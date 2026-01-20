@@ -212,6 +212,11 @@ watcher.on('change', (event) => {
 - [ ] 自定义工作流
 - [ ] 插件系统
 
+## 🔗 相关链接
+
+- 🌐 **官网**: [hawkiyi.com](https://hawkiyi.com)
+- 📦 **NPM**: `@hawkeye/core` (即将发布)
+
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
