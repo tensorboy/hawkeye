@@ -2,6 +2,15 @@
 
 English | [中文](./README.md)
 
+[![npm version](https://img.shields.io/npm/v/@hawkeye/core?color=blue&label=npm)](https://www.npmjs.com/package/@hawkeye/core)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/tensorboy/hawkeye/ci.yml?branch=main&label=build)](https://github.com/tensorboy/hawkeye/actions)
+[![License](https://img.shields.io/github/license/tensorboy/hawkeye?color=green)](https://github.com/tensorboy/hawkeye/blob/main/LICENSE)
+[![Discord](https://img.shields.io/discord/YOUR_DISCORD_ID?color=7289da&label=discord&logo=discord&logoColor=white)](https://discord.gg/YOUR_INVITE)
+
+[![macOS](https://img.shields.io/badge/macOS-supported-brightgreen?logo=apple&logoColor=white)](https://github.com/tensorboy/hawkeye)
+[![Windows](https://img.shields.io/badge/Windows-supported-brightgreen?logo=windows&logoColor=white)](https://github.com/tensorboy/hawkeye)
+[![Linux](https://img.shields.io/badge/Linux-supported-brightgreen?logo=linux&logoColor=white)](https://github.com/tensorboy/hawkeye)
+
 **Intelligent Task Perception & Execution Assistant** - Observes your work environment, understands your intent, and proactively offers help.
 
 > "Watch keenly like a hawk, execute thoughtfully like an assistant."
