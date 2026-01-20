@@ -1,0 +1,45 @@
+{
+  "name": "@hawkeye/core",
+  "version": "0.1.0",
+  "description": "Hawkeye Core Engine - Perception, Reasoning, Execution",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./perception": {
+      "import": "./dist/perception/index.mjs",
+      "require": "./dist/perception/index.js",
+      "types": "./dist/perception/index.d.ts"
+    },
+    "./reasoning": {
+      "import": "./dist/reasoning/index.mjs",
+      "require": "./dist/reasoning/index.js",
+      "types": "./dist/reasoning/index.d.ts"
+    },
+    "./execution": {
+      "import": "./dist/execution/index.mjs",
+      "require": "./dist/execution/index.js",
+      "types": "./dist/execution/index.d.ts"
+    }
+  },
+  "scripts": {
+    "dev": "tsup src/index.ts --watch",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "screenshot-desktop": "^1.15.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.0"
+  }
+}

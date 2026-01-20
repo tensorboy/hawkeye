@@ -1,0 +1,29 @@
+{
+  "name": "hawkeye",
+  "version": "0.1.0",
+  "description": "Hawkeye - Intelligent Task Perception and Execution Assistant",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:core": "pnpm --filter @hawkeye/core dev",
+    "dev:vscode": "pnpm --filter @hawkeye/vscode-extension dev",
+    "dev:desktop": "pnpm --filter @hawkeye/desktop dev",
+    "build": "pnpm -r build",
+    "build:core": "pnpm --filter @hawkeye/core build",
+    "build:vscode": "pnpm --filter @hawkeye/vscode-extension build",
+    "build:desktop": "pnpm --filter @hawkeye/desktop build",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
