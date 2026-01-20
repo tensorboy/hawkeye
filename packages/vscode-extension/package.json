@@ -1,0 +1,112 @@
+{
+  "name": "@hawkeye/vscode-extension",
+  "displayName": "Hawkeye",
+  "description": "Intelligent Task Perception and Execution Assistant for VS Code",
+  "version": "0.1.0",
+  "publisher": "hawkeye",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "hawkeye.observe",
+        "title": "Hawkeye: Observe Screen",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "hawkeye.showSuggestions",
+        "title": "Hawkeye: Show Suggestions",
+        "icon": "$(lightbulb)"
+      },
+      {
+        "command": "hawkeye.execute",
+        "title": "Hawkeye: Execute Selected Suggestion"
+      },
+      {
+        "command": "hawkeye.configure",
+        "title": "Hawkeye: Configure API Key"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "hawkeye",
+          "title": "Hawkeye",
+          "icon": "$(eye)"
+        }
+      ]
+    },
+    "views": {
+      "hawkeye": [
+        {
+          "id": "hawkeye.suggestions",
+          "name": "Suggestions",
+          "type": "webview"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Hawkeye",
+      "properties": {
+        "hawkeye.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API Key for Claude"
+        },
+        "hawkeye.model": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "description": "Claude model to use"
+        },
+        "hawkeye.autoObserve": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically observe screen at intervals"
+        },
+        "hawkeye.observeInterval": {
+          "type": "number",
+          "default": 60000,
+          "description": "Interval for auto-observation (ms)"
+        },
+        "hawkeye.requireConfirmation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require confirmation before executing tasks"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "hawkeye.observe",
+        "key": "ctrl+shift+h",
+        "mac": "cmd+shift+h"
+      }
+    ]
+  },
+  "scripts": {
+    "dev": "npm run watch",
+    "watch": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "package": "vsce package",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.19.11",
+    "typescript": "^5.3.3",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {
+    "@hawkeye/core": "workspace:*"
+  }
+}
