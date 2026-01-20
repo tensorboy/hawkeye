@@ -209,6 +209,40 @@ watcher.on('change', (event) => {
 });
 ```
 
+## ❓ FAQ
+
+### How is Hawkeye different from Claude Code / Cursor / Copilot?
+
+| Feature | Hawkeye | Claude Code / Cursor / Copilot |
+|---------|---------|--------------------------------|
+| **Interaction Mode** | 🦅 **Proactive Perception** - Automatically observes your work and finds opportunities to help | Reactive - Waits for your commands or questions |
+| **Trigger** | Runs continuously, analyzing screen, clipboard, file changes | Requires manual invocation or prompt input |
+| **Decision Power** | ✅ **You Decide** - Gives suggestions, you choose whether to execute | AI directly executes or generates code |
+| **Use Cases** | All scenarios: coding, browsing, office work, learning | Primarily for code writing |
+| **Target Users** | Everyone: developers, designers, students, office workers | Mainly developers |
+
+**Core difference in one sentence**:
+
+> Claude Code / Cursor is a **"you ask, it answers"** tool;
+> Hawkeye is an **"it watches you work, helps you discover opportunities"** assistant.
+
+### Why do we need "proactive perception"?
+
+Often, you don't even know you need help. For example:
+- You're reading a great article in your browser - Hawkeye can suggest saving it to your notes
+- You copied an error message - Hawkeye can automatically analyze and suggest solutions
+- You downloaded a file - Hawkeye can suggest organizing it to the right folder
+- You're doing repetitive work - Hawkeye can detect patterns and suggest automation
+
+**Traditional AI tools require you to think of the problem first, then ask; Hawkeye helps you discover problems, then you decide whether to solve them.**
+
+### Will Hawkeye automatically execute dangerous operations?
+
+No. Hawkeye's core philosophy is **"suggestions first, humans decide"**:
+- All operations require your confirmation before execution
+- Dangerous commands (like file deletion, system operations) have additional safety confirmations
+- You can configure whitelists/blacklists to control which operations are allowed
+
 ## 🗺️ Roadmap
 
 - [x] Core Perception Engine
