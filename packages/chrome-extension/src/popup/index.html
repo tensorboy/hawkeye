@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hawkeye</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1>Hawkeye</h1>
+      <button id="settingsBtn" class="icon-btn" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- API Key Setup -->
+    <div id="setupPanel" class="panel hidden">
+      <h2>Setup</h2>
+      <p>Enter your Anthropic API key to get started.</p>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+      <button id="saveApiKeyBtn" class="btn primary">Save API Key</button>
+      <p class="hint">Your API key is stored locally and never sent anywhere except Anthropic's API.</p>
+    </div>
+
+    <!-- Main Panel -->
+    <div id="mainPanel" class="panel">
+      <div class="actions">
+        <button id="observeBtn" class="btn primary full-width">
+          <span class="btn-icon">👁</span>
+          Observe Page
+        </button>
+      </div>
+
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Analyzing page...</p>
+      </div>
+
+      <div id="suggestionsList" class="suggestions-list">
+        <p class="empty-state">Click "Observe Page" to analyze the current page and get suggestions.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="index.js" type="module"></script>
+</body>
+</html>

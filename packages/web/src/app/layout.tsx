@@ -1,0 +1,29 @@
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'Hawkeye - Intelligent Task Assistant',
+  description: 'Your AI-powered task perception and execution assistant. Local-first, privacy-focused.',
+  keywords: ['AI assistant', 'task automation', 'productivity', 'Claude AI'],
+  authors: [{ name: 'tensorboy' }],
+  openGraph: {
+    title: 'Hawkeye - Intelligent Task Assistant',
+    description: 'Your AI-powered task perception and execution assistant',
+    type: 'website',
+  },
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
+    </html>
+  )
+}

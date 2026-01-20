@@ -1,6 +1,6 @@
 /**
- * 眼力劲核心引擎
- * Yanliqin Core - Perception, Reasoning, Execution
+ * Hawkeye 核心引擎
+ * Hawkeye Core - Perception, Reasoning, Execution
  */
 
 // 感知模块
@@ -15,8 +15,14 @@ export * from './execution';
 // 存储模块
 export * from './storage';
 
+// 文件监控模块
+export * from './watcher';
+
+// 同步模块
+export * from './sync';
+
 // 核心类型
 export * from './types';
 
 // 主引擎
-export { YanliqinEngine } from './engine';
+export { YanliqinEngine, YanliqinEngine as HawkeyeEngine } from './engine';
