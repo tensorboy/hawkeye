@@ -20,9 +20,9 @@ English | [中文](./README.md)
 
 After using these powerful AI tools, I kept thinking: How can we make AI tools **benefit everyone**?
 
-I don't believe laws can bring fairness, but I believe **AI will**.
+**I believe AI can empower everyone to achieve 10x productivity.**
 
-Technology should be accessible to all. When AI becomes powerful enough, cheap enough, and easy enough to use, everyone will have a tireless intelligent assistant—whether you're a programmer, designer, student, or office worker. This is the vision behind Hawkeye: **Let AI be everyone's hawk eye, helping you see opportunities and seize them.**
+Technology should be accessible to all. When AI becomes powerful enough, cheap enough, and easy enough to use, everyone will have a tireless intelligent assistant—whether you're a programmer, designer, student, or office worker. This is the vision behind Hawkeye: **Let AI be everyone's hawk eye, helping you see opportunities, seize them, and 10x your productivity.**
 
 ---
 
