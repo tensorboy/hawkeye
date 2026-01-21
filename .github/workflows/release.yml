@@ -106,8 +106,8 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: |
-            packages/desktop/out/*.dmg
-            packages/desktop/out/*.zip
+            packages/desktop/release/*.dmg
+            packages/desktop/release/*.zip
           if-no-files-found: warn
 
       - name: Upload Windows Artifacts
@@ -116,8 +116,8 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: |
-            packages/desktop/out/*.exe
-            packages/desktop/out/*.msi
+            packages/desktop/release/*.exe
+            packages/desktop/release/*.msi
           if-no-files-found: warn
 
       - name: Upload Linux Artifacts
@@ -126,9 +126,9 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: |
-            packages/desktop/out/*.AppImage
-            packages/desktop/out/*.deb
-            packages/desktop/out/*.rpm
+            packages/desktop/release/*.AppImage
+            packages/desktop/release/*.deb
+            packages/desktop/release/*.rpm
           if-no-files-found: warn
 
   # ============================================
@@ -194,23 +194,28 @@ jobs:
         with:
           node-version: 20
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Copy Extension to Isolated Directory
+        run: |
+          mkdir -p /tmp/vscode-extension
+          cp -r packages/vscode-extension/* /tmp/vscode-extension/
 
       - name: Install Dependencies
         run: npm install
-        working-directory: packages/vscode-extension
+        working-directory: /tmp/vscode-extension
 
       - name: Install vsce
         run: npm install -g @vscode/vsce
 
       - name: Build VS Code Extension
         run: npm run build
-        working-directory: packages/vscode-extension
+        working-directory: /tmp/vscode-extension
 
       - name: Package VSIX
         run: vsce package -o hawkeye-vscode-extension.vsix
-        working-directory: packages/vscode-extension
+        working-directory: /tmp/vscode-extension
+
+      - name: Copy VSIX back
+        run: cp /tmp/vscode-extension/hawkeye-vscode-extension.vsix packages/vscode-extension/
 
       - name: Upload VS Code Extension Artifact
         uses: actions/upload-artifact@v4

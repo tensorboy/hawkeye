@@ -43,7 +43,7 @@
     "appId": "com.hawkeye.app",
     "productName": "Hawkeye",
     "directories": {
-      "output": "out"
+      "output": "release"
     },
     "mac": {
       "category": "public.app-category.productivity",
