@@ -63,7 +63,7 @@ jobs:
             libnotify-dev \
             libnss3 \
             libxss1 \
-            libasound2 \
+            libasound2t64 \
             libxtst6 \
             xvfb
 
@@ -72,6 +72,10 @@ jobs:
 
       - name: Build Core
         run: pnpm build:core
+
+      - name: Build Desktop
+        run: pnpm build
+        working-directory: packages/desktop
 
       - name: Build Desktop App (macOS)
         if: matrix.platform == 'darwin'

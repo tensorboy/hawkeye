@@ -1,6 +1,6 @@
 # Hawkeye 产品需求文档 (PRD)
 
-**版本**: 2.4
+**版本**: 2.5
 **最后更新**: 2026-01-20
 **作者**: Hawkeye Team
 **状态**: Draft
@@ -3207,6 +3207,150 @@ type SuggestionType =
 
 ---
 
+### 17.9 竞品功能研究：AI 伴侣与智能助手
+
+基于对 [moeru-ai/airi](https://github.com/moeru-ai/airi)、PyGPT、Fellou 等开源项目的调研，提取可借鉴的功能特性。
+
+#### 17.9.1 AIRI (moeru-ai) - AI 虚拟伴侣平台
+
+**项目定位**: 自托管 AI 虚拟角色平台，支持实时语音交互和游戏陪玩
+
+| 功能特性 | 描述 | Hawkeye 借鉴价值 |
+|----------|------|-----------------|
+| **实时语音对话** | 超低延迟语音交互 | ⭐⭐⭐ 可作为辅助交互方式 |
+| **游戏陪玩** | Minecraft、Factorio 等游戏中的 AI 伙伴 | ⭐ 垂直场景，暂不需要 |
+| **VRM/Live2D 支持** | 虚拟形象动画和表情 | ⭐⭐ 可增强用户亲和感 |
+| **记忆系统** | 长期记忆存储和关联 | ⭐⭐⭐ 核心功能，已规划 |
+| **多 LLM 支持** | 20+ 模型提供商 | ⭐⭐⭐ 已实现 Claude + Ollama |
+| **桌面常驻** | Tamagotchi 模式，始终陪伴 | ⭐⭐⭐ 符合 Hawkeye 定位 |
+| **原生 GPU 加速** | CUDA/Metal 支持 | ⭐⭐ 本地模型性能优化 |
+
+**可借鉴功能**:
+1. **语音交互层**: 添加可选语音输入/输出，降低交互门槛
+2. **情感化反馈**: AI 回复可附带情绪指示 (开心/担忧/建议)
+3. **常驻通知**: Tray 图标动态变化，展示 AI 状态
+
+#### 17.9.2 PyGPT - 桌面 AI 助手
+
+**项目定位**: 开源桌面 AI 助手，强调长期记忆和自主循环
+
+| 功能特性 | 描述 | Hawkeye 借鉴价值 |
+|----------|------|-----------------|
+| **长期记忆** | 跨会话记忆保留 | ⭐⭐⭐ 核心功能，已规划 |
+| **持续录制模式** | 屏幕/音频持续捕获 | ⭐⭐⭐ 符合感知层设计 |
+| **自主循环评估** | AI 自主判断下一步 | ⭐⭐ 可增强主动性 |
+| **多模态支持** | 视觉+音频+文本 | ⭐⭐⭐ 感知层多模态 |
+
+**可借鉴功能**:
+1. **自主循环模式**: AI 完成一个建议后，自动评估是否有下一步
+2. **会话连续性**: 关闭重开后，恢复上次上下文
+
+#### 17.9.3 Fellou - 代理式 AI 浏览器
+
+**项目定位**: 具备主动帮助能力的 AI 浏览器
+
+| 功能特性 | 描述 | Hawkeye 借鉴价值 |
+|----------|------|-----------------|
+| **主动任务帮助** | AI 主动发现可帮助的点 | ⭐⭐⭐ 核心理念一致 |
+| **代理式记忆** | 连接历史、上下文、知识库 | ⭐⭐⭐ 符合 MemOS 设计 |
+| **动态多任务** | 同时处理多个任务流 | ⭐⭐ 可增强并行能力 |
+| **网页深度理解** | 结构化解析网页内容 | ⭐⭐⭐ Chrome 扩展核心能力 |
+
+**可借鉴功能**:
+1. **任务队列可视化**: 展示当前正在处理的多个任务
+2. **知识图谱**: 将感知到的信息关联成知识网络
+
+#### 17.9.4 工作流自动化平台对比
+
+| 平台 | 定位 | AI 特性 | Hawkeye 差异 |
+|------|------|---------|--------------|
+| **Activepieces** | 低代码自动化 | AI Copilot 辅助构建 | Hawkeye 更主动，无需构建 |
+| **n8n** | 工作流自动化 | AI 节点支持 | Hawkeye 更轻量，零配置 |
+| **Zapier** | SaaS 集成 | AI Actions | Hawkeye 本地优先 |
+| **Make** | 可视化自动化 | AI 场景推荐 | Hawkeye 自动发现场景 |
+
+**核心差异**: Hawkeye 不需要用户预定义工作流，AI 自动发现并建议自动化机会。
+
+#### 17.9.5 功能优先级建议
+
+基于调研，建议 Hawkeye 按以下优先级增加功能：
+
+**P0 - 核心体验 (已规划)**
+- ✅ 主动感知 (屏幕、剪贴板、文件)
+- ✅ 意图识别与建议生成
+- ✅ 本地优先架构
+- ✅ 多端同步 (Desktop/VS Code/Chrome)
+
+**P1 - 增强体验 (建议增加)**
+| 功能 | 来源 | 实现复杂度 | 用户价值 |
+|------|------|-----------|---------|
+| 语音输入 | AIRI | 中 | 高 |
+| 自主循环模式 | PyGPT | 低 | 中 |
+| 任务队列可视化 | Fellou | 低 | 中 |
+| 情感化反馈 | AIRI | 低 | 中 |
+
+**P2 - 差异化功能 (未来考虑)**
+| 功能 | 来源 | 实现复杂度 | 用户价值 |
+|------|------|-----------|---------|
+| 虚拟形象 | AIRI | 高 | 低 |
+| 知识图谱 | Fellou | 高 | 高 |
+| 游戏陪玩 | AIRI | 高 | 低 |
+
+#### 17.9.6 技术实现参考
+
+**语音交互层 (P1)**
+```typescript
+// 可选语音输入模块
+interface VoiceInputConfig {
+  enabled: boolean;
+  wakeWord?: string;        // "Hey Hawkeye"
+  language: 'en' | 'zh-CN' | 'auto';
+  localProcessing: boolean; // 使用 Whisper 本地处理
+}
+
+// 语音反馈模块
+interface VoiceFeedbackConfig {
+  enabled: boolean;
+  voice: 'default' | 'custom';
+  speed: number;            // 0.5 - 2.0
+  localTTS: boolean;        // 使用本地 TTS
+}
+```
+
+**自主循环模式 (P1)**
+```typescript
+interface AutonomousLoopConfig {
+  enabled: boolean;
+  maxIterations: number;    // 最大自主迭代次数
+  pauseOnHighRisk: boolean; // 高风险操作暂停
+  requireConfirmEvery: number; // 每 N 次操作需确认
+}
+
+// 自主循环流程
+// 1. 执行用户确认的建议
+// 2. AI 评估执行结果
+// 3. 如果发现新机会，生成新建议
+// 4. 根据配置决定是否自动继续或等待确认
+```
+
+**任务队列可视化 (P1)**
+```typescript
+interface TaskQueueDisplay {
+  activeTasks: Array<{
+    id: string;
+    title: string;
+    status: 'pending' | 'running' | 'paused' | 'completed';
+    progress: number;
+    canPause: boolean;
+    canCancel: boolean;
+  }>;
+  completedToday: number;
+  suggestionsGenerated: number;
+}
+```
+
+---
+
 ## 18. 附录
 
 ### 18.1 术语表
@@ -3230,6 +3374,11 @@ type SuggestionType =
 - [CrewAI - Multi-Agent Framework](https://github.com/crewAIInc/crewAI)
 - [SuperAGI - Autonomous AI Agent Framework](https://github.com/TransformerOptimus/SuperAGI)
 - [LangGraph - Plan-and-Execute Agents](https://github.com/langchain-ai/langgraph)
+
+**AI 伴侣与桌面助手**:
+- [AIRI - AI 虚拟伴侣平台](https://github.com/moeru-ai/airi) - 实时语音、记忆系统、多 LLM 支持
+- [PyGPT - 桌面 AI 助手](https://github.com/szczyglis-dev/py-gpt) - 长期记忆、自主循环评估
+- [Fellou - 代理式 AI 浏览器](https://fellou.ai/) - 主动任务帮助、代理式记忆
 
 **AI 驱动 UI 生成**:
 - [Google A2UI - Agent-to-User Interface Protocol](https://github.com/google/A2UI)
@@ -3267,6 +3416,7 @@ type SuggestionType =
 | 2.2 | 2026-01-20 | 新增第 16 章：市场痛点与解决方案（基于用户研究） |
 | 2.3 | 2026-01-20 | 添加详细实现规格文档引用 (implementation-spec.md) |
 | 2.4 | 2026-01-20 | 新增 17.8 节：行业交互方案研究 (A2UI/GenUI/json-render) |
+| 2.5 | 2026-01-20 | 新增 17.9 节：竞品功能研究 (AIRI/PyGPT/Fellou) |
 
 ---
 
