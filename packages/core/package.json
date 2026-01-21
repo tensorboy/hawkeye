@@ -29,22 +29,24 @@
   },
   "scripts": {
     "dev": "tsup src/index.ts --watch",
-    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts --format cjs,esm",
     "lint": "eslint src/ || true",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
+    "@types/ws": "^8.5.10",
+    "chokidar": "^3.5.3",
     "screenshot-desktop": "^1.15.0",
-    "chokidar": "^3.5.3"
+    "ws": "^8.19.0"
   },
   "optionalDependencies": {
     "@paddlejs-models/ocr": "^1.2.4"
   },
   "devDependencies": {
+    "@types/node": "^20.10.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3",
-    "@types/node": "^20.10.0"
+    "typescript": "^5.3.3"
   }
 }
