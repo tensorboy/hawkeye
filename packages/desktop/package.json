@@ -2,6 +2,11 @@
   "name": "@hawkeye/desktop",
   "version": "0.1.0",
   "description": "Hawkeye Desktop Application - Intelligent Task Assistant",
+  "author": "Hawkeye Team",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tensorboy/hawkeye"
+  },
   "main": "./dist/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

@@ -1,9 +1,13 @@
 {
-  "name": "@hawkeye/vscode-extension",
+  "name": "hawkeye-assistant",
   "displayName": "%displayName%",
   "description": "%description%",
   "version": "0.1.0",
   "publisher": "hawkeye",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tensorboy/hawkeye"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
