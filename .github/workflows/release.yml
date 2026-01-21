@@ -53,8 +53,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install Linux Dependencies
         if: matrix.platform == 'linux'
@@ -146,8 +144,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
@@ -196,8 +192,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
