@@ -46,15 +46,19 @@
     "directories": {
       "output": "release"
     },
+    "files": [
+      "out/**/*"
+    ],
     "mac": {
       "category": "public.app-category.productivity",
-      "icon": "build/icon.icns"
+      "target": ["dmg", "zip"]
     },
     "win": {
-      "icon": "build/icon.ico"
+      "target": ["nsis"]
     },
     "linux": {
-      "category": "Utility"
+      "category": "Utility",
+      "target": ["AppImage", "deb"]
     }
   }
 }
