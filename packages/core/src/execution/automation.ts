@@ -255,6 +255,184 @@ export class AutomationExecutor {
   }
 
   /**
+   * 获取剪贴板内容
+   */
+  async getClipboard(): Promise<ExecutionResult> {
+    const startTime = Date.now();
+
+    try {
+      let content: string;
+      switch (this.platform) {
+        case 'darwin': {
+          const { stdout } = await execAsync('pbpaste');
+          content = stdout;
+          break;
+        }
+        case 'win32': {
+          const { stdout } = await execAsync('powershell -Command "Get-Clipboard"');
+          content = stdout;
+          break;
+        }
+        case 'linux': {
+          const { stdout } = await execAsync('xclip -selection clipboard -o');
+          content = stdout;
+          break;
+        }
+        default:
+          throw new Error(`不支持的平台: ${this.platform}`);
+      }
+      return {
+        success: true,
+        output: content.trim(),
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 浏览器动作
+   */
+  async browserAction(
+    action: string,
+    options?: Record<string, unknown>
+  ): Promise<ExecutionResult> {
+    const startTime = Date.now();
+
+    try {
+      switch (action) {
+        case 'navigate':
+          return this.openUrl(options?.url as string);
+
+        case 'refresh':
+          if (this.platform === 'darwin') {
+            await execAsync(`osascript -e 'tell application "System Events" to keystroke "r" using command down'`);
+          } else if (this.platform === 'win32') {
+            await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('^r')"`);
+          }
+          return {
+            success: true,
+            output: '页面已刷新',
+            duration: Date.now() - startTime,
+          };
+
+        case 'back':
+          if (this.platform === 'darwin') {
+            await execAsync(`osascript -e 'tell application "System Events" to keystroke "[" using command down'`);
+          } else if (this.platform === 'win32') {
+            await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('%{LEFT}')"`);
+          }
+          return {
+            success: true,
+            output: '已返回上一页',
+            duration: Date.now() - startTime,
+          };
+
+        case 'forward':
+          if (this.platform === 'darwin') {
+            await execAsync(`osascript -e 'tell application "System Events" to keystroke "]" using command down'`);
+          } else if (this.platform === 'win32') {
+            await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('%{RIGHT}')"`);
+          }
+          return {
+            success: true,
+            output: '已前进到下一页',
+            duration: Date.now() - startTime,
+          };
+
+        default:
+          return {
+            success: false,
+            error: `不支持的浏览器动作: ${action}`,
+            duration: Date.now() - startTime,
+          };
+      }
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 应用动作
+   */
+  async appAction(
+    app: string,
+    action: string,
+    options?: Record<string, unknown>
+  ): Promise<ExecutionResult> {
+    const startTime = Date.now();
+
+    try {
+      if (this.platform === 'darwin') {
+        // 使用 AppleScript 执行应用动作
+        let script = '';
+        switch (action) {
+          case 'activate':
+            script = `tell application "${app}" to activate`;
+            break;
+          case 'hide':
+            script = `tell application "System Events" to set visible of process "${app}" to false`;
+            break;
+          case 'show':
+            script = `tell application "System Events" to set visible of process "${app}" to true`;
+            break;
+          case 'minimize':
+            script = `tell application "${app}" to set miniaturized of every window to true`;
+            break;
+          default:
+            // 自定义动作
+            script = `tell application "${app}" to ${action}`;
+        }
+        return this.runAppleScript(script);
+      } else if (this.platform === 'win32') {
+        // Windows 下的应用动作较有限
+        switch (action) {
+          case 'activate':
+            await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.AppActivate('${app}')"`);
+            return {
+              success: true,
+              output: `已激活应用: ${app}`,
+              duration: Date.now() - startTime,
+            };
+          case 'minimize':
+            await execAsync(`powershell -Command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class W32 { [DllImport(\\\"user32.dll\\\")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); }'; $hwnd = (Get-Process -Name '${app}' | Select-Object -First 1).MainWindowHandle; [W32]::ShowWindow($hwnd, 6)"`);
+            return {
+              success: true,
+              output: `已最小化应用: ${app}`,
+              duration: Date.now() - startTime,
+            };
+          default:
+            return {
+              success: false,
+              error: `Windows 上不支持的应用动作: ${action}`,
+              duration: Date.now() - startTime,
+            };
+        }
+      }
+      return {
+        success: false,
+        error: `平台 ${this.platform} 不支持应用动作`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
    * 关闭应用程序
    */
   async closeApp(appName: string): Promise<ExecutionResult> {

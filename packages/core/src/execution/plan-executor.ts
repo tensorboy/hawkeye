@@ -372,8 +372,17 @@ export class PlanExecutor extends EventEmitter {
         case 'folder_create':
           return this.file.createDir(params.path as string);
 
+        case 'folder_delete':
+          return this.file.deleteDir(params.path as string);
+
         case 'url_open':
           return this.automation.openUrl(params.url as string);
+
+        case 'browser_action':
+          return this.automation.browserAction(
+            params.action as string,
+            params.options as Record<string, unknown>
+          );
 
         case 'app_open':
           return this.automation.openApp(params.app as string);
@@ -381,14 +390,30 @@ export class PlanExecutor extends EventEmitter {
         case 'app_close':
           return this.automation.closeApp(params.app as string);
 
+        case 'app_action':
+          return this.automation.appAction(
+            params.app as string,
+            params.action as string,
+            params.options as Record<string, unknown>
+          );
+
         case 'clipboard_set':
           return this.automation.setClipboard(params.content as string);
+
+        case 'clipboard_get':
+          return this.automation.getClipboard();
 
         case 'notification':
           return this.automation.showNotification(
             params.title as string || 'Hawkeye',
             params.message as string
           );
+
+        case 'api_call':
+          return this.executeApiCall(params);
+
+        case 'user_input':
+          return this.requestUserInput(params);
 
         case 'wait':
           await this.delay((params.duration as number) || 1000);
@@ -425,5 +450,87 @@ export class PlanExecutor extends EventEmitter {
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * 执行 API 调用
+   */
+  private async executeApiCall(params: Record<string, unknown>): Promise<ExecutionResult> {
+    const startTime = Date.now();
+
+    try {
+      const url = params.url as string;
+      const method = (params.method as string) || 'GET';
+      const headers = (params.headers as Record<string, string>) || {};
+      const body = params.body;
+
+      const options: RequestInit = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
+      };
+
+      if (body && method !== 'GET') {
+        options.body = typeof body === 'string' ? body : JSON.stringify(body);
+      }
+
+      const response = await fetch(url, options);
+      const contentType = response.headers.get('content-type');
+      let data: string;
+
+      if (contentType?.includes('application/json')) {
+        const json = await response.json();
+        data = JSON.stringify(json, null, 2);
+      } else {
+        data = await response.text();
+      }
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `API 调用失败: ${response.status} ${response.statusText}`,
+          output: data,
+          duration: Date.now() - startTime,
+        };
+      }
+
+      return {
+        success: true,
+        output: data,
+        duration: Date.now() - startTime,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 请求用户输入
+   * 注意：需要在上层提供输入处理器
+   */
+  private async requestUserInput(params: Record<string, unknown>): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    const prompt = (params.prompt as string) || '请输入:';
+    const defaultValue = params.defaultValue as string | undefined;
+
+    // 发出需要用户输入的事件
+    this.emit('input:required', {
+      prompt,
+      defaultValue,
+      inputType: params.inputType || 'text',
+    });
+
+    // 返回等待输入的结果
+    return {
+      success: true,
+      output: `等待用户输入: ${prompt}`,
+      duration: Date.now() - startTime,
+    };
   }
 }

@@ -172,14 +172,20 @@ export type ActionType =
   | 'file_delete'     // 删除文件
   | 'file_copy'       // 复制文件
   | 'folder_create'   // 创建文件夹
+  | 'folder_delete'   // 删除文件夹
   | 'url_open'        // 打开 URL
+  | 'browser_action'  // 浏览器动作
   | 'app_open'        // 打开应用
   | 'app_close'       // 关闭应用
+  | 'app_action'      // 应用动作
   | 'clipboard_set'   // 设置剪贴板
+  | 'clipboard_get'   // 获取剪贴板
   | 'notification'    // 发送通知
+  | 'api_call'        // API 调用
   | 'wait'            // 等待
   | 'condition'       // 条件判断
-  | 'loop';           // 循环
+  | 'loop'            // 循环
+  | 'user_input';     // 用户输入
 
 export interface AlternativePlan {
   /** 方案描述 */

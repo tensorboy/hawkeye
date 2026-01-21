@@ -12,6 +12,11 @@ import { PlanExecutor, type PlanExecutorConfig, type PlanExecution } from './exe
 import { HawkeyeDatabase, type DatabaseConfig } from './storage/database';
 import { VectorStore, type VectorStoreConfig, createAIEmbedFunction } from './storage/vector-store';
 import { SyncServer, type SyncConfig } from './sync';
+import { BehaviorTracker, type BehaviorTrackerOptions } from './behavior';
+import { MemOSManager, type MemOSConfig } from './memory';
+import { DashboardManager, type DashboardManagerConfig } from './dashboard';
+import { WorkflowManager, type WorkflowManagerConfig } from './workflow';
+import { PluginManager, type PluginManagerConfig } from './plugin';
 import type {
   UserIntent,
   ExecutionPlan,
@@ -38,11 +43,41 @@ export interface HawkeyeConfig {
   /** 同步配置 */
   sync?: SyncConfig;
 
+  /** 行为追踪配置 */
+  behavior?: BehaviorTrackerOptions;
+
+  /** 记忆系统配置 */
+  memory?: MemOSConfig;
+
+  /** Dashboard 配置 */
+  dashboard?: DashboardManagerConfig;
+
+  /** 工作流配置 */
+  workflow?: WorkflowManagerConfig;
+
+  /** 插件系统配置 */
+  plugin?: PluginManagerConfig;
+
   /** 是否自动启动 WebSocket 服务器 */
   autoStartSync?: boolean;
 
   /** 是否启用 AI 嵌入 */
   enableAIEmbedding?: boolean;
+
+  /** 是否启用行为追踪 */
+  enableBehaviorTracking?: boolean;
+
+  /** 是否启用记忆系统 */
+  enableMemory?: boolean;
+
+  /** 是否启用 Dashboard */
+  enableDashboard?: boolean;
+
+  /** 是否启用工作流 */
+  enableWorkflow?: boolean;
+
+  /** 是否启用插件系统 */
+  enablePlugins?: boolean;
 }
 
 export interface HawkeyeStatus {
@@ -52,6 +87,12 @@ export interface HawkeyeStatus {
   syncRunning: boolean;
   syncPort: number | null;
   connectedClients: number;
+  behaviorTracking: boolean;
+  memoryEnabled: boolean;
+  dashboardEnabled: boolean;
+  workflowEnabled: boolean;
+  pluginsEnabled: boolean;
+  loadedPlugins: number;
 }
 
 export class Hawkeye extends EventEmitter {
@@ -65,7 +106,16 @@ export class Hawkeye extends EventEmitter {
   private vectorStore: VectorStore;
   private syncServer: SyncServer | null = null;
 
+  // 新增模块
+  private behaviorTracker: BehaviorTracker | null = null;
+  private memoryManager: MemOSManager | null = null;
+  private dashboardManager: DashboardManager | null = null;
+  private workflowManager: WorkflowManager | null = null;
+  private pluginManager: PluginManager | null = null;
+
   private _initialized: boolean = false;
+  private _syncRunning: boolean = false;
+  private _behaviorRunning: boolean = false;
   private currentIntents: UserIntent[] = [];
   private currentPlan: ExecutionPlan | null = null;
 
@@ -73,7 +123,7 @@ export class Hawkeye extends EventEmitter {
     super();
     this.config = config;
 
-    // 初始化各模块（非 async 部分）
+    // 初始化核心模块（非 async 部分）
     this.perception = new PerceptionEngine(config.perception);
     this.intentEngine = new IntentEngine({});
     this.planGenerator = new PlanGenerator({});
@@ -83,6 +133,31 @@ export class Hawkeye extends EventEmitter {
 
     if (config.sync) {
       this.syncServer = new SyncServer(config.sync);
+    }
+
+    // 初始化行为追踪器
+    if (config.enableBehaviorTracking !== false) {
+      this.behaviorTracker = new BehaviorTracker(config.behavior);
+    }
+
+    // 初始化记忆系统
+    if (config.enableMemory !== false) {
+      this.memoryManager = new MemOSManager(config.memory);
+    }
+
+    // 初始化 Dashboard
+    if (config.enableDashboard !== false) {
+      this.dashboardManager = new DashboardManager(config.dashboard);
+    }
+
+    // 初始化工作流管理器
+    if (config.enableWorkflow !== false) {
+      this.workflowManager = new WorkflowManager(config.workflow);
+    }
+
+    // 初始化插件管理器
+    if (config.enablePlugins !== false) {
+      this.pluginManager = new PluginManager(config.plugin);
     }
   }
 
@@ -159,10 +234,46 @@ export class Hawkeye extends EventEmitter {
       // 7. 启动同步服务器（如果配置）
       if (this.syncServer && this.config.autoStartSync !== false) {
         await this.syncServer.start();
+        this._syncRunning = true;
         this.emit('module:ready', 'sync');
 
         // 设置同步服务器事件
         this.setupSyncEvents();
+      }
+
+      // 8. 初始化行为追踪器
+      if (this.behaviorTracker) {
+        await this.behaviorTracker.start();
+        this._behaviorRunning = true;
+        this.setupBehaviorEvents();
+        this.emit('module:ready', 'behavior');
+      }
+
+      // 9. 初始化记忆系统
+      if (this.memoryManager) {
+        await this.memoryManager.initialize();
+        this.setupMemoryEvents();
+        this.emit('module:ready', 'memory');
+      }
+
+      // 10. 初始化 Dashboard (no async init needed, loads in constructor)
+      if (this.dashboardManager) {
+        this.dashboardManager.loadAll();
+        this.setupDashboardEvents();
+        this.emit('module:ready', 'dashboard');
+      }
+
+      // 11. 初始化工作流管理器 (no async init needed, loads in constructor)
+      if (this.workflowManager) {
+        this.workflowManager.loadAllWorkflows();
+        this.setupWorkflowEvents();
+        this.emit('module:ready', 'workflow');
+      }
+
+      // 12. 初始化插件系统
+      if (this.pluginManager) {
+        this.setupPluginEvents();
+        this.emit('module:ready', 'plugin');
       }
 
       this._initialized = true;
@@ -386,10 +497,131 @@ export class Hawkeye extends EventEmitter {
       initialized: this._initialized,
       aiReady: this.aiManager?.isReady ?? false,
       aiProvider: this.aiManager?.activeProvider ?? null,
-      syncRunning: this.syncServer?.isRunning ?? false,
-      syncPort: this.syncServer?.port ?? null,
-      connectedClients: this.syncServer?.clientCount ?? 0,
+      syncRunning: this._syncRunning,
+      syncPort: this.config.sync?.port ?? null,
+      connectedClients: this.syncServer?.getClientCount() ?? 0,
+      behaviorTracking: this._behaviorRunning,
+      memoryEnabled: this.memoryManager !== null,
+      dashboardEnabled: this.dashboardManager !== null,
+      workflowEnabled: this.workflowManager !== null,
+      pluginsEnabled: this.pluginManager !== null,
+      loadedPlugins: this.pluginManager?.getLoadedPlugins().length ?? 0,
     };
+  }
+
+  // ============ 行为追踪相关 ============
+
+  /**
+   * 获取行为追踪器
+   */
+  getBehaviorTracker(): BehaviorTracker | null {
+    return this.behaviorTracker;
+  }
+
+  /**
+   * 获取用户行为模式
+   */
+  async getBehaviorPatterns() {
+    return this.behaviorTracker?.getPatterns() ?? [];
+  }
+
+  /**
+   * 获取习惯建议
+   */
+  async getHabitSuggestions() {
+    return this.behaviorTracker?.getSuggestions() ?? [];
+  }
+
+  // ============ 记忆系统相关 ============
+
+  /**
+   * 获取记忆管理器
+   */
+  getMemoryManager(): MemOSManager | null {
+    return this.memoryManager;
+  }
+
+  /**
+   * 记忆语义搜索
+   */
+  async memorySearch(query: string, options?: { limit?: number; types?: string[] }) {
+    return this.memoryManager?.semanticSearch(query, options?.limit ?? 10) ?? [];
+  }
+
+  /**
+   * 获取语义记忆
+   */
+  getSemanticMemories(query: string, limit = 10) {
+    return this.memoryManager?.semanticSearch(query, limit) ?? [];
+  }
+
+  // ============ Dashboard 相关 ============
+
+  /**
+   * 获取 Dashboard 管理器
+   */
+  getDashboardManager(): DashboardManager | null {
+    return this.dashboardManager;
+  }
+
+  /**
+   * 获取今日时间统计
+   */
+  getTodayTimeStats() {
+    return this.dashboardManager?.getTodayTimeStats();
+  }
+
+  /**
+   * 获取生产力报告
+   */
+  getProductivityReport(type: 'weekly' | 'monthly') {
+    return this.dashboardManager?.getProductivityReport(type);
+  }
+
+  // ============ 工作流相关 ============
+
+  /**
+   * 获取工作流管理器
+   */
+  getWorkflowManager(): WorkflowManager | null {
+    return this.workflowManager;
+  }
+
+  /**
+   * 执行工作流
+   */
+  async executeWorkflow(workflowId: string, input?: Record<string, unknown>) {
+    return this.workflowManager?.executeWorkflow(workflowId, input);
+  }
+
+  /**
+   * 获取所有工作流
+   */
+  getWorkflows() {
+    return this.workflowManager?.getAllWorkflows() ?? [];
+  }
+
+  // ============ 插件相关 ============
+
+  /**
+   * 获取插件管理器
+   */
+  getPluginManager(): PluginManager | null {
+    return this.pluginManager;
+  }
+
+  /**
+   * 从文件加载插件
+   */
+  async loadPluginFromFile(pluginPath: string) {
+    return this.pluginManager?.loadPluginFromFile(pluginPath);
+  }
+
+  /**
+   * 获取已加载的插件
+   */
+  getLoadedPlugins() {
+    return this.pluginManager?.getLoadedPlugins() ?? [];
   }
 
   /**
@@ -440,8 +672,30 @@ export class Hawkeye extends EventEmitter {
   async shutdown(): Promise<void> {
     this.emit('shutting_down');
 
+    // 停止行为追踪
+    if (this.behaviorTracker) {
+      await this.behaviorTracker.stop();
+      this._behaviorRunning = false;
+    }
+
+    // 保存记忆系统数据
+    if (this.memoryManager) {
+      await this.memoryManager.saveToDisk();
+    }
+
+    // 停止工作流
+    if (this.workflowManager) {
+      this.workflowManager.destroy();
+    }
+
+    // 卸载所有插件
+    if (this.pluginManager) {
+      await this.pluginManager.destroy();
+    }
+
     if (this.syncServer) {
       this.syncServer.stop();
+      this._syncRunning = false;
     }
 
     if (this.aiManager) {
@@ -561,6 +815,98 @@ export class Hawkeye extends EventEmitter {
         });
         break;
     }
+  }
+
+  private setupBehaviorEvents(): void {
+    if (!this.behaviorTracker) return;
+
+    this.behaviorTracker.on('pattern:detected', (pattern) => {
+      this.emit('behavior:pattern:detected', pattern);
+    });
+
+    this.behaviorTracker.on('habit:learned', (habit) => {
+      this.emit('behavior:habit:learned', habit);
+    });
+
+    this.behaviorTracker.on('suggestion', (suggestion) => {
+      this.emit('behavior:suggestion', suggestion);
+    });
+  }
+
+  private setupMemoryEvents(): void {
+    if (!this.memoryManager) return;
+
+    this.memoryManager.on('memory:consolidated', (data) => {
+      this.emit('memory:consolidated', data);
+    });
+
+    this.memoryManager.on('memory:pruned', (data) => {
+      this.emit('memory:pruned', data);
+    });
+
+    this.memoryManager.on('recall', (data) => {
+      this.emit('memory:recall', data);
+    });
+  }
+
+  private setupDashboardEvents(): void {
+    if (!this.dashboardManager) return;
+
+    this.dashboardManager.on('task:created', (task) => {
+      this.emit('dashboard:task:created', task);
+    });
+
+    this.dashboardManager.on('task:completed', (task) => {
+      this.emit('dashboard:task:completed', task);
+    });
+
+    this.dashboardManager.on('focus:started', (session) => {
+      this.emit('dashboard:focus:started', session);
+    });
+
+    this.dashboardManager.on('focus:ended', (session) => {
+      this.emit('dashboard:focus:ended', session);
+    });
+  }
+
+  private setupWorkflowEvents(): void {
+    if (!this.workflowManager) return;
+
+    this.workflowManager.on('workflow:started', (execution) => {
+      this.emit('workflow:started', execution);
+    });
+
+    this.workflowManager.on('workflow:completed', (execution) => {
+      this.emit('workflow:completed', execution);
+    });
+
+    this.workflowManager.on('workflow:failed', (execution) => {
+      this.emit('workflow:failed', execution);
+    });
+
+    this.workflowManager.on('step:executed', (data) => {
+      this.emit('workflow:step:executed', data);
+    });
+  }
+
+  private setupPluginEvents(): void {
+    if (!this.pluginManager) return;
+
+    this.pluginManager.on('plugin:loaded', (plugin) => {
+      this.emit('plugin:loaded', plugin);
+    });
+
+    this.pluginManager.on('plugin:activated', (plugin) => {
+      this.emit('plugin:activated', plugin);
+    });
+
+    this.pluginManager.on('plugin:deactivated', (plugin) => {
+      this.emit('plugin:deactivated', plugin);
+    });
+
+    this.pluginManager.on('plugin:error', (data) => {
+      this.emit('plugin:error', data);
+    });
   }
 }
 

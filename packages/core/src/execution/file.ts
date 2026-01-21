@@ -171,6 +171,27 @@ export class FileExecutor {
   }
 
   /**
+   * 删除目录
+   */
+  async deleteDir(dirPath: string): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    try {
+      await fs.rm(dirPath, { recursive: true, force: true });
+      return {
+        success: true,
+        output: `目录已删除: ${dirPath}`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
    * 列出目录内容
    */
   async listDir(dirPath: string): Promise<ExecutionResult> {
