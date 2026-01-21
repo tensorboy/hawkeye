@@ -39,6 +39,7 @@
     "@types/ws": "^8.5.10",
     "chokidar": "^3.5.3",
     "screenshot-desktop": "^1.15.0",
+    "uuid": "^13.0.0",
     "ws": "^8.19.0"
   },
   "optionalDependencies": {
