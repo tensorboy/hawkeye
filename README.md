@@ -1,19 +1,41 @@
-# Hawkeye 🦅
+# Hawkeye 🦅 - AI 智能任务感知助手
 
 [English](./README_EN.md) | 中文
 
-[![GitHub stars](https://img.shields.io/github/stars/tensorboy/hawkeye?style=social)](https://github.com/tensorboy/hawkeye)
-[![npm version](https://img.shields.io/npm/v/@hawkeye/core?color=blue&label=npm)](https://www.npmjs.com/package/@hawkeye/core)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/tensorboy/hawkeye/ci.yml?branch=main&label=build)](https://github.com/tensorboy/hawkeye/actions)
-[![License](https://img.shields.io/github/license/tensorboy/hawkeye?color=green)](https://github.com/tensorboy/hawkeye/blob/main/LICENSE)
+<p align="center">
+  <a href="https://hawkiyi.com">🌐 官网</a> •
+  <a href="https://hawkiyi.com/features">✨ 功能</a> •
+  <a href="https://hawkiyi.com/compare">📊 对比</a> •
+  <a href="https://hawkiyi.com/faq">❓ FAQ</a> •
+  <a href="https://hawkiyi.com/blog">📝 博客</a>
+</p>
 
-[![macOS](https://img.shields.io/badge/macOS-supported-brightgreen?logo=apple&logoColor=white)](https://github.com/tensorboy/hawkeye)
-[![Windows](https://img.shields.io/badge/Windows-supported-brightgreen?logo=windows&logoColor=white)](https://github.com/tensorboy/hawkeye)
-[![Linux](https://img.shields.io/badge/Linux-supported-brightgreen?logo=linux&logoColor=white)](https://github.com/tensorboy/hawkeye)
+<p align="center">
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/github/stars/tensorboy/hawkeye?style=social" alt="GitHub stars"></a>
+  <a href="https://www.npmjs.com/package/@hawkeye/core"><img src="https://img.shields.io/npm/v/@hawkeye/core?color=blue&label=npm" alt="npm version"></a>
+  <a href="https://github.com/tensorboy/hawkeye/actions"><img src="https://img.shields.io/github/actions/workflow/status/tensorboy/hawkeye/ci.yml?branch=main&label=build" alt="Build Status"></a>
+  <a href="https://github.com/tensorboy/hawkeye/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tensorboy/hawkeye?color=green" alt="License"></a>
+</p>
 
-**智能任务感知与执行助手** - 观察你的工作环境，理解你的意图，主动提供帮助。
+<p align="center">
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/macOS-supported-brightgreen?logo=apple&logoColor=white" alt="macOS"></a>
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Windows-supported-brightgreen?logo=windows&logoColor=white" alt="Windows"></a>
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Linux-supported-brightgreen?logo=linux&logoColor=white" alt="Linux"></a>
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/VS%20Code-Extension-blue?logo=visualstudiocode" alt="VS Code"></a>
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Chrome-Extension-yellow?logo=googlechrome" alt="Chrome"></a>
+</p>
 
-> "像鹰眼一样敏锐地观察，像助手一样贴心地执行。"
+<p align="center">
+  <strong>🚀 智能任务感知与执行助手</strong> - 观察你的工作环境，理解你的意图，主动提供帮助。<br>
+  不同于 Copilot/Cursor 的被动响应，Hawkeye 采用<b>主动感知</b>模式，自动发现你的需求。
+</p>
+
+<p align="center">
+  <em>"像鹰眼一样敏锐地观察，像助手一样贴心地执行。"</em>
+</p>
+
+<!-- 关键词标签（帮助 GitHub 搜索） -->
+<!-- AI assistant, productivity tool, local-first, privacy-focused, screen perception, task automation, Claude AI, Ollama, VS Code extension, Chrome extension, desktop app, workflow automation, intelligent assistant, proactive AI -->
 
 ---
 
@@ -297,12 +319,30 @@ watcher.on('change', (event) => {
 ## 🔗 相关链接
 
 - 🌐 **官网**: [hawkiyi.com](https://hawkiyi.com)
+- ✨ **功能介绍**: [hawkiyi.com/features](https://hawkiyi.com/features)
+- 📊 **产品对比**: [hawkiyi.com/compare](https://hawkiyi.com/compare) - Hawkeye vs Copilot vs Cursor vs Cline
+- 🎯 **使用场景**: [hawkiyi.com/use-cases](https://hawkiyi.com/use-cases)
+- ❓ **常见问题**: [hawkiyi.com/faq](https://hawkiyi.com/faq)
+- 📝 **博客**: [hawkiyi.com/blog](https://hawkiyi.com/blog)
 - 📦 **NPM**: `@hawkeye/core` (即将发布)
 
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
+如果你觉得 Hawkeye 有用，请给我们一个 ⭐ Star，这是对我们最大的支持！
+
+## 🏷️ 关键词
+
+`AI助手` `智能任务助手` `本地AI` `隐私保护` `屏幕感知` `剪贴板助手` `任务自动化` `生产力工具` `VS Code扩展` `Chrome扩展` `桌面应用` `Ollama` `Claude` `10x效率` `开源AI工具` `主动感知AI`
+
 ## 📄 License
 
 MIT © [tensorboy](https://github.com/tensorboy)
+
+---
+
+<p align="center">
+  <sub>Built with ❤️ for everyone who wants to be more productive</sub><br>
+  <sub>让 AI 成为每个人的鹰眼，帮你看见机会，抓住机会，10x 你的工作效率</sub>
+</p>
