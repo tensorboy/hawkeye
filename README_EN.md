@@ -1,19 +1,41 @@
-# Hawkeye 🦅
+# Hawkeye 🦅 - AI Task Perception Assistant
 
 English | [中文](./README.md)
 
-[![GitHub stars](https://img.shields.io/github/stars/tensorboy/hawkeye?style=social)](https://github.com/tensorboy/hawkeye)
-[![npm version](https://img.shields.io/npm/v/@hawkeye/core?color=blue&label=npm)](https://www.npmjs.com/package/@hawkeye/core)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/tensorboy/hawkeye/ci.yml?branch=main&label=build)](https://github.com/tensorboy/hawkeye/actions)
-[![License](https://img.shields.io/github/license/tensorboy/hawkeye?color=green)](https://github.com/tensorboy/hawkeye/blob/main/LICENSE)
+<p align="center">
+  <a href="https://hawkiyi.com/en">🌐 Website</a> •
+  <a href="https://hawkiyi.com/features">✨ Features</a> •
+  <a href="https://hawkiyi.com/compare">📊 Compare</a> •
+  <a href="https://hawkiyi.com/faq">❓ FAQ</a> •
+  <a href="https://hawkiyi.com/blog">📝 Blog</a>
+</p>
 
-[![macOS](https://img.shields.io/badge/macOS-supported-brightgreen?logo=apple&logoColor=white)](https://github.com/tensorboy/hawkeye)
-[![Windows](https://img.shields.io/badge/Windows-supported-brightgreen?logo=windows&logoColor=white)](https://github.com/tensorboy/hawkeye)
-[![Linux](https://img.shields.io/badge/Linux-supported-brightgreen?logo=linux&logoColor=white)](https://github.com/tensorboy/hawkeye)
+<p align="center">
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/github/stars/tensorboy/hawkeye?style=social" alt="GitHub stars"></a>
+  <a href="https://www.npmjs.com/package/@hawkeye/core"><img src="https://img.shields.io/npm/v/@hawkeye/core?color=blue&label=npm" alt="npm version"></a>
+  <a href="https://github.com/tensorboy/hawkeye/actions"><img src="https://img.shields.io/github/actions/workflow/status/tensorboy/hawkeye/ci.yml?branch=main&label=build" alt="Build Status"></a>
+  <a href="https://github.com/tensorboy/hawkeye/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tensorboy/hawkeye?color=green" alt="License"></a>
+</p>
 
-**Intelligent Task Perception & Execution Assistant** - Observes your work environment, understands your intent, and proactively offers help.
+<p align="center">
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/macOS-supported-brightgreen?logo=apple&logoColor=white" alt="macOS"></a>
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Windows-supported-brightgreen?logo=windows&logoColor=white" alt="Windows"></a>
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Linux-supported-brightgreen?logo=linux&logoColor=white" alt="Linux"></a>
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/VS%20Code-Extension-blue?logo=visualstudiocode" alt="VS Code"></a>
+  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Chrome-Extension-yellow?logo=googlechrome" alt="Chrome"></a>
+</p>
 
-> "Watch keenly like a hawk, execute thoughtfully like an assistant."
+<p align="center">
+  <strong>🚀 Intelligent Task Perception & Execution Assistant</strong> - Observes your work environment, understands your intent, and proactively offers help.<br>
+  Unlike Copilot/Cursor's reactive approach, Hawkeye uses <b>proactive perception</b> to automatically discover your needs.
+</p>
+
+<p align="center">
+  <em>"Watch keenly like a hawk, execute thoughtfully like an assistant."</em>
+</p>
+
+<!-- Keywords for GitHub Search -->
+<!-- AI assistant, productivity tool, local-first, privacy-focused, screen perception, task automation, Claude AI, Ollama, VS Code extension, Chrome extension, desktop app, workflow automation, intelligent assistant, proactive AI, Copilot alternative, Cursor alternative -->
 
 ---
 
@@ -273,12 +295,30 @@ No. Hawkeye's core philosophy is **"suggestions first, humans decide"**:
 ## 🔗 Links
 
 - 🌐 **Website**: [hawkiyi.com](https://hawkiyi.com)
+- ✨ **Features**: [hawkiyi.com/features](https://hawkiyi.com/features)
+- 📊 **Comparison**: [hawkiyi.com/compare](https://hawkiyi.com/compare) - Hawkeye vs Copilot vs Cursor vs Cline
+- 🎯 **Use Cases**: [hawkiyi.com/use-cases](https://hawkiyi.com/use-cases)
+- ❓ **FAQ**: [hawkiyi.com/faq](https://hawkiyi.com/faq)
+- 📝 **Blog**: [hawkiyi.com/blog](https://hawkiyi.com/blog)
 - 📦 **NPM**: `@hawkeye/core` (coming soon)
 
 ## 🤝 Contributing
 
 Issues and Pull Requests are welcome!
 
+If you find Hawkeye useful, please give us a ⭐ Star - it means a lot to us!
+
+## 🏷️ Keywords
+
+`AI assistant` `productivity tool` `local-first` `privacy-focused` `screen perception` `clipboard assistant` `task automation` `VS Code extension` `Chrome extension` `desktop app` `Ollama` `Claude` `10x productivity` `open source AI tool` `proactive AI` `Copilot alternative` `Cursor alternative`
+
 ## 📄 License
 
 MIT © [tensorboy](https://github.com/tensorboy)
+
+---
+
+<p align="center">
+  <sub>Built with ❤️ for everyone who wants to be more productive</sub><br>
+  <sub>Let AI be everyone's hawk eye, helping you see opportunities, seize them, and 10x your productivity</sub>
+</p>

@@ -1,6 +1,7 @@
 {
   "name": "hawkeye-assistant",
   "displayName": "%displayName%",
+  "icon": "images/icon.png",
   "description": "%description%",
   "version": "0.2.0",
   "publisher": "hawkeye",
@@ -80,7 +81,10 @@
       "properties": {
         "hawkeye.connectionMode": {
           "type": "string",
-          "enum": ["desktop", "standalone"],
+          "enum": [
+            "desktop",
+            "standalone"
+          ],
           "default": "desktop",
           "description": "%config.connectionMode.description%"
         },
