@@ -1,6 +1,6 @@
 # Hawkeye 产品需求文档 (PRD)
 
-**版本**: 2.2
+**版本**: 2.4
 **最后更新**: 2026-01-20
 **作者**: Hawkeye Team
 **状态**: Draft
@@ -2944,6 +2944,162 @@ const errorRecovery = {
 
 > **详细设计请参考**: [零输入体验设计文档](./zero-input-experience.md)
 
+### 17.8 行业交互方案研究
+
+为了实现真正的"零 Prompt"体验，我们研究了业界三个领先的 AI 驱动 UI 生成方案：
+
+#### 17.8.1 Google A2UI (Agent-to-User Interface)
+
+**项目地址**: [github.com/google/A2UI](https://github.com/google/A2UI)
+
+**核心理念**: 声明式 JSON 格式的 Agent-to-User 界面协议
+
+**关键特性**:
+| 特性 | 说明 |
+|------|------|
+| **声明式 UI** | AI 输出 JSON 描述，前端负责渲染 |
+| **组件目录** | 预定义的 UI 组件类型（按钮、表单、卡片等） |
+| **框架无关** | 可适配 React、Vue、Flutter 等任何前端框架 |
+| **双向通信** | 用户操作可反馈给 AI 进行下一步推理 |
+
+**交互模式**:
+```
+AI 分析上下文 → 生成 JSON UI 描述 → 渲染为可交互组件 → 用户点击选择 → 反馈给 AI
+```
+
+**Hawkeye 借鉴点**:
+- 使用声明式 JSON 描述建议卡片
+- 组件目录系统便于扩展新的建议类型
+- 用户交互可作为反馈优化后续建议
+
+#### 17.8.2 Flutter GenUI
+
+**项目地址**: [github.com/flutter/genui](https://github.com/flutter/genui)
+
+**核心理念**: AI 驱动的动态界面生成 SDK
+
+**关键特性**:
+| 特性 | 说明 |
+|------|------|
+| **Widget 组合** | 基于 JSON 的 Widget 树描述 |
+| **状态反馈** | 双向状态绑定，用户操作实时反馈 |
+| **流式渲染** | 支持 AI 流式输出，渐进式 UI 构建 |
+| **类型安全** | 严格的 Schema 验证 |
+
+**交互流程**:
+```typescript
+interface GenUIFlow {
+  // 1. AI 观察用户上下文
+  observe: () => UserContext;
+
+  // 2. 生成 UI 描述
+  generate: (context: UserContext) => UIDescription;
+
+  // 3. 渲染为交互组件
+  render: (description: UIDescription) => Widget;
+
+  // 4. 收集用户选择
+  collect: (userAction: Action) => Feedback;
+
+  // 5. 循环优化
+  refine: (feedback: Feedback) => void;
+}
+```
+
+**Hawkeye 借鉴点**:
+- 流式 UI 生成提升响应速度
+- 状态反馈循环实现个性化建议
+- 严格 Schema 确保 UI 稳定性
+
+#### 17.8.3 Vercel json-render
+
+**项目地址**: [github.com/vercel-labs/json-render](https://github.com/vercel-labs/json-render)
+
+**核心理念**: AI → JSON → React 渲染管道
+
+**关键特性**:
+| 特性 | 说明 |
+|------|------|
+| **Zod Schema** | 使用 Zod 定义组件目录，提供类型安全 |
+| **Catalog 模式** | 预定义可用组件列表供 AI 选择 |
+| **流式渲染** | 支持 AI 流式输出的实时渲染 |
+| **React 原生** | 无缝集成 React 生态 |
+
+**组件目录示例**:
+```typescript
+const suggestionCatalog = z.object({
+  type: z.enum(['action_card', 'quick_fix', 'file_operation', 'code_snippet']),
+  title: z.string(),
+  description: z.string(),
+  actions: z.array(z.object({
+    label: z.string(),
+    action: z.enum(['execute', 'preview', 'dismiss', 'modify']),
+    primary: z.boolean().optional(),
+  })),
+  metadata: z.object({
+    confidence: z.number(),
+    reversible: z.boolean(),
+    riskLevel: z.enum(['low', 'medium', 'high']),
+  }),
+});
+```
+
+**Hawkeye 借鉴点**:
+- Zod Schema 定义建议组件类型
+- Catalog 模式限制 AI 输出范围，提高稳定性
+- 流式渲染提供即时反馈
+
+#### 17.8.4 Hawkeye 交互方案设计
+
+基于以上研究，Hawkeye 采用 **"观察-生成-选择"** 交互模式：
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Hawkeye 零 Prompt 交互流程                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   [1. 观察]          [2. 理解]          [3. 生成]              │
+│   ┌─────────┐       ┌─────────┐       ┌─────────┐             │
+│   │ 屏幕    │       │ 上下文  │       │ JSON    │             │
+│   │ 剪贴板  │──────▶│ 意图    │──────▶│ UI 描述 │             │
+│   │ 文件    │       │ 推理    │       │         │             │
+│   └─────────┘       └─────────┘       └─────────┘             │
+│                                              │                  │
+│                                              ▼                  │
+│   [6. 学习]          [5. 执行]          [4. 展示]              │
+│   ┌─────────┐       ┌─────────┐       ┌─────────┐             │
+│   │ 反馈    │       │ 用户    │       │ 建议    │             │
+│   │ 优化    │◀──────│ 确认    │◀──────│ 卡片    │             │
+│   │ 记忆    │       │         │       │         │             │
+│   └─────────┘       └─────────┘       └─────────┘             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**核心设计原则**:
+
+| 原则 | 实现方式 |
+|------|---------|
+| **零输入** | AI 主动观察，用户只需点击 |
+| **可预测** | 组件目录限制，AI 输出稳定可控 |
+| **可扩展** | JSON Schema 支持新组件类型 |
+| **可回滚** | 所有操作记录，支持撤销 |
+| **个性化** | 用户反馈循环，持续优化建议 |
+
+**建议组件类型目录**:
+
+```typescript
+type SuggestionType =
+  | 'quick_action'      // 快速操作：一键执行
+  | 'code_fix'          // 代码修复：展示 diff
+  | 'file_operation'    // 文件操作：移动、重命名
+  | 'context_restore'   // 上下文恢复：打开相关文件
+  | 'learning_card'     // 学习卡片：解释概念
+  | 'workflow_suggest'  // 工作流建议：自动化任务
+  | 'multi_choice'      // 多选项：让用户选择方案
+  | 'confirmation'      // 确认框：危险操作确认
+```
+
 ---
 
 ## 18. 附录
@@ -2969,6 +3125,11 @@ const errorRecovery = {
 - [CrewAI - Multi-Agent Framework](https://github.com/crewAIInc/crewAI)
 - [SuperAGI - Autonomous AI Agent Framework](https://github.com/TransformerOptimus/SuperAGI)
 - [LangGraph - Plan-and-Execute Agents](https://github.com/langchain-ai/langgraph)
+
+**AI 驱动 UI 生成**:
+- [Google A2UI - Agent-to-User Interface Protocol](https://github.com/google/A2UI)
+- [Flutter GenUI - AI-Driven Dynamic UI SDK](https://github.com/flutter/genui)
+- [Vercel json-render - AI → JSON → React Pipeline](https://github.com/vercel-labs/json-render)
 
 **研究论文**:
 - Plan-and-Solve Prompting (2023)
@@ -3000,6 +3161,7 @@ const errorRecovery = {
 | 2.1 | 2026-01-20 | 新增第 17 章：零输入傻瓜式体验设计 |
 | 2.2 | 2026-01-20 | 新增第 16 章：市场痛点与解决方案（基于用户研究） |
 | 2.3 | 2026-01-20 | 添加详细实现规格文档引用 (implementation-spec.md) |
+| 2.4 | 2026-01-20 | 新增 17.8 节：行业交互方案研究 (A2UI/GenUI/json-render) |
 
 ---
 
