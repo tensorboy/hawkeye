@@ -70,7 +70,31 @@ hawkeye/
 
 ## 🚀 快速开始
 
-### 安装
+### 下载安装
+
+从 [Releases](https://github.com/tensorboy/hawkeye/releases) 下载最新版本：
+
+| 平台 | 下载 |
+|------|------|
+| macOS (Apple Silicon) | `Hawkeye-x.x.x-mac-arm64.dmg` |
+| macOS (Intel) | `Hawkeye-x.x.x-mac-x64.dmg` |
+| Windows | `Hawkeye.Setup.x.x.x.exe` |
+| Linux (Debian/Ubuntu) | `Hawkeye-x.x.x-linux-amd64.deb` |
+| Linux (Other) | `Hawkeye-x.x.x-linux-x86_64.AppImage` |
+
+#### macOS 安装提示
+
+由于应用未经 Apple 签名，首次打开可能显示"已损坏，无法打开"。请在终端中运行：
+
+```bash
+# 方法一：移除下载文件的隔离属性
+xattr -d com.apple.quarantine ~/Downloads/Hawkeye-*-mac-*.dmg
+
+# 方法二：安装后移除应用的隔离属性
+xattr -cr /Applications/Hawkeye.app
+```
+
+### 从源码构建
 
 ```bash
 # 克隆仓库
