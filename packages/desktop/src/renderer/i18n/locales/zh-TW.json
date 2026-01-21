@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Hawkeye",
+    "loading": "正在分析螢幕...",
+    "empty": "暫無檢測到意圖",
+    "observeScreen": "觀察螢幕",
+    "hint": "或按 {{shortcut}}",
+    "execute": "執行",
+    "refresh": "重新整理",
+    "generatePlan": "生成計畫",
+    "reject": "拒絕",
+    "markIrrelevant": "標記為無關",
+    "executing": "正在執行...",
+    "step": "步驟",
+    "executionCompleted": "執行成功完成！",
+    "executionFailed": "執行失敗",
+    "done": "完成",
+    "back": "返回",
+    "pause": "暫停",
+    "cancel": "取消",
+    "steps": "執行步驟",
+    "pros": "優點",
+    "cons": "注意事項",
+    "impact": "影響分析",
+    "filesAffected": "影響檔案數",
+    "reversible": "可回滾",
+    "systemChanges": "將修改系統設定",
+    "requiresNetwork": "需要網路存取"
+  },
+  "settings": {
+    "title": "設定",
+    "aiProvider": "AI 提供者",
+    "ollamaHost": "Ollama 伺服器",
+    "ollamaModel": "Ollama 模型",
+    "geminiApiKey": "Gemini API 金鑰",
+    "geminiModel": "Gemini 模型",
+    "getApiKey": "取得 API 金鑰",
+    "apiKey": {
+      "label": "API 金鑰",
+      "placeholder": "sk-ant-..."
+    },
+    "language": {
+      "label": "語言"
+    },
+    "save": "儲存",
+    "cancel": "取消"
+  },
+  "tray": {
+    "observeScreen": "觀察螢幕",
+    "showSuggestions": "顯示建議",
+    "settings": "設定",
+    "quit": "結束",
+    "tooltip": "Hawkeye - 智慧任務助手"
+  },
+  "error": {
+    "configureApiKey": "請先設定 API 金鑰",
+    "engineNotInitialized": "引擎未初始化",
+    "notInitialized": "Hawkeye 未初始化",
+    "intentNotFound": "未找到意圖",
+    "planNotFound": "未找到計畫"
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "extensionName": {
+    "message": "Hawkeye"
+  },
+  "extensionDescription": {
+    "message": "지능형 작업 인식 및 실행 도우미"
+  },
+  "actionTitle": {
+    "message": "Hawkeye"
+  },
+  "commandObservePage": {
+    "message": "현재 페이지 관찰"
+  },
+  "connected": {
+    "message": "데스크톱에 연결됨"
+  },
+  "disconnected": {
+    "message": "데스크톱 연결 안 됨"
+  },
+  "desktopNotConnected": {
+    "message": "Hawkeye 데스크톱이 실행 중이고 연결되어 있는지 확인하세요"
+  },
+  "settings": {
+    "message": "설정"
+  },
+  "back": {
+    "message": "뒤로"
+  },
+  "desktopHost": {
+    "message": "데스크톱 호스트"
+  },
+  "desktopPort": {
+    "message": "데스크톱 포트"
+  },
+  "showFloatingButton": {
+    "message": "페이지에 플로팅 버튼 표시"
+  },
+  "enableNotifications": {
+    "message": "알림 활성화"
+  },
+  "save": {
+    "message": "저장"
+  },
+  "cancel": {
+    "message": "취소"
+  },
+  "observePage": {
+    "message": "페이지 관찰"
+  },
+  "analyzing": {
+    "message": "페이지 분석 중..."
+  },
+  "emptyStateIntents": {
+    "message": "「페이지 관찰」을 클릭하여 현재 페이지를 분석하고 사용자 의도를 감지하세요"
+  },
+  "generatePlan": {
+    "message": "계획 생성"
+  },
+  "markIrrelevant": {
+    "message": "관련 없음"
+  },
+  "steps": {
+    "message": "실행 단계"
+  },
+  "pros": {
+    "message": "장점"
+  },
+  "cons": {
+    "message": "고려사항"
+  },
+  "impact": {
+    "message": "영향 분석"
+  },
+  "filesAffected": {
+    "message": "영향받는 파일"
+  },
+  "reversible": {
+    "message": "되돌리기 가능"
+  },
+  "systemChanges": {
+    "message": "시스템 설정을 수정합니다"
+  },
+  "requiresNetwork": {
+    "message": "네트워크 접근 필요"
+  },
+  "execute": {
+    "message": "실행"
+  },
+  "reject": {
+    "message": "거부"
+  },
+  "executing": {
+    "message": "실행 중..."
+  },
+  "step": {
+    "message": "단계"
+  },
+  "pause": {
+    "message": "일시정지"
+  },
+  "executionCompleted": {
+    "message": "실행이 완료되었습니다!"
+  },
+  "executionFailed": {
+    "message": "실행 실패"
+  },
+  "done": {
+    "message": "완료"
+  },
+  "errorPrefix": {
+    "message": "오류: $error$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "contextMenuAnalyzeSelection": {
+    "message": "Hawkeye: 선택 항목 분석"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "Hawkeye: 페이지 분석"
+  },
+  "foundIntents": {
+    "message": "$count$개의 의도를 발견했습니다",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationError": {
+    "message": "Hawkeye 오류"
+  }
+}

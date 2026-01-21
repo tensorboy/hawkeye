@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Hawkeye",
+    "loading": "Analyzing screen...",
+    "empty": "No intents detected",
+    "observeScreen": "Observe Screen",
+    "hint": "or press {{shortcut}}",
+    "execute": "Execute",
+    "refresh": "Refresh",
+    "generatePlan": "Generate Plan",
+    "reject": "Reject",
+    "markIrrelevant": "Mark as irrelevant",
+    "executing": "Executing...",
+    "step": "Step",
+    "executionCompleted": "Execution completed successfully!",
+    "executionFailed": "Execution failed",
+    "done": "Done",
+    "back": "Back",
+    "pause": "Pause",
+    "cancel": "Cancel",
+    "steps": "Steps",
+    "pros": "Pros",
+    "cons": "Cons",
+    "impact": "Impact Analysis",
+    "filesAffected": "Files affected",
+    "reversible": "Reversible",
+    "systemChanges": "Will modify system settings",
+    "requiresNetwork": "Requires network access"
+  },
+  "settings": {
+    "title": "Settings",
+    "aiProvider": "AI Provider",
+    "ollamaHost": "Ollama Server",
+    "ollamaModel": "Ollama Model",
+    "geminiApiKey": "Gemini API Key",
+    "geminiModel": "Gemini Model",
+    "getApiKey": "Get API Key",
+    "apiKey": {
+      "label": "API Key",
+      "placeholder": "sk-ant-..."
+    },
+    "language": {
+      "label": "Language"
+    },
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "tray": {
+    "observeScreen": "Observe Screen",
+    "showSuggestions": "Show Suggestions",
+    "settings": "Settings",
+    "quit": "Quit",
+    "tooltip": "Hawkeye - Intelligent Task Assistant"
+  },
+  "error": {
+    "configureApiKey": "Please configure API key first",
+    "engineNotInitialized": "Engine not initialized",
+    "notInitialized": "Hawkeye not initialized",
+    "intentNotFound": "Intent not found",
+    "planNotFound": "Plan not found"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Hawkeye",
+    "loading": "화면 분석 중...",
+    "empty": "감지된 의도가 없습니다",
+    "observeScreen": "화면 관찰",
+    "hint": "또는 {{shortcut}} 누르기",
+    "execute": "실행",
+    "refresh": "새로고침",
+    "generatePlan": "계획 생성",
+    "reject": "거부",
+    "markIrrelevant": "관련 없음으로 표시",
+    "executing": "실행 중...",
+    "step": "단계",
+    "executionCompleted": "실행이 성공적으로 완료되었습니다!",
+    "executionFailed": "실행 실패",
+    "done": "완료",
+    "back": "뒤로",
+    "pause": "일시 정지",
+    "cancel": "취소",
+    "steps": "실행 단계",
+    "pros": "장점",
+    "cons": "주의사항",
+    "impact": "영향 분석",
+    "filesAffected": "영향 받는 파일 수",
+    "reversible": "되돌리기 가능",
+    "systemChanges": "시스템 설정을 수정합니다",
+    "requiresNetwork": "네트워크 액세스 필요"
+  },
+  "settings": {
+    "title": "설정",
+    "aiProvider": "AI 공급자",
+    "ollamaHost": "Ollama 서버",
+    "ollamaModel": "Ollama 모델",
+    "geminiApiKey": "Gemini API 키",
+    "geminiModel": "Gemini 모델",
+    "getApiKey": "API 키 받기",
+    "apiKey": {
+      "label": "API 키",
+      "placeholder": "sk-ant-..."
+    },
+    "language": {
+      "label": "언어"
+    },
+    "save": "저장",
+    "cancel": "취소"
+  },
+  "tray": {
+    "observeScreen": "화면 관찰",
+    "showSuggestions": "제안 표시",
+    "settings": "설정",
+    "quit": "종료",
+    "tooltip": "Hawkeye - 지능형 작업 도우미"
+  },
+  "error": {
+    "configureApiKey": "먼저 API 키를 설정해주세요",
+    "engineNotInitialized": "엔진이 초기화되지 않았습니다",
+    "notInitialized": "Hawkeye가 초기화되지 않았습니다",
+    "intentNotFound": "의도를 찾을 수 없습니다",
+    "planNotFound": "계획을 찾을 수 없습니다"
+  }
+}

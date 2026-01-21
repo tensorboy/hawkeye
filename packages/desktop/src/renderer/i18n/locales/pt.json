@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Hawkeye",
+    "loading": "Analisando tela...",
+    "empty": "Nenhuma intenção detectada",
+    "observeScreen": "Observar tela",
+    "hint": "ou pressione {{shortcut}}",
+    "execute": "Executar",
+    "refresh": "Atualizar",
+    "generatePlan": "Gerar plano",
+    "reject": "Rejeitar",
+    "markIrrelevant": "Marcar como irrelevante",
+    "executing": "Executando...",
+    "step": "Passo",
+    "executionCompleted": "Execução concluída com sucesso!",
+    "executionFailed": "Execução falhou",
+    "done": "Concluído",
+    "back": "Voltar",
+    "pause": "Pausar",
+    "cancel": "Cancelar",
+    "steps": "Passos de execução",
+    "pros": "Vantagens",
+    "cons": "Considerações",
+    "impact": "Análise de impacto",
+    "filesAffected": "Arquivos afetados",
+    "reversible": "Reversível",
+    "systemChanges": "Irá modificar configurações do sistema",
+    "requiresNetwork": "Requer acesso à rede"
+  },
+  "settings": {
+    "title": "Configurações",
+    "aiProvider": "Provedor de IA",
+    "ollamaHost": "Servidor Ollama",
+    "ollamaModel": "Modelo Ollama",
+    "geminiApiKey": "Chave API do Gemini",
+    "geminiModel": "Modelo Gemini",
+    "getApiKey": "Obter chave API",
+    "apiKey": {
+      "label": "Chave API",
+      "placeholder": "sk-ant-..."
+    },
+    "language": {
+      "label": "Idioma"
+    },
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "tray": {
+    "observeScreen": "Observar tela",
+    "showSuggestions": "Mostrar sugestões",
+    "settings": "Configurações",
+    "quit": "Sair",
+    "tooltip": "Hawkeye - Assistente inteligente de tarefas"
+  },
+  "error": {
+    "configureApiKey": "Por favor, configure a chave API primeiro",
+    "engineNotInitialized": "Motor não inicializado",
+    "notInitialized": "Hawkeye não inicializado",
+    "intentNotFound": "Intenção não encontrada",
+    "planNotFound": "Plano não encontrado"
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "extensionName": {
+    "message": "Hawkeye",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Intelligent Task Perception and Execution Assistant",
+    "description": "Extension description"
+  },
+  "actionTitle": {
+    "message": "Hawkeye",
+    "description": "Action button tooltip"
+  },
+  "commandObservePage": {
+    "message": "Observe current page",
+    "description": "Keyboard shortcut description"
+  },
+  "connected": {
+    "message": "Connected to Desktop",
+    "description": "Connection status when connected"
+  },
+  "disconnected": {
+    "message": "Desktop not connected",
+    "description": "Connection status when disconnected"
+  },
+  "desktopNotConnected": {
+    "message": "Please ensure Hawkeye Desktop is running and connected",
+    "description": "Alert when desktop is not connected"
+  },
+  "settings": {
+    "message": "Settings",
+    "description": "Settings button tooltip"
+  },
+  "back": {
+    "message": "Back",
+    "description": "Back button text"
+  },
+  "desktopHost": {
+    "message": "Desktop Host",
+    "description": "Desktop host setting label"
+  },
+  "desktopPort": {
+    "message": "Desktop Port",
+    "description": "Desktop port setting label"
+  },
+  "showFloatingButton": {
+    "message": "Show floating button on pages",
+    "description": "Floating button checkbox label"
+  },
+  "enableNotifications": {
+    "message": "Enable notifications",
+    "description": "Notifications checkbox label"
+  },
+  "save": {
+    "message": "Save",
+    "description": "Save button text"
+  },
+  "cancel": {
+    "message": "Cancel",
+    "description": "Cancel button text"
+  },
+  "observePage": {
+    "message": "Observe Page",
+    "description": "Main observe button text"
+  },
+  "analyzing": {
+    "message": "Analyzing page...",
+    "description": "Loading text while analyzing"
+  },
+  "emptyStateIntents": {
+    "message": "Click \"Observe Page\" to analyze the current page and detect user intents.",
+    "description": "Empty state message for intents"
+  },
+  "generatePlan": {
+    "message": "Generate Plan",
+    "description": "Generate plan button text"
+  },
+  "markIrrelevant": {
+    "message": "Not relevant",
+    "description": "Mark as irrelevant button text"
+  },
+  "steps": {
+    "message": "Execution Steps",
+    "description": "Steps section title"
+  },
+  "pros": {
+    "message": "Pros",
+    "description": "Pros section title"
+  },
+  "cons": {
+    "message": "Considerations",
+    "description": "Cons section title"
+  },
+  "impact": {
+    "message": "Impact Analysis",
+    "description": "Impact section title"
+  },
+  "filesAffected": {
+    "message": "Files affected",
+    "description": "Files affected label"
+  },
+  "reversible": {
+    "message": "Reversible",
+    "description": "Reversible label"
+  },
+  "systemChanges": {
+    "message": "Will modify system settings",
+    "description": "System changes warning"
+  },
+  "requiresNetwork": {
+    "message": "Requires network access",
+    "description": "Network required label"
+  },
+  "execute": {
+    "message": "Execute",
+    "description": "Execute button text"
+  },
+  "reject": {
+    "message": "Reject",
+    "description": "Reject button text"
+  },
+  "executing": {
+    "message": "Executing...",
+    "description": "Execution in progress title"
+  },
+  "step": {
+    "message": "Step",
+    "description": "Step label"
+  },
+  "pause": {
+    "message": "Pause",
+    "description": "Pause button text"
+  },
+  "executionCompleted": {
+    "message": "Execution completed successfully!",
+    "description": "Execution success message"
+  },
+  "executionFailed": {
+    "message": "Execution failed",
+    "description": "Execution failure message"
+  },
+  "done": {
+    "message": "Done",
+    "description": "Done button text"
+  },
+  "errorPrefix": {
+    "message": "Error: $error$",
+    "description": "Error message prefix",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Network error"
+      }
+    }
+  },
+  "contextMenuAnalyzeSelection": {
+    "message": "Hawkeye: Analyze Selection",
+    "description": "Context menu for selection"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "Hawkeye: Analyze Page",
+    "description": "Context menu for page"
+  },
+  "foundIntents": {
+    "message": "Found $count$ intent(s)",
+    "description": "Notification for found intents",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "notificationError": {
+    "message": "Hawkeye Error",
+    "description": "Error notification title"
+  }
+}

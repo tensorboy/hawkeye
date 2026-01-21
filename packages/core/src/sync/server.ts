@@ -4,16 +4,47 @@
  */
 
 import { EventEmitter } from 'events';
-import type { SyncConfig, SyncMessage } from './types';
+import type {
+  SyncConfig,
+  SyncMessage,
+  SyncMessageType,
+  ContextUpdatePayload,
+  IntentDetectedPayload,
+  PlanGeneratedPayload,
+  ExecutionProgressPayload,
+  ExecutionCompletedPayload,
+  ExecutionFailedPayload,
+  StatusPayload,
+  ErrorPayload,
+} from './types';
 
-// 注意：实际运行需要安装 ws 包
-// import { WebSocketServer, WebSocket } from 'ws';
+interface WebSocketLike {
+  readyState: number;
+  send: (data: string) => void;
+  close: (code?: number, reason?: string) => void;
+  on: (event: string, listener: (...args: unknown[]) => void) => void;
+  once: (event: string, listener: (...args: unknown[]) => void) => void;
+}
+
+interface WebSocketServerLike {
+  on: (event: string, listener: (...args: unknown[]) => void) => void;
+  close: () => void;
+}
+
+interface ClientInfo {
+  ws: WebSocketLike;
+  type: 'desktop' | 'extension' | 'web' | 'vscode';
+  connectedAt: number;
+  lastSeen: number;
+  authenticated: boolean;
+}
 
 export class SyncServer extends EventEmitter {
   private config: Required<SyncConfig>;
-  private server: unknown = null;
-  private clients: Set<unknown> = new Set();
+  private server: WebSocketServerLike | null = null;
+  private clients: Map<WebSocketLike, ClientInfo> = new Map();
   private heartbeatTimer: NodeJS.Timeout | null = null;
+  private messageId: number = 0;
 
   constructor(config: SyncConfig = {}) {
     super();
@@ -21,6 +52,8 @@ export class SyncServer extends EventEmitter {
       port: 9527,
       authToken: '',
       heartbeatInterval: 30000,
+      maxReconnectAttempts: 5,
+      reconnectDelay: 1000,
       ...config,
     };
   }
@@ -32,13 +65,13 @@ export class SyncServer extends EventEmitter {
     // 动态导入 ws 模块
     const { WebSocketServer } = await import('ws');
 
-    this.server = new WebSocketServer({ port: this.config.port });
+    this.server = new WebSocketServer({ port: this.config.port }) as WebSocketServerLike;
 
-    (this.server as { on: Function }).on('connection', (ws: unknown, req: unknown) => {
+    this.server.on('connection', (ws: WebSocketLike, req: unknown) => {
       this.handleConnection(ws, req);
     });
 
-    (this.server as { on: Function }).on('error', (error: Error) => {
+    this.server.on('error', (error: Error) => {
       this.emit('error', error);
     });
 
@@ -58,7 +91,7 @@ export class SyncServer extends EventEmitter {
     }
 
     if (this.server) {
-      (this.server as { close: Function }).close();
+      this.server.close();
       this.server = null;
     }
 
@@ -69,11 +102,13 @@ export class SyncServer extends EventEmitter {
   /**
    * 广播消息给所有客户端
    */
-  broadcast(message: SyncMessage): void {
+  broadcast<T>(type: SyncMessageType, payload: T): void {
+    const message = this.createMessage(type, payload);
     const data = JSON.stringify(message);
-    for (const client of this.clients) {
-      if ((client as { readyState: number }).readyState === 1) { // WebSocket.OPEN
-        (client as { send: Function }).send(data);
+
+    for (const [ws, info] of this.clients) {
+      if (ws.readyState === 1 && info.authenticated) { // WebSocket.OPEN
+        ws.send(data);
       }
     }
   }
@@ -81,10 +116,76 @@ export class SyncServer extends EventEmitter {
   /**
    * 发送消息给特定客户端
    */
-  send(client: unknown, message: SyncMessage): void {
-    if ((client as { readyState: number }).readyState === 1) {
-      (client as { send: Function }).send(JSON.stringify(message));
+  send<T>(ws: WebSocketLike, type: SyncMessageType, payload: T): void {
+    if (ws.readyState === 1) {
+      const message = this.createMessage(type, payload);
+      ws.send(JSON.stringify(message));
     }
+  }
+
+  /**
+   * 发送消息给特定类型的客户端
+   */
+  sendToType<T>(clientType: ClientInfo['type'], type: SyncMessageType, payload: T): void {
+    const message = this.createMessage(type, payload);
+    const data = JSON.stringify(message);
+
+    for (const [ws, info] of this.clients) {
+      if (ws.readyState === 1 && info.authenticated && info.type === clientType) {
+        ws.send(data);
+      }
+    }
+  }
+
+  // ============ 便捷发送方法 ============
+
+  /**
+   * 广播上下文更新
+   */
+  broadcastContextUpdate(payload: ContextUpdatePayload): void {
+    this.broadcast('context_update', payload);
+  }
+
+  /**
+   * 广播意图检测结果
+   */
+  broadcastIntentDetected(payload: IntentDetectedPayload): void {
+    this.broadcast('intent_detected', payload);
+  }
+
+  /**
+   * 广播计划生成结果
+   */
+  broadcastPlanGenerated(payload: PlanGeneratedPayload): void {
+    this.broadcast('plan_generated', payload);
+  }
+
+  /**
+   * 广播执行进度
+   */
+  broadcastExecutionProgress(payload: ExecutionProgressPayload): void {
+    this.broadcast('execution_progress', payload);
+  }
+
+  /**
+   * 广播执行完成
+   */
+  broadcastExecutionCompleted(payload: ExecutionCompletedPayload): void {
+    this.broadcast('execution_completed', payload);
+  }
+
+  /**
+   * 广播执行失败
+   */
+  broadcastExecutionFailed(payload: ExecutionFailedPayload): void {
+    this.broadcast('execution_failed', payload);
+  }
+
+  /**
+   * 广播错误
+   */
+  broadcastError(payload: ErrorPayload): void {
+    this.broadcast('error', payload);
   }
 
   /**
@@ -94,65 +195,175 @@ export class SyncServer extends EventEmitter {
     return this.clients.size;
   }
 
-  private handleConnection(ws: unknown, _req: unknown): void {
+  /**
+   * 获取已认证的客户端数量
+   */
+  getAuthenticatedClientCount(): number {
+    let count = 0;
+    for (const info of this.clients.values()) {
+      if (info.authenticated) count++;
+    }
+    return count;
+  }
+
+  /**
+   * 获取客户端信息
+   */
+  getClientsInfo(): Array<{
+    type: ClientInfo['type'];
+    connectedAt: number;
+    lastSeen: number;
+  }> {
+    return Array.from(this.clients.values())
+      .filter(info => info.authenticated)
+      .map(info => ({
+        type: info.type,
+        connectedAt: info.connectedAt,
+        lastSeen: info.lastSeen,
+      }));
+  }
+
+  // ============ 私有方法 ============
+
+  private handleConnection(ws: WebSocketLike, _req: unknown): void {
+    const clientInfo: ClientInfo = {
+      ws,
+      type: 'extension',
+      connectedAt: Date.now(),
+      lastSeen: Date.now(),
+      authenticated: !this.config.authToken, // 没有 token 时自动认证
+    };
+
+    this.clients.set(ws, clientInfo);
+
     // 认证检查
     if (this.config.authToken) {
       // 等待认证消息
       const authTimeout = setTimeout(() => {
-        (ws as { close: Function }).close(4001, 'Authentication timeout');
+        ws.close(4001, 'Authentication timeout');
+        this.clients.delete(ws);
       }, 5000);
 
-      (ws as { once: Function }).once('message', (data: Buffer) => {
+      ws.once('message', (data: Buffer) => {
         clearTimeout(authTimeout);
         try {
           const message = JSON.parse(data.toString()) as SyncMessage;
-          if (message.type === 'auth' && message.payload === this.config.authToken) {
-            this.addClient(ws);
+          if (message.type === 'auth') {
+            const authPayload = message.payload as { token: string; clientType?: ClientInfo['type'] };
+            if (authPayload.token === this.config.authToken) {
+              clientInfo.authenticated = true;
+              clientInfo.type = authPayload.clientType || 'extension';
+              this.send(ws, 'auth_success', { message: 'Authenticated' });
+              this.setupClientListeners(ws, clientInfo);
+            } else {
+              this.send(ws, 'auth_failed', { message: 'Invalid token' });
+              ws.close(4002, 'Invalid token');
+              this.clients.delete(ws);
+            }
           } else {
-            (ws as { close: Function }).close(4002, 'Invalid token');
+            ws.close(4003, 'Expected auth message');
+            this.clients.delete(ws);
           }
         } catch {
-          (ws as { close: Function }).close(4003, 'Invalid message');
+          ws.close(4003, 'Invalid message');
+          this.clients.delete(ws);
         }
       });
     } else {
-      this.addClient(ws);
+      this.setupClientListeners(ws, clientInfo);
     }
   }
 
-  private addClient(ws: unknown): void {
-    this.clients.add(ws);
-    this.emit('client-connected', { clientCount: this.clients.size });
+  private setupClientListeners(ws: WebSocketLike, clientInfo: ClientInfo): void {
+    this.emit('client-connected', {
+      clientCount: this.getAuthenticatedClientCount(),
+      clientType: clientInfo.type,
+    });
 
-    (ws as { on: Function }).on('message', (data: Buffer) => {
+    ws.on('message', (data: Buffer) => {
       try {
         const message = JSON.parse(data.toString()) as SyncMessage;
+        clientInfo.lastSeen = Date.now();
+
+        // 更新客户端类型
+        if (message.source) {
+          clientInfo.type = message.source;
+        }
+
+        // 处理心跳响应
+        if (message.type === 'pong') {
+          return;
+        }
+
+        // 触发通用消息事件
         this.emit('message', message, ws);
-        this.emit(message.type, message.payload, ws);
+
+        // 触发特定类型的消息事件
+        this.emit(message.type, message.payload, ws, message);
       } catch (error) {
         this.emit('error', error);
       }
     });
 
-    (ws as { on: Function }).on('close', () => {
+    ws.on('close', () => {
       this.clients.delete(ws);
-      this.emit('client-disconnected', { clientCount: this.clients.size });
+      this.emit('client-disconnected', {
+        clientCount: this.getAuthenticatedClientCount(),
+        clientType: clientInfo.type,
+      });
     });
 
-    (ws as { on: Function }).on('error', (error: Error) => {
+    ws.on('error', (error: Error) => {
       this.emit('error', error);
     });
+
+    // 发送当前状态
+    this.sendStatus(ws);
+  }
+
+  private sendStatus(ws: WebSocketLike): void {
+    const status: StatusPayload = {
+      connected: true,
+      lastSeen: Date.now(),
+      clientType: 'desktop',
+      capabilities: [
+        'context_update',
+        'intent_detection',
+        'plan_generation',
+        'execution',
+      ],
+    };
+    this.send(ws, 'status', status);
   }
 
   private startHeartbeat(): void {
     this.heartbeatTimer = setInterval(() => {
-      const message: SyncMessage = {
-        type: 'heartbeat',
-        payload: { timestamp: Date.now() },
-        timestamp: Date.now(),
-        source: 'desktop',
-      };
-      this.broadcast(message);
+      const message = this.createMessage('heartbeat', { timestamp: Date.now() });
+      const data = JSON.stringify(message);
+
+      for (const [ws, info] of this.clients) {
+        if (ws.readyState === 1 && info.authenticated) {
+          ws.send(data);
+
+          // 检查客户端是否响应
+          const timeSinceLastSeen = Date.now() - info.lastSeen;
+          if (timeSinceLastSeen > this.config.heartbeatInterval * 3) {
+            // 客户端可能已断开
+            ws.close(4004, 'Heartbeat timeout');
+            this.clients.delete(ws);
+          }
+        }
+      }
     }, this.config.heartbeatInterval);
+  }
+
+  private createMessage<T>(type: SyncMessageType, payload: T): SyncMessage<T> {
+    return {
+      type,
+      payload,
+      timestamp: Date.now(),
+      source: 'desktop',
+      id: `msg_${++this.messageId}`,
+    };
   }
 }

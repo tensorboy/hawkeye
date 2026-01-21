@@ -1,0 +1,135 @@
+{
+  "extensionName": {
+    "message": "Hawkeye"
+  },
+  "extensionDescription": {
+    "message": "Assistente inteligente de percepção e execução de tarefas"
+  },
+  "actionTitle": {
+    "message": "Hawkeye"
+  },
+  "commandObservePage": {
+    "message": "Observar página atual"
+  },
+  "connected": {
+    "message": "Conectado ao desktop"
+  },
+  "disconnected": {
+    "message": "Desktop não conectado"
+  },
+  "desktopNotConnected": {
+    "message": "Certifique-se de que o Hawkeye Desktop está em execução e conectado"
+  },
+  "settings": {
+    "message": "Configurações"
+  },
+  "back": {
+    "message": "Voltar"
+  },
+  "desktopHost": {
+    "message": "Host do desktop"
+  },
+  "desktopPort": {
+    "message": "Porta do desktop"
+  },
+  "showFloatingButton": {
+    "message": "Mostrar botão flutuante nas páginas"
+  },
+  "enableNotifications": {
+    "message": "Habilitar notificações"
+  },
+  "save": {
+    "message": "Salvar"
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "observePage": {
+    "message": "Observar página"
+  },
+  "analyzing": {
+    "message": "Analisando página..."
+  },
+  "emptyStateIntents": {
+    "message": "Clique em \"Observar página\" para analisar a página atual e detectar intenções do usuário"
+  },
+  "generatePlan": {
+    "message": "Gerar plano"
+  },
+  "markIrrelevant": {
+    "message": "Não relevante"
+  },
+  "steps": {
+    "message": "Passos de execução"
+  },
+  "pros": {
+    "message": "Vantagens"
+  },
+  "cons": {
+    "message": "Considerações"
+  },
+  "impact": {
+    "message": "Análise de impacto"
+  },
+  "filesAffected": {
+    "message": "Arquivos afetados"
+  },
+  "reversible": {
+    "message": "Reversível"
+  },
+  "systemChanges": {
+    "message": "Irá modificar configurações do sistema"
+  },
+  "requiresNetwork": {
+    "message": "Requer acesso à rede"
+  },
+  "execute": {
+    "message": "Executar"
+  },
+  "reject": {
+    "message": "Rejeitar"
+  },
+  "executing": {
+    "message": "Executando..."
+  },
+  "step": {
+    "message": "Passo"
+  },
+  "pause": {
+    "message": "Pausar"
+  },
+  "executionCompleted": {
+    "message": "Execução concluída com sucesso!"
+  },
+  "executionFailed": {
+    "message": "Execução falhou"
+  },
+  "done": {
+    "message": "Concluído"
+  },
+  "errorPrefix": {
+    "message": "Erro: $error$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "contextMenuAnalyzeSelection": {
+    "message": "Hawkeye: Analisar seleção"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "Hawkeye: Analisar página"
+  },
+  "foundIntents": {
+    "message": "Encontrada(s) $count$ intenção(ões)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationError": {
+    "message": "Erro do Hawkeye"
+  }
+}

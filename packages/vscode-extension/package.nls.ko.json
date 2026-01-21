@@ -1,0 +1,16 @@
+{
+  "displayName": "Hawkeye",
+  "description": "VS Code 지능형 작업 인식 및 실행 도우미",
+  "command.observe.title": "Hawkeye: 화면 관찰",
+  "command.showSuggestions.title": "Hawkeye: 제안 표시",
+  "command.execute.title": "Hawkeye: 선택한 제안 실행",
+  "command.configure.title": "Hawkeye: API 키 설정",
+  "viewContainer.hawkeye.title": "Hawkeye",
+  "view.suggestions.name": "제안",
+  "config.title": "Hawkeye",
+  "config.apiKey.description": "Claude용 Anthropic API 키",
+  "config.model.description": "사용할 Claude 모델",
+  "config.autoObserve.description": "자동으로 화면을 주기적으로 관찰",
+  "config.observeInterval.description": "자동 관찰 간격 (밀리초)",
+  "config.requireConfirmation.description": "작업 실행 전 확인 필요"
+}

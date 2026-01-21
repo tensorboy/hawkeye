@@ -1,0 +1,135 @@
+{
+  "extensionName": {
+    "message": "Hawkeye"
+  },
+  "extensionDescription": {
+    "message": "智慧任務感知與執行助手"
+  },
+  "actionTitle": {
+    "message": "Hawkeye"
+  },
+  "commandObservePage": {
+    "message": "觀察當前頁面"
+  },
+  "connected": {
+    "message": "已連接桌面端"
+  },
+  "disconnected": {
+    "message": "桌面端未連接"
+  },
+  "desktopNotConnected": {
+    "message": "請確保 Hawkeye 桌面端正在執行並已連接"
+  },
+  "settings": {
+    "message": "設定"
+  },
+  "back": {
+    "message": "返回"
+  },
+  "desktopHost": {
+    "message": "桌面端主機"
+  },
+  "desktopPort": {
+    "message": "桌面端連接埠"
+  },
+  "showFloatingButton": {
+    "message": "在頁面顯示懸浮按鈕"
+  },
+  "enableNotifications": {
+    "message": "啟用通知"
+  },
+  "save": {
+    "message": "儲存"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "observePage": {
+    "message": "觀察頁面"
+  },
+  "analyzing": {
+    "message": "正在分析頁面..."
+  },
+  "emptyStateIntents": {
+    "message": "點擊「觀察頁面」分析當前頁面並檢測使用者意圖"
+  },
+  "generatePlan": {
+    "message": "生成計畫"
+  },
+  "markIrrelevant": {
+    "message": "不相關"
+  },
+  "steps": {
+    "message": "執行步驟"
+  },
+  "pros": {
+    "message": "優點"
+  },
+  "cons": {
+    "message": "注意事項"
+  },
+  "impact": {
+    "message": "影響分析"
+  },
+  "filesAffected": {
+    "message": "影響檔案數"
+  },
+  "reversible": {
+    "message": "可撤銷"
+  },
+  "systemChanges": {
+    "message": "將修改系統設定"
+  },
+  "requiresNetwork": {
+    "message": "需要網路存取"
+  },
+  "execute": {
+    "message": "執行"
+  },
+  "reject": {
+    "message": "拒絕"
+  },
+  "executing": {
+    "message": "執行中..."
+  },
+  "step": {
+    "message": "步驟"
+  },
+  "pause": {
+    "message": "暫停"
+  },
+  "executionCompleted": {
+    "message": "執行成功！"
+  },
+  "executionFailed": {
+    "message": "執行失敗"
+  },
+  "done": {
+    "message": "完成"
+  },
+  "errorPrefix": {
+    "message": "錯誤: $error$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "contextMenuAnalyzeSelection": {
+    "message": "Hawkeye: 分析選取內容"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "Hawkeye: 分析頁面"
+  },
+  "foundIntents": {
+    "message": "發現 $count$ 個意圖",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationError": {
+    "message": "Hawkeye 錯誤"
+  }
+}

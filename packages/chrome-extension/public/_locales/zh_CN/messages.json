@@ -1,0 +1,135 @@
+{
+  "extensionName": {
+    "message": "Hawkeye"
+  },
+  "extensionDescription": {
+    "message": "智能任务感知与执行助手"
+  },
+  "actionTitle": {
+    "message": "Hawkeye"
+  },
+  "commandObservePage": {
+    "message": "观察当前页面"
+  },
+  "connected": {
+    "message": "已连接桌面端"
+  },
+  "disconnected": {
+    "message": "桌面端未连接"
+  },
+  "desktopNotConnected": {
+    "message": "请确保 Hawkeye 桌面端正在运行并已连接"
+  },
+  "settings": {
+    "message": "设置"
+  },
+  "back": {
+    "message": "返回"
+  },
+  "desktopHost": {
+    "message": "桌面端主机"
+  },
+  "desktopPort": {
+    "message": "桌面端端口"
+  },
+  "showFloatingButton": {
+    "message": "在页面显示悬浮按钮"
+  },
+  "enableNotifications": {
+    "message": "启用通知"
+  },
+  "save": {
+    "message": "保存"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "observePage": {
+    "message": "观察页面"
+  },
+  "analyzing": {
+    "message": "正在分析页面..."
+  },
+  "emptyStateIntents": {
+    "message": "点击「观察页面」分析当前页面并检测用户意图"
+  },
+  "generatePlan": {
+    "message": "生成计划"
+  },
+  "markIrrelevant": {
+    "message": "不相关"
+  },
+  "steps": {
+    "message": "执行步骤"
+  },
+  "pros": {
+    "message": "优点"
+  },
+  "cons": {
+    "message": "注意事项"
+  },
+  "impact": {
+    "message": "影响分析"
+  },
+  "filesAffected": {
+    "message": "影响文件数"
+  },
+  "reversible": {
+    "message": "可撤销"
+  },
+  "systemChanges": {
+    "message": "将修改系统设置"
+  },
+  "requiresNetwork": {
+    "message": "需要网络访问"
+  },
+  "execute": {
+    "message": "执行"
+  },
+  "reject": {
+    "message": "拒绝"
+  },
+  "executing": {
+    "message": "执行中..."
+  },
+  "step": {
+    "message": "步骤"
+  },
+  "pause": {
+    "message": "暂停"
+  },
+  "executionCompleted": {
+    "message": "执行成功！"
+  },
+  "executionFailed": {
+    "message": "执行失败"
+  },
+  "done": {
+    "message": "完成"
+  },
+  "errorPrefix": {
+    "message": "错误: $error$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "contextMenuAnalyzeSelection": {
+    "message": "Hawkeye: 分析选中内容"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "Hawkeye: 分析页面"
+  },
+  "foundIntents": {
+    "message": "发现 $count$ 个意图",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationError": {
+    "message": "Hawkeye 错误"
+  }
+}

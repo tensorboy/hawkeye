@@ -28,6 +28,11 @@ Technology should be accessible to all. When AI becomes powerful enough, cheap e
 
 ## ✨ Features
 
+### 🚫 Zero Prompt Experience
+- **No prompts required**: Hawkeye automatically observes your screen, clipboard, and files, proactively offering suggestions
+- **No more "what should I ask?"**: Traditional AI needs you to formulate questions first; Hawkeye discovers problems for you
+- **Manual input also supported**: If you have specific needs, you can always tell it directly
+
 ### 🏠 Local-First Architecture
 - **All core functions run entirely locally**: screen perception, file monitoring, task execution
 - **Your data never leaves your device**: screenshots, clipboard, file operations are all processed locally
