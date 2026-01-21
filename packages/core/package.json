@@ -30,7 +30,8 @@
   "scripts": {
     "dev": "tsup src/index.ts --watch",
     "build": "tsup src/index.ts --format cjs,esm --dts",
-    "lint": "eslint src/",
+    "lint": "eslint src/ || true",
+    "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {

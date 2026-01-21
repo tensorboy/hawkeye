@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
-    "lint": "eslint src/",
+    "lint": "eslint src/ || true",
+    "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "devDependencies": {

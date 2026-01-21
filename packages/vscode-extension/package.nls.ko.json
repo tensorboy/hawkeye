@@ -1,16 +1,18 @@
 {
   "displayName": "Hawkeye",
   "description": "VS Code 지능형 작업 인식 및 실행 도우미",
-  "command.observe.title": "Hawkeye: 화면 관찰",
-  "command.showSuggestions.title": "Hawkeye: 제안 표시",
-  "command.execute.title": "Hawkeye: 선택한 제안 실행",
-  "command.configure.title": "Hawkeye: API 키 설정",
+  "command.observe.title": "Hawkeye: 컨텍스트 관찰",
+  "command.showStatus.title": "Hawkeye: 연결 상태 표시",
+  "command.generatePlan.title": "Hawkeye: 계획 생성",
+  "command.executePlan.title": "Hawkeye: 계획 실행",
+  "command.rejectPlan.title": "Hawkeye: 계획 거부",
+  "command.configure.title": "Hawkeye: 설정",
+  "command.reconnect.title": "Hawkeye: 데스크톱에 재연결",
   "viewContainer.hawkeye.title": "Hawkeye",
-  "view.suggestions.name": "제안",
+  "view.intents.name": "의도",
   "config.title": "Hawkeye",
-  "config.apiKey.description": "Claude용 Anthropic API 키",
-  "config.model.description": "사용할 Claude 모델",
-  "config.autoObserve.description": "자동으로 화면을 주기적으로 관찰",
-  "config.observeInterval.description": "자동 관찰 간격 (밀리초)",
-  "config.requireConfirmation.description": "작업 실행 전 확인 필요"
+  "config.connectionMode.description": "연결 모드: 'desktop'은 Hawkeye 데스크톱에 연결, 'standalone'은 직접 API 호출",
+  "config.desktopHost.description": "Hawkeye 데스크톱 호스트 주소",
+  "config.desktopPort.description": "Hawkeye 데스크톱 포트 번호",
+  "config.enableNotifications.description": "알림 메시지 활성화"
 }

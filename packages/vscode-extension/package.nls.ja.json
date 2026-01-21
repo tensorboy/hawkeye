@@ -1,16 +1,18 @@
 {
   "displayName": "Hawkeye",
   "description": "VS Code インテリジェントタスク認識・実行アシスタント",
-  "command.observe.title": "Hawkeye: 画面を観察",
-  "command.showSuggestions.title": "Hawkeye: 提案を表示",
-  "command.execute.title": "Hawkeye: 選択した提案を実行",
-  "command.configure.title": "Hawkeye: API キーを設定",
+  "command.observe.title": "Hawkeye: コンテキストを観察",
+  "command.showStatus.title": "Hawkeye: 接続状態を表示",
+  "command.generatePlan.title": "Hawkeye: プランを生成",
+  "command.executePlan.title": "Hawkeye: プランを実行",
+  "command.rejectPlan.title": "Hawkeye: プランを拒否",
+  "command.configure.title": "Hawkeye: 設定",
+  "command.reconnect.title": "Hawkeye: デスクトップに再接続",
   "viewContainer.hawkeye.title": "Hawkeye",
-  "view.suggestions.name": "提案",
+  "view.intents.name": "意図",
   "config.title": "Hawkeye",
-  "config.apiKey.description": "Claude 用 Anthropic API キー",
-  "config.model.description": "使用する Claude モデル",
-  "config.autoObserve.description": "定期的に自動で画面を観察",
-  "config.observeInterval.description": "自動観察の間隔（ミリ秒）",
-  "config.requireConfirmation.description": "タスク実行前に確認が必要"
+  "config.connectionMode.description": "接続モード：'desktop' で Hawkeye デスクトップに接続、'standalone' で直接 API 呼び出し",
+  "config.desktopHost.description": "Hawkeye デスクトップのホストアドレス",
+  "config.desktopPort.description": "Hawkeye デスクトップのポート番号",
+  "config.enableNotifications.description": "通知メッセージを有効にする"
 }

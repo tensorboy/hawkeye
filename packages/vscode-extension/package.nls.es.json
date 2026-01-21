@@ -1,16 +1,18 @@
 {
   "displayName": "Hawkeye",
   "description": "Asistente inteligente de percepción y ejecución de tareas para VS Code",
-  "command.observe.title": "Hawkeye: Observar pantalla",
-  "command.showSuggestions.title": "Hawkeye: Mostrar sugerencias",
-  "command.execute.title": "Hawkeye: Ejecutar sugerencia seleccionada",
-  "command.configure.title": "Hawkeye: Configurar clave API",
+  "command.observe.title": "Hawkeye: Observar contexto",
+  "command.showStatus.title": "Hawkeye: Mostrar estado de conexión",
+  "command.generatePlan.title": "Hawkeye: Generar plan",
+  "command.executePlan.title": "Hawkeye: Ejecutar plan",
+  "command.rejectPlan.title": "Hawkeye: Rechazar plan",
+  "command.configure.title": "Hawkeye: Configuración",
+  "command.reconnect.title": "Hawkeye: Reconectar al escritorio",
   "viewContainer.hawkeye.title": "Hawkeye",
-  "view.suggestions.name": "Sugerencias",
+  "view.intents.name": "Intenciones",
   "config.title": "Hawkeye",
-  "config.apiKey.description": "Clave API de Anthropic para Claude",
-  "config.model.description": "Modelo de Claude a usar",
-  "config.autoObserve.description": "Observar pantalla automáticamente en intervalos",
-  "config.observeInterval.description": "Intervalo de auto-observación (ms)",
-  "config.requireConfirmation.description": "Requerir confirmación antes de ejecutar tareas"
+  "config.connectionMode.description": "Modo de conexión: 'desktop' para conectar a Hawkeye Desktop, 'standalone' para llamadas API directas",
+  "config.desktopHost.description": "Dirección del host de Hawkeye Desktop",
+  "config.desktopPort.description": "Puerto de Hawkeye Desktop",
+  "config.enableNotifications.description": "Habilitar mensajes de notificación"
 }

@@ -25,12 +25,12 @@ jobs:
           node-version: 20
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
         working-directory: packages/chrome-extension
 
       - name: Build Chrome Extension
@@ -75,12 +75,12 @@ jobs:
           node-version: 20
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
         working-directory: packages/chrome-extension
 
       - name: Build Firefox Extension

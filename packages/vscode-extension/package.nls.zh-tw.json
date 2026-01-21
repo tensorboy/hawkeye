@@ -1,16 +1,18 @@
 {
   "displayName": "Hawkeye",
   "description": "VS Code 智慧任務感知與執行助手",
-  "command.observe.title": "Hawkeye: 觀察螢幕",
-  "command.showSuggestions.title": "Hawkeye: 顯示建議",
-  "command.execute.title": "Hawkeye: 執行選取的建議",
-  "command.configure.title": "Hawkeye: 設定 API 金鑰",
+  "command.observe.title": "Hawkeye: 觀察上下文",
+  "command.showStatus.title": "Hawkeye: 顯示連接狀態",
+  "command.generatePlan.title": "Hawkeye: 生成計畫",
+  "command.executePlan.title": "Hawkeye: 執行計畫",
+  "command.rejectPlan.title": "Hawkeye: 拒絕計畫",
+  "command.configure.title": "Hawkeye: 設定",
+  "command.reconnect.title": "Hawkeye: 重新連接桌面端",
   "viewContainer.hawkeye.title": "Hawkeye",
-  "view.suggestions.name": "建議",
+  "view.intents.name": "意圖",
   "config.title": "Hawkeye",
-  "config.apiKey.description": "Claude 的 Anthropic API 金鑰",
-  "config.model.description": "要使用的 Claude 模型",
-  "config.autoObserve.description": "自動定期觀察螢幕",
-  "config.observeInterval.description": "自動觀察間隔（毫秒）",
-  "config.requireConfirmation.description": "執行任務前需要確認"
+  "config.connectionMode.description": "連接模式：'desktop' 連接 Hawkeye 桌面端，'standalone' 直接呼叫 API",
+  "config.desktopHost.description": "Hawkeye 桌面端主機位址",
+  "config.desktopPort.description": "Hawkeye 桌面端連接埠",
+  "config.enableNotifications.description": "啟用通知訊息"
 }

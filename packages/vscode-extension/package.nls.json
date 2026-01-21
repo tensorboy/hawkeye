@@ -1,16 +1,18 @@
 {
   "displayName": "Hawkeye",
   "description": "Intelligent Task Perception and Execution Assistant for VS Code",
-  "command.observe.title": "Hawkeye: Observe Screen",
-  "command.showSuggestions.title": "Hawkeye: Show Suggestions",
-  "command.execute.title": "Hawkeye: Execute Selected Suggestion",
-  "command.configure.title": "Hawkeye: Configure API Key",
+  "command.observe.title": "Hawkeye: Observe Context",
+  "command.showStatus.title": "Hawkeye: Show Connection Status",
+  "command.generatePlan.title": "Hawkeye: Generate Plan",
+  "command.executePlan.title": "Hawkeye: Execute Plan",
+  "command.rejectPlan.title": "Hawkeye: Reject Plan",
+  "command.configure.title": "Hawkeye: Settings",
+  "command.reconnect.title": "Hawkeye: Reconnect to Desktop",
   "viewContainer.hawkeye.title": "Hawkeye",
-  "view.suggestions.name": "Suggestions",
+  "view.intents.name": "Intents",
   "config.title": "Hawkeye",
-  "config.apiKey.description": "Anthropic API Key for Claude",
-  "config.model.description": "Claude model to use",
-  "config.autoObserve.description": "Automatically observe screen at intervals",
-  "config.observeInterval.description": "Interval for auto-observation (ms)",
-  "config.requireConfirmation.description": "Require confirmation before executing tasks"
+  "config.connectionMode.description": "Connection mode: 'desktop' to connect to Hawkeye Desktop, 'standalone' for direct API calls",
+  "config.desktopHost.description": "Hawkeye Desktop host address",
+  "config.desktopPort.description": "Hawkeye Desktop port number",
+  "config.enableNotifications.description": "Enable notification messages"
 }
