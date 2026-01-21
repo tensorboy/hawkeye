@@ -46,7 +46,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   );
 };
 
-// 预定义的常用快捷操作
+// 预定义的常用快捷操作（设置按钮已移至右上角）
 export const defaultQuickActions: QuickAction[] = [
   {
     id: 'refresh',
@@ -71,11 +71,5 @@ export const defaultQuickActions: QuickAction[] = [
     label: '历史记录',
     icon: '📜',
     tooltip: '查看操作历史',
-  },
-  {
-    id: 'settings',
-    label: '设置',
-    icon: '⚙️',
-    tooltip: '打开设置',
   },
 ];

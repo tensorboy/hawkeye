@@ -35,6 +35,13 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let hawkeye: Hawkeye | null = null;
 
+// 扩展 app 类型以添加 isQuitting 标志
+declare module 'electron' {
+  interface App {
+    isQuitting?: boolean;
+  }
+}
+
 // 配置存储
 interface AppConfig {
   aiProvider: 'ollama' | 'gemini' | 'openai';
@@ -67,14 +74,17 @@ let appConfig: AppConfig = { ...defaultConfig };
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 420,
-    height: 680,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
+    width: 800,
+    height: 600,
+    minWidth: 400,
+    minHeight: 300,
+    frame: true,  // 启用标准窗口边框（包含关闭、最小化、最大化按钮）
+    transparent: false,
+    alwaysOnTop: false,
+    skipTaskbar: false,  // 在任务栏/Dock 显示
+    resizable: true,  // 允许调整窗口大小
     show: false,
+    titleBarStyle: 'default',  // macOS 标准标题栏样式
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -97,10 +107,11 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
-  // 失去焦点时隐藏窗口（开发模式下禁用，方便调试）
-  mainWindow.on('blur', () => {
-    if (process.env.NODE_ENV !== 'development' && mainWindow && !mainWindow.webContents.isDevToolsOpened()) {
-      mainWindow.hide();
+  // 窗口关闭时隐藏到托盘（而不是退出应用）
+  mainWindow.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
     }
   });
 }
@@ -527,6 +538,11 @@ app.whenReady().then(async () => {
     debugLog(`Error during initialization: ${error}`);
     throw error;
   }
+});
+
+// 退出前设置标志
+app.on('before-quit', () => {
+  app.isQuitting = true;
 });
 
 // 退出时清理
