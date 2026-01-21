@@ -50,6 +50,27 @@ export * from './watcher';
 // 同步模块
 export * from './sync';
 
+// 行为追踪模块
+export * from './behavior';
+
+// 认证与权限模块
+export * from './auth';
+
+// MemOS 记忆系统
+export * from './memory';
+
+// 插件系统
+export * from './plugin';
+
+// 工作流系统
+export * from './workflow';
+
+// 主线任务 Dashboard
+export * from './dashboard';
+
+// 企业版功能
+export * from './enterprise';
+
 // 核心类型 (these take precedence)
 export {
   type TaskType,
