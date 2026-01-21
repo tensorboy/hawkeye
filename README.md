@@ -1,5 +1,9 @@
 # Hawkeye 🦅 - AI 智能任务感知助手
 
+<p align="center">
+  <img src="./logo.png" alt="Hawkeye Logo" width="128" height="128" />
+</p>
+
 [English](./README_EN.md) | 中文
 
 <p align="center">
