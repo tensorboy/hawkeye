@@ -93,16 +93,24 @@ Hawkeye 默认使用 Claude API 进行智能分析。你可以：
    在设置中输入你的 Anthropic API Key
    ```
 
-2. **使用本地模型**（完全离线）
+2. **使用本地模型**（完全离线，推荐）
    ```bash
    # 安装 Ollama
-   brew install ollama
+   brew install ollama   # macOS
+   # Windows/Linux: https://ollama.com/download
 
-   # 下载模型
-   ollama pull llama3.2
+   # 下载推荐模型（2025 最佳开源模型）
+   # 文本模型 - Qwen3 (代码/推理能力最强)
+   ollama pull qwen3:8b          # 8B 参数，需要 8GB+ 内存
+   ollama pull qwen3:14b         # 14B 参数，需要 16GB+ 内存
 
-   # 在 Hawkeye 配置中选择 "本地模型"
+   # 视觉模型 - Qwen2.5-VL (屏幕理解)
+   ollama pull qwen2.5vl:7b      # 7B 参数，性能超越 Llama 3.2 Vision 11B
+
+   # 在 Hawkeye 设置中选择 "Ollama" 并配置模型名
    ```
+
+   > 💡 **模型推荐**：Qwen3 在代码生成和推理任务上超越 DeepSeek-R1 和 Llama 4，是 2025 年最强开源模型。
 
 ### 运行
 
@@ -189,8 +197,8 @@ import { HawkeyeEngine } from '@hawkeye/core';
 
 const engine = new HawkeyeEngine({
   anthropicApiKey: 'sk-ant-...',
-  // 或使用本地模型
-  // localModel: { provider: 'ollama', model: 'llama3.2' }
+  // 或使用本地模型（推荐 Qwen3）
+  // localModel: { provider: 'ollama', model: 'qwen3:8b' }
 });
 
 // 观察并获取建议

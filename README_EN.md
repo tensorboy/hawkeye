@@ -93,16 +93,24 @@ Hawkeye uses Claude API for intelligent analysis by default. You can:
    Enter your Anthropic API Key in settings
    ```
 
-2. **Use Local Model** (Fully Offline)
+2. **Use Local Model** (Fully Offline, Recommended)
    ```bash
    # Install Ollama
-   brew install ollama
+   brew install ollama   # macOS
+   # Windows/Linux: https://ollama.com/download
 
-   # Download model
-   ollama pull llama3.2
+   # Download recommended models (2025 best open-source)
+   # Text model - Qwen3 (best for coding/reasoning)
+   ollama pull qwen3:8b          # 8B params, needs 8GB+ RAM
+   ollama pull qwen3:14b         # 14B params, needs 16GB+ RAM
 
-   # Select "Local Model" in Hawkeye settings
+   # Vision model - Qwen2.5-VL (screen understanding)
+   ollama pull qwen2.5vl:7b      # 7B params, outperforms Llama 3.2 Vision 11B
+
+   # Select "Ollama" in Hawkeye settings and configure model name
    ```
+
+   > 💡 **Model Recommendation**: Qwen3 outperforms DeepSeek-R1 and Llama 4 in code generation and reasoning tasks - the best open-source model in 2025.
 
 ### Run
 
@@ -189,8 +197,8 @@ import { HawkeyeEngine } from '@hawkeye/core';
 
 const engine = new HawkeyeEngine({
   anthropicApiKey: 'sk-ant-...',
-  // Or use local model
-  // localModel: { provider: 'ollama', model: 'llama3.2' }
+  // Or use local model (Qwen3 recommended)
+  // localModel: { provider: 'ollama', model: 'qwen3:8b' }
 });
 
 // Observe and get suggestions

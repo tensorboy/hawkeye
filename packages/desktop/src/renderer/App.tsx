@@ -1,11 +1,14 @@
 /**
- * Hawkeye Desktop - Main App Component
- * 支持意图识别 → 计划生成 → 执行确认流程
+ * Hawkeye Desktop - A2UI Main App Component
+ * 零输入交互界面 - 卡片式用户交互
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { languages } from './i18n';
+import type { A2UICard, A2UIAction } from '@hawkeye/core';
+import { CardList, QuickActions, defaultQuickActions } from './components/A2UI';
+import type { QuickAction } from './components/A2UI';
 
 // 类型定义
 interface UserIntent {
@@ -134,63 +137,217 @@ declare global {
   }
 }
 
-type ViewMode = 'intents' | 'plan' | 'executing' | 'settings';
+// 生成唯一 ID
+const generateId = () => `card_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+// 将意图转换为建议卡片
+const intentToSuggestionCard = (intent: UserIntent): A2UICard => ({
+  id: `suggestion_${intent.id}`,
+  type: 'suggestion',
+  title: intent.description,
+  description: intent.context?.reason,
+  icon: getIntentIcon(intent.type),
+  confidence: intent.confidence,
+  timestamp: Date.now(),
+  metadata: {
+    intentId: intent.id,
+    intentType: intent.type,
+    impact: getIntentImpact(intent.type),
+  },
+  actions: [
+    {
+      id: 'generate_plan',
+      label: '生成计划',
+      type: 'primary',
+      icon: '📋',
+      shortcut: '⏎',
+    },
+    {
+      id: 'dismiss',
+      label: '忽略',
+      type: 'dismiss',
+    },
+  ],
+});
+
+// 将计划转换为预览卡片
+const planToPreviewCard = (plan: ExecutionPlan): A2UICard => ({
+  id: `preview_${plan.id}`,
+  type: 'preview',
+  title: plan.title,
+  description: plan.description,
+  icon: 'preview',
+  timestamp: Date.now(),
+  metadata: {
+    planId: plan.id,
+    steps: plan.steps.map((s) => s.description),
+    pros: plan.pros,
+    cons: plan.cons,
+    impact: plan.impact,
+    reversible: plan.impact.fullyReversible,
+  },
+  actions: [
+    {
+      id: 'execute',
+      label: '执行计划',
+      type: 'primary',
+      icon: '▶️',
+      shortcut: '⏎',
+    },
+    {
+      id: 'reject',
+      label: '放弃',
+      type: 'secondary',
+    },
+  ],
+});
+
+// 创建执行进度卡片
+const createProgressCard = (plan: ExecutionPlan, execution: PlanExecution): A2UICard => ({
+  id: `progress_${execution.planId}`,
+  type: 'progress',
+  title: `执行中: ${plan.title}`,
+  description: plan.steps[execution.currentStep - 1]?.description || '准备中...',
+  icon: 'progress',
+  timestamp: Date.now(),
+  metadata: {
+    planId: execution.planId,
+    progress: (execution.currentStep / plan.steps.length) * 100,
+    currentStep: execution.currentStep,
+    totalSteps: plan.steps.length,
+  },
+  actions: [
+    {
+      id: 'pause',
+      label: '暂停',
+      type: 'secondary',
+      icon: '⏸️',
+    },
+    {
+      id: 'cancel',
+      label: '取消',
+      type: 'danger',
+      icon: '⏹️',
+    },
+  ],
+});
+
+// 创建执行结果卡片
+const createResultCard = (plan: ExecutionPlan, execution: PlanExecution): A2UICard => {
+  const success = execution.status === 'completed';
+  return {
+    id: `result_${execution.planId}`,
+    type: 'result',
+    title: success ? '执行完成' : '执行失败',
+    description: plan.title,
+    icon: success ? 'success' : 'error',
+    timestamp: Date.now(),
+    metadata: {
+      planId: execution.planId,
+      success,
+      results: execution.results,
+      duration: execution.completedAt
+        ? execution.completedAt - execution.startedAt
+        : undefined,
+    },
+    actions: [
+      {
+        id: 'done',
+        label: '完成',
+        type: 'primary',
+      },
+      ...(success
+        ? []
+        : [
+            {
+              id: 'retry',
+              label: '重试',
+              type: 'secondary' as const,
+            },
+          ]),
+    ],
+  };
+};
+
+// 获取意图图标
+function getIntentIcon(type: string): string {
+  const icons: Record<string, string> = {
+    file_organize: '📁',
+    code_assist: '💻',
+    search: '🔍',
+    communication: '💬',
+    automation: '⚡',
+    data_process: '📊',
+  };
+  return icons[type] || '💡';
+}
+
+// 获取意图影响级别
+function getIntentImpact(type: string): 'low' | 'medium' | 'high' {
+  const highImpact = ['automation', 'file_organize'];
+  const mediumImpact = ['code_assist', 'data_process'];
+  if (highImpact.includes(type)) return 'high';
+  if (mediumImpact.includes(type)) return 'medium';
+  return 'low';
+}
 
 export default function App() {
   const { t, i18n } = useTranslation();
 
-  // 状态
-  const [viewMode, setViewMode] = useState<ViewMode>('intents');
-  const [intents, setIntents] = useState<UserIntent[]>([]);
-  const [selectedIntent, setSelectedIntent] = useState<UserIntent | null>(null);
-  const [plan, setPlan] = useState<ExecutionPlan | null>(null);
-  const [execution, setExecution] = useState<PlanExecution | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<HawkeyeStatus | null>(null);
+  // A2UI 卡片状态
+  const [cards, setCards] = useState<A2UICard[]>([]);
 
-  // 配置
+  // 应用状态
+  const [status, setStatus] = useState<HawkeyeStatus | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [tempConfig, setTempConfig] = useState<Partial<AppConfig>>({});
 
+  // 当前执行的计划
+  const [currentPlan, setCurrentPlan] = useState<ExecutionPlan | null>(null);
+  const [currentExecution, setCurrentExecution] = useState<PlanExecution | null>(null);
+
+  // 添加卡片
+  const addCard = useCallback((card: A2UICard) => {
+    setCards((prev) => [...prev, card]);
+  }, []);
+
+  // 移除卡片
+  const removeCard = useCallback((cardId: string) => {
+    setCards((prev) => prev.filter((c) => c.id !== cardId));
+  }, []);
+
+  // 更新卡片
+  const updateCard = useCallback((cardId: string, updates: Partial<A2UICard>) => {
+    setCards((prev) =>
+      prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c))
+    );
+  }, []);
+
+  // 添加错误卡片
+  const addErrorCard = useCallback((message: string) => {
+    const card: A2UICard = {
+      id: generateId(),
+      type: 'error',
+      title: '发生错误',
+      description: message,
+      icon: 'error',
+      timestamp: Date.now(),
+      actions: [
+        {
+          id: 'dismiss',
+          label: '关闭',
+          type: 'dismiss',
+        },
+      ],
+    };
+    addCard(card);
+  }, [addCard]);
+
+  // 初始化
   useEffect(() => {
-    // 初始化
     initializeApp();
-
-    // 监听事件
-    window.hawkeye.onIntents((newIntents) => {
-      setIntents(newIntents);
-      if (newIntents.length > 0) {
-        setSelectedIntent(newIntents[0]);
-      }
-      setError(null);
-      setViewMode('intents');
-    });
-
-    window.hawkeye.onPlan((newPlan) => {
-      setPlan(newPlan);
-      setViewMode('plan');
-    });
-
-    window.hawkeye.onExecutionProgress((data) => {
-      setExecution(prev => prev ? { ...prev, currentStep: data.step.order } : null);
-    });
-
-    window.hawkeye.onExecutionCompleted((result) => {
-      setExecution(result);
-      setLoading(false);
-    });
-
-    window.hawkeye.onHawkeyeReady((newStatus) => {
-      setStatus(newStatus);
-    });
-
-    window.hawkeye.onShowSettings(() => {
-      setViewMode('settings');
-    });
-
-    window.hawkeye.onLoading(setLoading);
-    window.hawkeye.onError((err) => setError(err));
+    setupEventListeners();
   }, []);
 
   const initializeApp = async () => {
@@ -206,118 +363,230 @@ export default function App() {
 
       // 如果没有配置 AI，显示设置
       if (!configData.hasOllama && !configData.hasGemini) {
-        setViewMode('settings');
+        setShowSettings(true);
       }
     } catch (err) {
-      setError((err as Error).message);
+      addErrorCard((err as Error).message);
     }
   };
 
-  const handleObserve = async () => {
-    setLoading(true);
-    setError(null);
+  const setupEventListeners = () => {
+    // 监听意图事件 - 转换为建议卡片
+    window.hawkeye.onIntents((intents) => {
+      // 清除旧的建议卡片
+      setCards((prev) => prev.filter((c) => c.type !== 'suggestion'));
+
+      // 添加新的建议卡片
+      const suggestionCards = intents.map(intentToSuggestionCard);
+      setCards((prev) => [...prev, ...suggestionCards]);
+    });
+
+    // 监听计划事件 - 转换为预览卡片
+    window.hawkeye.onPlan((plan) => {
+      setCurrentPlan(plan);
+      // 清除建议卡片，添加预览卡片
+      setCards((prev) => {
+        const filtered = prev.filter((c) => c.type !== 'suggestion');
+        return [...filtered, planToPreviewCard(plan)];
+      });
+    });
+
+    // 监听执行进度
+    window.hawkeye.onExecutionProgress((data) => {
+      if (currentPlan && currentExecution) {
+        const updatedExecution = { ...currentExecution, currentStep: data.step.order };
+        setCurrentExecution(updatedExecution);
+
+        // 更新进度卡片
+        const progressCard = createProgressCard(currentPlan, updatedExecution);
+        setCards((prev) => {
+          const filtered = prev.filter((c) => c.type !== 'progress');
+          return [...filtered, progressCard];
+        });
+      }
+    });
+
+    // 监听执行完成
+    window.hawkeye.onExecutionCompleted((execution) => {
+      setCurrentExecution(execution);
+      if (currentPlan) {
+        // 替换进度卡片为结果卡片
+        const resultCard = createResultCard(currentPlan, execution);
+        setCards((prev) => {
+          const filtered = prev.filter((c) => c.type !== 'progress');
+          return [...filtered, resultCard];
+        });
+      }
+    });
+
+    // 监听状态更新
+    window.hawkeye.onHawkeyeReady((newStatus) => {
+      setStatus(newStatus);
+    });
+
+    // 监听显示设置
+    window.hawkeye.onShowSettings(() => {
+      setShowSettings(true);
+    });
+
+    // 监听错误
+    window.hawkeye.onError((error) => {
+      addErrorCard(error);
+    });
+  };
+
+  // 处理卡片操作
+  const handleCardAction = async (cardId: string, actionId: string, data?: unknown) => {
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+
     try {
-      await window.hawkeye.observe();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSelectIntent = (intent: UserIntent) => {
-    setSelectedIntent(intent);
-  };
-
-  const handleGeneratePlan = async () => {
-    if (!selectedIntent) return;
-
-    setLoading(true);
-    setError(null);
-    try {
-      const newPlan = await window.hawkeye.generatePlan(selectedIntent.id);
-      setPlan(newPlan);
-      setViewMode('plan');
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExecutePlan = async () => {
-    if (!plan) return;
-
-    setLoading(true);
-    setError(null);
-    setViewMode('executing');
-    try {
-      const result = await window.hawkeye.executePlan(plan.id);
-      setExecution(result);
-    } catch (err) {
-      setError((err as Error).message);
-      setViewMode('plan');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRejectPlan = () => {
-    setPlan(null);
-    setViewMode('intents');
-  };
-
-  const handleIntentFeedback = async (intentId: string, feedback: 'accept' | 'reject' | 'irrelevant') => {
-    try {
-      await window.hawkeye.intentFeedback(intentId, feedback);
-      if (feedback === 'reject' || feedback === 'irrelevant') {
-        setIntents(prev => prev.filter(i => i.id !== intentId));
-        if (selectedIntent?.id === intentId) {
-          setSelectedIntent(intents.length > 1 ? intents[0] : null);
+      switch (actionId) {
+        case 'generate_plan': {
+          const intentId = card.metadata?.intentId as string;
+          if (intentId) {
+            const plan = await window.hawkeye.generatePlan(intentId);
+            setCurrentPlan(plan);
+          }
+          break;
         }
+
+        case 'execute': {
+          const planId = card.metadata?.planId as string;
+          if (planId && currentPlan) {
+            // 替换预览卡片为进度卡片
+            removeCard(cardId);
+            const execution = await window.hawkeye.executePlan(planId);
+            setCurrentExecution(execution);
+            const progressCard = createProgressCard(currentPlan, execution);
+            addCard(progressCard);
+          }
+          break;
+        }
+
+        case 'reject': {
+          removeCard(cardId);
+          setCurrentPlan(null);
+          break;
+        }
+
+        case 'pause': {
+          const planId = card.metadata?.planId as string;
+          if (planId) {
+            await window.hawkeye.pauseExecution(planId);
+          }
+          break;
+        }
+
+        case 'cancel': {
+          const planId = card.metadata?.planId as string;
+          if (planId) {
+            await window.hawkeye.cancelExecution(planId);
+            removeCard(cardId);
+            setCurrentPlan(null);
+            setCurrentExecution(null);
+          }
+          break;
+        }
+
+        case 'done':
+        case 'dismiss': {
+          removeCard(cardId);
+          if (card.type === 'result') {
+            setCurrentPlan(null);
+            setCurrentExecution(null);
+          }
+          break;
+        }
+
+        case 'retry': {
+          if (currentPlan) {
+            removeCard(cardId);
+            const execution = await window.hawkeye.executePlan(currentPlan.id);
+            setCurrentExecution(execution);
+            const progressCard = createProgressCard(currentPlan, execution);
+            addCard(progressCard);
+          }
+          break;
+        }
+
+        default:
+          console.log('Unknown action:', actionId);
       }
     } catch (err) {
-      setError((err as Error).message);
+      addErrorCard((err as Error).message);
     }
   };
 
+  // 处理卡片忽略
+  const handleCardDismiss = (cardId: string) => {
+    const card = cards.find((c) => c.id === cardId);
+    if (card?.type === 'suggestion' && card.metadata?.intentId) {
+      window.hawkeye.intentFeedback(card.metadata.intentId as string, 'irrelevant');
+    }
+    removeCard(cardId);
+  };
+
+  // 处理快捷操作
+  const handleQuickAction = async (actionId: string) => {
+    switch (actionId) {
+      case 'refresh':
+        await window.hawkeye.observe();
+        break;
+
+      case 'screenshot':
+        await window.hawkeye.observe();
+        break;
+
+      case 'clipboard':
+        // 分析剪贴板
+        await window.hawkeye.observe();
+        break;
+
+      case 'history':
+        // TODO: 显示历史记录
+        const infoCard: A2UICard = {
+          id: generateId(),
+          type: 'info',
+          title: '历史记录',
+          description: '历史记录功能即将推出',
+          icon: 'info',
+          timestamp: Date.now(),
+          actions: [{ id: 'dismiss', label: '关闭', type: 'dismiss' }],
+        };
+        addCard(infoCard);
+        break;
+
+      case 'settings':
+        setShowSettings(true);
+        break;
+    }
+  };
+
+  // 保存配置
   const handleSaveConfig = async () => {
     try {
       const newConfig = await window.hawkeye.saveConfig(tempConfig);
       setConfig(newConfig);
-      setViewMode('intents');
+      setShowSettings(false);
     } catch (err) {
-      setError((err as Error).message);
+      addErrorCard((err as Error).message);
     }
   };
 
+  // 语言切换
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     i18n.changeLanguage(e.target.value);
   };
 
-  const getRiskLevelColor = (level: string) => {
-    switch (level) {
-      case 'low': return '#4caf50';
-      case 'medium': return '#ff9800';
-      case 'high': return '#f44336';
-      default: return '#9e9e9e';
-    }
-  };
-
-  const getIntentTypeIcon = (type: string) => {
-    switch (type) {
-      case 'file_organize': return '📁';
-      case 'code_assist': return '💻';
-      case 'search': return '🔍';
-      case 'communication': return '💬';
-      case 'automation': return '⚡';
-      case 'data_process': return '📊';
-      default: return '💡';
-    }
-  };
+  // 准备快捷操作
+  const quickActions: QuickAction[] = defaultQuickActions.map((action) => ({
+    ...action,
+    disabled: !status?.aiReady && action.id !== 'settings',
+  }));
 
   // 设置页面
-  if (viewMode === 'settings') {
+  if (showSettings) {
     return (
       <div className="container settings">
         <header className="header">
@@ -330,7 +599,9 @@ export default function App() {
             <label>{t('settings.aiProvider')}</label>
             <select
               value={tempConfig.aiProvider || 'ollama'}
-              onChange={(e) => setTempConfig({ ...tempConfig, aiProvider: e.target.value as any })}
+              onChange={(e) =>
+                setTempConfig({ ...tempConfig, aiProvider: e.target.value as any })
+              }
             >
               <option value="ollama">Ollama (本地)</option>
               <option value="gemini">Gemini (云端)</option>
@@ -345,7 +616,9 @@ export default function App() {
                 <input
                   type="text"
                   value={tempConfig.ollamaHost || 'http://localhost:11434'}
-                  onChange={(e) => setTempConfig({ ...tempConfig, ollamaHost: e.target.value })}
+                  onChange={(e) =>
+                    setTempConfig({ ...tempConfig, ollamaHost: e.target.value })
+                  }
                   placeholder="http://localhost:11434"
                 />
               </div>
@@ -353,9 +626,11 @@ export default function App() {
                 <label>{t('settings.ollamaModel')}</label>
                 <input
                   type="text"
-                  value={tempConfig.ollamaModel || 'llama3.2-vision'}
-                  onChange={(e) => setTempConfig({ ...tempConfig, ollamaModel: e.target.value })}
-                  placeholder="llama3.2-vision"
+                  value={tempConfig.ollamaModel || 'qwen2.5vl:7b'}
+                  onChange={(e) =>
+                    setTempConfig({ ...tempConfig, ollamaModel: e.target.value })
+                  }
+                  placeholder="qwen2.5vl:7b"
                 />
               </div>
             </>
@@ -369,11 +644,17 @@ export default function App() {
                 <input
                   type="password"
                   value={tempConfig.geminiApiKey || ''}
-                  onChange={(e) => setTempConfig({ ...tempConfig, geminiApiKey: e.target.value })}
+                  onChange={(e) =>
+                    setTempConfig({ ...tempConfig, geminiApiKey: e.target.value })
+                  }
                   placeholder="AIza..."
                 />
                 <small>
-                  <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {t('settings.getApiKey')}
                   </a>
                 </small>
@@ -383,7 +664,9 @@ export default function App() {
                 <input
                   type="text"
                   value={tempConfig.geminiModel || 'gemini-2.0-flash-exp'}
-                  onChange={(e) => setTempConfig({ ...tempConfig, geminiModel: e.target.value })}
+                  onChange={(e) =>
+                    setTempConfig({ ...tempConfig, geminiModel: e.target.value })
+                  }
                   placeholder="gemini-2.0-flash-exp"
                 />
               </div>
@@ -406,7 +689,9 @@ export default function App() {
           {status && (
             <div className="status-info">
               <p>AI: {status.aiReady ? `✅ ${status.aiProvider}` : '❌ 未就绪'}</p>
-              <p>同步: {status.syncRunning ? `✅ 端口 ${status.syncPort}` : '❌ 未运行'}</p>
+              <p>
+                同步: {status.syncRunning ? `✅ 端口 ${status.syncPort}` : '❌ 未运行'}
+              </p>
               <p>连接: {status.connectedClients} 个客户端</p>
             </div>
           )}
@@ -417,7 +702,7 @@ export default function App() {
             {t('settings.save')}
           </button>
           {config && (
-            <button className="btn" onClick={() => setViewMode('intents')}>
+            <button className="btn" onClick={() => setShowSettings(false)}>
               {t('settings.cancel')}
             </button>
           )}
@@ -426,245 +711,53 @@ export default function App() {
     );
   }
 
-  // 执行中页面
-  if (viewMode === 'executing' && execution) {
-    return (
-      <div className="container">
-        <header className="header">
-          <h1>🦅 Hawkeye</h1>
-        </header>
-
-        <div className="content">
-          <div className="execution-view">
-            <h3>⚡ {t('app.executing')}</h3>
-            <p>{plan?.title}</p>
-
-            <div className="execution-progress">
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${(execution.currentStep / (plan?.steps.length || 1)) * 100}%` }}
-                />
-              </div>
-              <p>{t('app.step')} {execution.currentStep} / {plan?.steps.length}</p>
-            </div>
-
-            {execution.status === 'completed' && (
-              <div className="execution-result success">
-                <p>✅ {t('app.executionCompleted')}</p>
-                <button className="btn btn-primary" onClick={() => {
-                  setExecution(null);
-                  setPlan(null);
-                  setViewMode('intents');
-                }}>
-                  {t('app.done')}
-                </button>
-              </div>
-            )}
-
-            {execution.status === 'failed' && (
-              <div className="execution-result error">
-                <p>❌ {t('app.executionFailed')}</p>
-                <button className="btn" onClick={() => {
-                  setExecution(null);
-                  setViewMode('plan');
-                }}>
-                  {t('app.back')}
-                </button>
-              </div>
-            )}
-
-            {execution.status === 'running' && (
-              <div className="execution-controls">
-                <button className="btn" onClick={() => window.hawkeye.pauseExecution(execution.planId)}>
-                  ⏸️ {t('app.pause')}
-                </button>
-                <button className="btn" onClick={() => window.hawkeye.cancelExecution(execution.planId)}>
-                  ⏹️ {t('app.cancel')}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 计划确认页面
-  if (viewMode === 'plan' && plan) {
-    return (
-      <div className="container">
-        <header className="header">
-          <h1>🦅 Hawkeye</h1>
-          <button className="btn-icon" onClick={() => setViewMode('settings')} title={t('settings.title')}>
-            ⚙️
-          </button>
-        </header>
-
-        {error && (
-          <div className="error-banner">
-            {error}
-            <button onClick={() => setError(null)}>×</button>
-          </div>
-        )}
-
-        <div className="content plan-view">
-          <h3>📋 {plan.title}</h3>
-          <p className="plan-description">{plan.description}</p>
-
-          {/* 步骤列表 */}
-          <div className="plan-steps">
-            <h4>{t('app.steps')}</h4>
-            <ul>
-              {plan.steps.map((step) => (
-                <li key={step.order} className="plan-step">
-                  <span className="step-number">{step.order}</span>
-                  <span className="step-description">{step.description}</span>
-                  <span
-                    className="step-risk"
-                    style={{ backgroundColor: getRiskLevelColor(step.riskLevel) }}
-                  >
-                    {step.riskLevel}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* 优缺点 */}
-          <div className="plan-pros-cons">
-            <div className="pros">
-              <h4>✅ {t('app.pros')}</h4>
-              <ul>
-                {plan.pros.map((pro, i) => (
-                  <li key={i}>{pro}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="cons">
-              <h4>⚠️ {t('app.cons')}</h4>
-              <ul>
-                {plan.cons.map((con, i) => (
-                  <li key={i}>{con}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* 影响分析 */}
-          <div className="plan-impact">
-            <h4>{t('app.impact')}</h4>
-            <p>📁 {t('app.filesAffected')}: {plan.impact.filesAffected}</p>
-            <p>🔄 {t('app.reversible')}: {plan.impact.fullyReversible ? '✅' : '⚠️'}</p>
-            {plan.impact.systemChanges && <p>⚠️ {t('app.systemChanges')}</p>}
-            {plan.impact.requiresNetwork && <p>🌐 {t('app.requiresNetwork')}</p>}
-          </div>
-        </div>
-
-        <div className="footer-actions">
-          <button
-            className="btn btn-primary"
-            onClick={handleExecutePlan}
-            disabled={loading}
-          >
-            ▶️ {t('app.execute')}
-          </button>
-          <button className="btn" onClick={handleRejectPlan}>
-            ❌ {t('app.reject')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // 意图列表页面（默认）
+  // A2UI 主界面
   return (
-    <div className="container">
+    <div className="container a2ui-container">
+      {/* Header */}
       <header className="header">
-        <h1>🦅 Hawkeye</h1>
+        <div className="header-brand">
+          <span className="brand-icon">🦅</span>
+          <h1>Hawkeye</h1>
+        </div>
         <div className="header-actions">
-          {status && (
-            <span className={`status-dot ${status.aiReady ? 'online' : 'offline'}`} title={status.aiProvider || ''} />
-          )}
-          <button className="btn-icon" onClick={() => setViewMode('settings')} title={t('settings.title')}>
+          {/* 状态指示器 */}
+          <div className="a2ui-status-indicator">
+            <span
+              className={`status-dot ${
+                status?.aiReady ? 'active' : status?.initialized ? 'processing' : 'error'
+              }`}
+            />
+            <span className="status-text">
+              {status?.aiReady
+                ? '感知中'
+                : status?.initialized
+                ? '初始化中'
+                : '未连接'}
+            </span>
+          </div>
+          <button
+            className="btn-icon"
+            onClick={() => setShowSettings(true)}
+            title={t('settings.title')}
+          >
             ⚙️
           </button>
         </div>
       </header>
 
-      {error && (
-        <div className="error-banner">
-          {error}
-          <button onClick={() => setError(null)}>×</button>
-        </div>
-      )}
-
-      <div className="content">
-        {loading ? (
-          <div className="loading">
-            <div className="spinner"></div>
-            <p>{t('app.loading')}</p>
-          </div>
-        ) : intents.length === 0 ? (
-          <div className="empty-state">
-            <div className="icon">👁️</div>
-            <p>{t('app.empty')}</p>
-            <button className="btn btn-primary" onClick={handleObserve}>
-              {t('app.observeScreen')}
-            </button>
-            <p className="hint">{t('app.hint', { shortcut: '⌘+Shift+H' })}</p>
-          </div>
-        ) : (
-          <>
-            <ul className="intent-list">
-              {intents.map((intent) => (
-                <li
-                  key={intent.id}
-                  className={`intent-item ${selectedIntent?.id === intent.id ? 'selected' : ''}`}
-                  onClick={() => handleSelectIntent(intent)}
-                >
-                  <div className="intent-header">
-                    <span className="intent-icon">{getIntentTypeIcon(intent.type)}</span>
-                    <span className="intent-type">{intent.type}</span>
-                    <span className="intent-confidence">
-                      {Math.round(intent.confidence * 100)}%
-                    </span>
-                  </div>
-                  <p className="intent-description">{intent.description}</p>
-                  {intent.context?.reason && (
-                    <p className="intent-reason">{intent.context.reason}</p>
-                  )}
-                  <div className="intent-actions">
-                    <button
-                      className="btn-small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleIntentFeedback(intent.id, 'irrelevant');
-                      }}
-                      title={t('app.markIrrelevant')}
-                    >
-                      ❌
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            <div className="footer-actions">
-              <button
-                className="btn btn-primary"
-                onClick={handleGeneratePlan}
-                disabled={!selectedIntent || loading}
-              >
-                📋 {t('app.generatePlan')}
-              </button>
-              <button className="btn" onClick={handleObserve} disabled={loading}>
-                🔄 {t('app.refresh')}
-              </button>
-            </div>
-          </>
-        )}
+      {/* 卡片列表 */}
+      <div className="content a2ui-content">
+        <CardList
+          cards={cards}
+          onAction={handleCardAction}
+          onDismiss={handleCardDismiss}
+          emptyMessage="暂无建议，Hawkeye 正在观察您的工作环境..."
+        />
       </div>
+
+      {/* 快捷操作栏 */}
+      <QuickActions actions={quickActions} onAction={handleQuickAction} />
     </div>
   );
 }

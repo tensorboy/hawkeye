@@ -758,3 +758,106 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* A2UI Container */
+.a2ui-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.a2ui-container .header {
+  flex-shrink: 0;
+}
+
+.a2ui-container .header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.a2ui-container .brand-icon {
+  font-size: 24px;
+}
+
+.a2ui-container .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.a2ui-container .a2ui-content {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+
+.a2ui-container .status-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Status Info */
+.status-info {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.status-info p {
+  margin: 4px 0;
+}
+
+/* Status Dot */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.online,
+.status-dot.active {
+  background: var(--success);
+}
+
+.status-dot.offline,
+.status-dot.error {
+  background: var(--accent);
+}
+
+.status-dot.processing {
+  background: #ffc107;
+  animation: pulse-status 1s ease-in-out infinite;
+}
+
+@keyframes pulse-status {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Settings Content */
+.settings-content {
+  padding: 20px !important;
+}
+
+/* Small button */
+.btn-small {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.btn-small:hover {
+  background: var(--bg-card);
+}

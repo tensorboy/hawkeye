@@ -32,7 +32,7 @@ interface AppConfig {
 const defaultConfig: AppConfig = {
   aiProvider: 'ollama',
   ollamaHost: 'http://localhost:11434',
-  ollamaModel: 'llama3.2-vision',
+  ollamaModel: 'qwen2.5vl:7b',
   geminiApiKey: '',
   geminiModel: 'gemini-2.0-flash-exp',
   syncPort: 23789,
@@ -178,7 +178,7 @@ async function initializeHawkeye(): Promise<void> {
     config.ai.providers.push({
       type: 'ollama',
       baseUrl: appConfig.ollamaHost,
-      model: appConfig.ollamaModel || 'llama3.2-vision',
+      model: appConfig.ollamaModel || 'qwen2.5vl:7b',
     } as any);
   }
 
@@ -196,7 +196,7 @@ async function initializeHawkeye(): Promise<void> {
     config.ai.providers.push({
       type: 'ollama',
       baseUrl: 'http://localhost:11434',
-      model: 'llama3.2-vision',
+      model: 'qwen2.5vl:7b',
     } as any);
   }
 

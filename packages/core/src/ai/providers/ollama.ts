@@ -16,7 +16,7 @@ export interface OllamaConfig extends AIProviderConfig {
   type: 'ollama';
   /** Ollama 服务地址，默认 http://localhost:11434 */
   baseUrl?: string;
-  /** 模型名称，默认 llama3.2-vision (支持视觉) */
+  /** 模型名称，默认 qwen2.5vl:7b (支持视觉) */
   model?: string;
 }
 
@@ -58,7 +58,7 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
     this.config = {
       type: 'ollama',
       baseUrl: 'http://localhost:11434',
-      model: 'llama3.2-vision',  // 支持视觉的默认模型
+      model: 'qwen2.5vl:7b',  // 支持视觉的默认模型
       maxTokens: 4096,
       temperature: 0.7,
       timeout: 60000,
@@ -89,7 +89,7 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
 
       // 检查是否有可用模型
       if (models.length === 0) {
-        console.warn('Ollama 没有已安装的模型，请运行: ollama pull llama3.2-vision');
+        console.warn('Ollama 没有已安装的模型，请运行: ollama pull qwen2.5vl:7b');
       }
 
       // 检查指定模型是否存在
@@ -118,7 +118,7 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
         '请确保:\n' +
         '1. Ollama 已安装 (https://ollama.ai)\n' +
         '2. Ollama 服务正在运行 (ollama serve)\n' +
-        '3. 已下载模型 (ollama pull llama3.2-vision)'
+        '3. 已下载模型 (ollama pull qwen2.5vl:7b)'
       );
     }
   }

@@ -1,7 +1,9 @@
 /**
  * Hawkeye Chrome Extension - Popup Script
- * New intent-plan-execution flow
+ * A2UI Card-based interface (zero text input)
  */
+
+// ============ Types ============
 
 interface UserIntent {
   id: string;
@@ -47,10 +49,39 @@ interface ExtensionConfig {
   enableNotifications: boolean;
 }
 
-// State
-type ViewMode = 'main' | 'settings' | 'plan' | 'execution';
-let currentView: ViewMode = 'main';
+// A2UI Card Types
+type CardType = 'suggestion' | 'preview' | 'result' | 'progress' | 'confirmation' | 'info' | 'error' | 'choice';
+
+interface A2UICard {
+  id: string;
+  type: CardType;
+  title: string;
+  description?: string;
+  icon?: string;
+  timestamp?: number;
+  data?: Record<string, unknown>;
+  actions?: Array<{
+    id: string;
+    label: string;
+    type: 'primary' | 'secondary' | 'danger' | 'dismiss';
+  }>;
+  progress?: {
+    current: number;
+    total: number;
+    percentage: number;
+    stepDescription?: string;
+  };
+  metadata?: {
+    confidence?: number;
+    source?: string;
+    tags?: string[];
+  };
+}
+
+// ============ State ============
+
 let isConnected = false;
+let cards: A2UICard[] = [];
 let currentIntents: UserIntent[] = [];
 let currentPlan: ExecutionPlan | null = null;
 let currentExecutionId: string | null = null;
@@ -62,12 +93,12 @@ let config: ExtensionConfig = {
   enableNotifications: true,
 };
 
-// i18n helper
+// ============ i18n Helper ============
+
 function getMessage(key: string, substitutions?: string | string[]): string {
   return chrome.i18n.getMessage(key, substitutions) || key;
 }
 
-// Localize UI
 function localizeUI(): void {
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n');
@@ -80,18 +111,12 @@ function localizeUI(): void {
   });
 }
 
-// DOM Elements
-const connectionBanner = document.getElementById('connectionBanner') as HTMLDivElement;
-const connectionText = document.getElementById('connectionText') as HTMLSpanElement;
-const mainPanel = document.getElementById('mainPanel') as HTMLDivElement;
-const settingsPanel = document.getElementById('settingsPanel') as HTMLDivElement;
-const planPanel = document.getElementById('planPanel') as HTMLDivElement;
-const executionPanel = document.getElementById('executionPanel') as HTMLDivElement;
-const loading = document.getElementById('loading') as HTMLDivElement;
-const intentsList = document.getElementById('intentsList') as HTMLDivElement;
+// ============ DOM Elements ============
 
-// Settings elements
+const statusDot = document.getElementById('statusDot') as HTMLSpanElement;
+const statusText = document.getElementById('statusText') as HTMLSpanElement;
 const settingsBtn = document.getElementById('settingsBtn') as HTMLButtonElement;
+const settingsPanel = document.getElementById('settingsPanel') as HTMLDivElement;
 const backFromSettings = document.getElementById('backFromSettings') as HTMLButtonElement;
 const hostInput = document.getElementById('hostInput') as HTMLInputElement;
 const portInput = document.getElementById('portInput') as HTMLInputElement;
@@ -99,247 +124,570 @@ const floatingBtnCheck = document.getElementById('floatingBtnCheck') as HTMLInpu
 const notificationsCheck = document.getElementById('notificationsCheck') as HTMLInputElement;
 const saveSettingsBtn = document.getElementById('saveSettingsBtn') as HTMLButtonElement;
 const cancelSettingsBtn = document.getElementById('cancelSettingsBtn') as HTMLButtonElement;
+const cardContainer = document.getElementById('cardContainer') as HTMLDivElement;
+const refreshBtn = document.getElementById('refreshBtn') as HTMLButtonElement;
+const analyzeBtn = document.getElementById('analyzeBtn') as HTMLButtonElement;
+const clipboardBtn = document.getElementById('clipboardBtn') as HTMLButtonElement;
 
-// Main panel elements
-const observeBtn = document.getElementById('observeBtn') as HTMLButtonElement;
+// ============ Card Management ============
 
-// Plan panel elements
-const backFromPlan = document.getElementById('backFromPlan') as HTMLButtonElement;
-const planTitle = document.getElementById('planTitle') as HTMLHeadingElement;
-const planDesc = document.getElementById('planDesc') as HTMLParagraphElement;
-const planSteps = document.getElementById('planSteps') as HTMLOListElement;
-const planPros = document.getElementById('planPros') as HTMLUListElement;
-const planCons = document.getElementById('planCons') as HTMLUListElement;
-const planImpact = document.getElementById('planImpact') as HTMLDivElement;
-const executePlanBtn = document.getElementById('executePlanBtn') as HTMLButtonElement;
-const rejectPlanBtn = document.getElementById('rejectPlanBtn') as HTMLButtonElement;
-
-// Execution panel elements
-const executionProgress = document.getElementById('executionProgress') as HTMLDivElement;
-const executionResult = document.getElementById('executionResult') as HTMLDivElement;
-const executionStep = document.getElementById('executionStep') as HTMLParagraphElement;
-const progressFill = document.getElementById('progressFill') as HTMLDivElement;
-const progressText = document.getElementById('progressText') as HTMLSpanElement;
-const pauseBtn = document.getElementById('pauseBtn') as HTMLButtonElement;
-const cancelBtn = document.getElementById('cancelBtn') as HTMLButtonElement;
-const resultIcon = document.getElementById('resultIcon') as HTMLDivElement;
-const resultTitle = document.getElementById('resultTitle') as HTMLHeadingElement;
-const resultDesc = document.getElementById('resultDesc') as HTMLParagraphElement;
-const doneBtn = document.getElementById('doneBtn') as HTMLButtonElement;
-
-// ============ View Management ============
-
-function showView(view: ViewMode) {
-  currentView = view;
-  mainPanel.classList.add('hidden');
-  settingsPanel.classList.add('hidden');
-  planPanel.classList.add('hidden');
-  executionPanel.classList.add('hidden');
-
-  switch (view) {
-    case 'main':
-      mainPanel.classList.remove('hidden');
-      break;
-    case 'settings':
-      settingsPanel.classList.remove('hidden');
-      loadSettingsToForm();
-      break;
-    case 'plan':
-      planPanel.classList.remove('hidden');
-      renderPlan();
-      break;
-    case 'execution':
-      executionPanel.classList.remove('hidden');
-      break;
-  }
+function addCard(card: A2UICard): void {
+  // Remove existing card with same ID if present
+  cards = cards.filter((c) => c.id !== card.id);
+  cards.push(card);
+  renderCards();
 }
 
-function updateConnectionStatus(connected: boolean) {
-  isConnected = connected;
-  connectionBanner.classList.toggle('connected', connected);
-  connectionBanner.classList.toggle('disconnected', !connected);
-  connectionText.textContent = getMessage(connected ? 'connected' : 'disconnected');
+function removeCard(cardId: string): void {
+  cards = cards.filter((c) => c.id !== cardId);
+  renderCards();
 }
 
-// ============ Intents ============
+function updateCard(cardId: string, updates: Partial<A2UICard>): void {
+  cards = cards.map((c) => (c.id === cardId ? { ...c, ...updates } : c));
+  renderCards();
+}
 
-function renderIntents(intents: UserIntent[]) {
-  if (!intents || intents.length === 0) {
-    intentsList.innerHTML = `
-      <p class="empty-state">${getMessage('emptyStateIntents')}</p>
+function clearCards(): void {
+  cards = [];
+  renderCards();
+}
+
+// ============ Card Rendering ============
+
+function renderCards(): void {
+  if (cards.length === 0) {
+    cardContainer.innerHTML = `
+      <div class="a2ui-empty-state">
+        <div class="empty-icon">🦅</div>
+        <p>${getMessage('emptyStateIntents') || 'Click "Analyze" to observe the current page'}</p>
+      </div>
     `;
     return;
   }
 
-  intentsList.innerHTML = intents.map((intent) => `
-    <div class="intent-item" data-id="${intent.id}">
-      <div class="intent-header">
-        <span class="intent-type">${intent.type}</span>
-        <span class="intent-confidence ${getConfidenceClass(intent.confidence)}">
-          ${Math.round(intent.confidence * 100)}%
-        </span>
+  cardContainer.innerHTML = cards.map((card) => renderCard(card)).join('');
+  attachCardEventListeners();
+  scrollToBottom();
+}
+
+function renderCard(card: A2UICard): string {
+  switch (card.type) {
+    case 'suggestion':
+      return renderSuggestionCard(card);
+    case 'preview':
+      return renderPreviewCard(card);
+    case 'progress':
+      return renderProgressCard(card);
+    case 'result':
+      return renderResultCard(card);
+    case 'confirmation':
+      return renderConfirmationCard(card);
+    case 'info':
+      return renderInfoCard(card);
+    case 'error':
+      return renderErrorCard(card);
+    case 'choice':
+      return renderChoiceCard(card);
+    default:
+      return renderInfoCard(card);
+  }
+}
+
+function renderSuggestionCard(card: A2UICard): string {
+  const confidenceClass = getConfidenceClass(card.metadata?.confidence || 0);
+  const confidencePercent = Math.round((card.metadata?.confidence || 0) * 100);
+
+  return `
+    <div class="a2ui-card suggestion" data-card-id="${card.id}">
+      <div class="a2ui-card-header">
+        <span class="a2ui-card-icon">${card.icon || '💡'}</span>
+        <span class="a2ui-card-title">${escapeHtml(card.title)}</span>
+        ${card.metadata?.confidence ? `
+          <span class="a2ui-card-badge ${confidenceClass}">${confidencePercent}%</span>
+        ` : ''}
+        <button class="a2ui-card-dismiss" data-action="dismiss" data-card-id="${card.id}">×</button>
       </div>
-      <div class="intent-desc">${escapeHtml(intent.description)}</div>
-      <div class="intent-actions">
-        <button class="btn primary generate-plan-btn" data-id="${intent.id}">
-          ${getMessage('generatePlan')}
-        </button>
-        <button class="btn secondary mark-irrelevant-btn" data-id="${intent.id}">
-          ${getMessage('markIrrelevant')}
-        </button>
-      </div>
-    </div>
-  `).join('');
-
-  // Add event listeners
-  intentsList.querySelectorAll('.generate-plan-btn').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      const id = (e.currentTarget as HTMLElement).dataset.id;
-      if (id) {
-        await requestGeneratePlan(id);
-      }
-    });
-  });
-
-  intentsList.querySelectorAll('.mark-irrelevant-btn').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      const id = (e.currentTarget as HTMLElement).dataset.id;
-      if (id) {
-        sendIntentFeedback(id, 'irrelevant');
-        // Remove from list
-        currentIntents = currentIntents.filter((i) => i.id !== id);
-        renderIntents(currentIntents);
-      }
-    });
-  });
-}
-
-async function requestGeneratePlan(intentId: string) {
-  loading.classList.remove('hidden');
-  intentsList.innerHTML = '';
-
-  // Send feedback to accept this intent
-  await sendIntentFeedback(intentId, 'accept');
-
-  // Wait for plan to be generated (will come through message)
-  // The plan_updated message handler will call showView('plan')
-}
-
-async function sendIntentFeedback(intentId: string, feedback: 'accept' | 'reject' | 'irrelevant') {
-  await chrome.runtime.sendMessage({
-    type: 'intent-feedback',
-    intentId,
-    feedback,
-  });
-}
-
-// ============ Plan ============
-
-function renderPlan() {
-  if (!currentPlan) return;
-
-  planTitle.textContent = currentPlan.title;
-  planDesc.textContent = currentPlan.description;
-
-  // Steps
-  planSteps.innerHTML = currentPlan.steps.map((step) => `
-    <li class="step-item">
-      <span class="step-number">${step.order}</span>
-      <div class="step-content">
-        <span class="step-desc">${escapeHtml(step.description)}</span>
-        <div class="step-meta">
-          <span class="step-action">${step.actionType}</span>
-          <span class="step-risk ${step.riskLevel}">${step.riskLevel}</span>
+      ${card.description ? `
+        <div class="a2ui-card-body">
+          <p class="a2ui-card-desc">${escapeHtml(card.description)}</p>
         </div>
-      </div>
-    </li>
-  `).join('');
-
-  // Pros
-  planPros.innerHTML = currentPlan.pros.map((pro) =>
-    `<li>${escapeHtml(pro)}</li>`
-  ).join('');
-
-  // Cons
-  planCons.innerHTML = currentPlan.cons.map((con) =>
-    `<li>${escapeHtml(con)}</li>`
-  ).join('');
-
-  // Impact
-  const impact = currentPlan.impact;
-  planImpact.innerHTML = `
-    <div class="impact-item">
-      <span class="impact-icon">📁</span>
-      <span>${getMessage('filesAffected')}: ${impact.filesAffected}</span>
+      ` : ''}
+      ${card.actions?.length ? `
+        <div class="a2ui-card-actions">
+          ${card.actions.map((action) => `
+            <button class="a2ui-action-btn ${action.type}" data-action="${action.id}" data-card-id="${card.id}">
+              ${escapeHtml(action.label)}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
     </div>
-    <div class="impact-item">
-      <span class="impact-icon">${impact.fullyReversible ? '✓' : '⚠️'}</span>
-      <span class="impact-value ${impact.fullyReversible ? 'positive' : 'warning'}">
-        ${getMessage('reversible')}: ${impact.fullyReversible ? 'Yes' : 'No'}
-      </span>
-    </div>
-    ${impact.systemChanges ? `
-    <div class="impact-item">
-      <span class="impact-icon">⚙️</span>
-      <span class="impact-value warning">${getMessage('systemChanges')}</span>
-    </div>
-    ` : ''}
-    ${impact.requiresNetwork ? `
-    <div class="impact-item">
-      <span class="impact-icon">🌐</span>
-      <span>${getMessage('requiresNetwork')}</span>
-    </div>
-    ` : ''}
   `;
 }
 
-// ============ Execution ============
+function renderPreviewCard(card: A2UICard): string {
+  const plan = card.data as ExecutionPlan | undefined;
 
-function updateExecutionProgress(progress: ExecutionProgress) {
-  currentExecutionId = progress.executionId;
-  executionStep.textContent = `${getMessage('step')} ${progress.currentStep}/${progress.totalSteps}: ${progress.stepDescription}`;
-  progressFill.style.width = `${progress.progress}%`;
-  progressText.textContent = `${Math.round(progress.progress)}%`;
-}
-
-function showExecutionResult(success: boolean, message?: string) {
-  executionProgress.classList.add('hidden');
-  executionResult.classList.remove('hidden');
-
-  if (success) {
-    resultIcon.textContent = '✓';
-    resultIcon.classList.add('success');
-    resultIcon.classList.remove('error');
-    resultTitle.textContent = getMessage('executionCompleted');
-  } else {
-    resultIcon.textContent = '✕';
-    resultIcon.classList.add('error');
-    resultIcon.classList.remove('success');
-    resultTitle.textContent = getMessage('executionFailed');
+  let stepsHtml = '';
+  if (plan?.steps) {
+    stepsHtml = `
+      <div class="a2ui-preview-steps">
+        ${plan.steps.map((step) => `
+          <div class="a2ui-preview-step">
+            <span class="step-number">${step.order}</span>
+            <span class="step-desc">${escapeHtml(step.description)}</span>
+            <span class="step-risk ${step.riskLevel}">${step.riskLevel}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
   }
 
-  resultDesc.textContent = message || '';
+  let impactHtml = '';
+  if (plan?.impact) {
+    impactHtml = `
+      <div class="a2ui-preview-impact">
+        <span class="impact-item">📁 ${plan.impact.filesAffected} files</span>
+        <span class="impact-item ${plan.impact.fullyReversible ? 'positive' : 'warning'}">
+          ${plan.impact.fullyReversible ? '↩️ Reversible' : '⚠️ Not reversible'}
+        </span>
+        ${plan.impact.requiresNetwork ? '<span class="impact-item">🌐 Network</span>' : ''}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="a2ui-card preview" data-card-id="${card.id}">
+      <div class="a2ui-card-header">
+        <span class="a2ui-card-icon">${card.icon || '📋'}</span>
+        <span class="a2ui-card-title">${escapeHtml(card.title)}</span>
+        <button class="a2ui-card-dismiss" data-action="dismiss" data-card-id="${card.id}">×</button>
+      </div>
+      <div class="a2ui-card-body">
+        ${card.description ? `<p class="a2ui-card-desc">${escapeHtml(card.description)}</p>` : ''}
+        ${stepsHtml}
+        ${impactHtml}
+      </div>
+      ${card.actions?.length ? `
+        <div class="a2ui-card-actions">
+          ${card.actions.map((action) => `
+            <button class="a2ui-action-btn ${action.type}" data-action="${action.id}" data-card-id="${card.id}">
+              ${escapeHtml(action.label)}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
 }
 
-function resetExecution() {
-  executionProgress.classList.remove('hidden');
-  executionResult.classList.add('hidden');
-  progressFill.style.width = '0%';
-  progressText.textContent = '0%';
-  executionStep.textContent = '';
+function renderProgressCard(card: A2UICard): string {
+  const progress = card.progress || { current: 0, total: 1, percentage: 0 };
+
+  return `
+    <div class="a2ui-card progress" data-card-id="${card.id}">
+      <div class="a2ui-card-header">
+        <span class="a2ui-card-icon">${card.icon || '⏳'}</span>
+        <span class="a2ui-card-title">${escapeHtml(card.title)}</span>
+      </div>
+      <div class="a2ui-card-body">
+        <div class="a2ui-progress-bar">
+          <div class="a2ui-progress-fill" style="width: ${progress.percentage}%"></div>
+        </div>
+        <div class="a2ui-progress-info">
+          <span class="progress-step">Step ${progress.current}/${progress.total}</span>
+          <span class="progress-percent">${Math.round(progress.percentage)}%</span>
+        </div>
+        ${progress.stepDescription ? `
+          <p class="a2ui-progress-desc">${escapeHtml(progress.stepDescription)}</p>
+        ` : ''}
+      </div>
+      ${card.actions?.length ? `
+        <div class="a2ui-card-actions">
+          ${card.actions.map((action) => `
+            <button class="a2ui-action-btn ${action.type}" data-action="${action.id}" data-card-id="${card.id}">
+              ${escapeHtml(action.label)}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderResultCard(card: A2UICard): string {
+  const isSuccess = card.data?.success !== false;
+
+  return `
+    <div class="a2ui-card result ${isSuccess ? 'success' : 'error'}" data-card-id="${card.id}">
+      <div class="a2ui-card-header">
+        <span class="a2ui-card-icon">${card.icon || (isSuccess ? '✓' : '✕')}</span>
+        <span class="a2ui-card-title">${escapeHtml(card.title)}</span>
+        <button class="a2ui-card-dismiss" data-action="dismiss" data-card-id="${card.id}">×</button>
+      </div>
+      ${card.description ? `
+        <div class="a2ui-card-body">
+          <p class="a2ui-card-desc">${escapeHtml(card.description)}</p>
+        </div>
+      ` : ''}
+      ${card.actions?.length ? `
+        <div class="a2ui-card-actions">
+          ${card.actions.map((action) => `
+            <button class="a2ui-action-btn ${action.type}" data-action="${action.id}" data-card-id="${card.id}">
+              ${escapeHtml(action.label)}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderConfirmationCard(card: A2UICard): string {
+  return `
+    <div class="a2ui-card confirmation" data-card-id="${card.id}">
+      <div class="a2ui-card-header">
+        <span class="a2ui-card-icon">${card.icon || '⚠️'}</span>
+        <span class="a2ui-card-title">${escapeHtml(card.title)}</span>
+      </div>
+      ${card.description ? `
+        <div class="a2ui-card-body">
+          <p class="a2ui-card-desc">${escapeHtml(card.description)}</p>
+        </div>
+      ` : ''}
+      ${card.actions?.length ? `
+        <div class="a2ui-card-actions">
+          ${card.actions.map((action) => `
+            <button class="a2ui-action-btn ${action.type}" data-action="${action.id}" data-card-id="${card.id}">
+              ${escapeHtml(action.label)}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderInfoCard(card: A2UICard): string {
+  return `
+    <div class="a2ui-card info" data-card-id="${card.id}">
+      <div class="a2ui-card-header">
+        <span class="a2ui-card-icon">${card.icon || 'ℹ️'}</span>
+        <span class="a2ui-card-title">${escapeHtml(card.title)}</span>
+        <button class="a2ui-card-dismiss" data-action="dismiss" data-card-id="${card.id}">×</button>
+      </div>
+      ${card.description ? `
+        <div class="a2ui-card-body">
+          <p class="a2ui-card-desc">${escapeHtml(card.description)}</p>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderErrorCard(card: A2UICard): string {
+  return `
+    <div class="a2ui-card error" data-card-id="${card.id}">
+      <div class="a2ui-card-header">
+        <span class="a2ui-card-icon">${card.icon || '❌'}</span>
+        <span class="a2ui-card-title">${escapeHtml(card.title)}</span>
+        <button class="a2ui-card-dismiss" data-action="dismiss" data-card-id="${card.id}">×</button>
+      </div>
+      ${card.description ? `
+        <div class="a2ui-card-body">
+          <p class="a2ui-card-desc">${escapeHtml(card.description)}</p>
+        </div>
+      ` : ''}
+      ${card.actions?.length ? `
+        <div class="a2ui-card-actions">
+          ${card.actions.map((action) => `
+            <button class="a2ui-action-btn ${action.type}" data-action="${action.id}" data-card-id="${card.id}">
+              ${escapeHtml(action.label)}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderChoiceCard(card: A2UICard): string {
+  return `
+    <div class="a2ui-card choice" data-card-id="${card.id}">
+      <div class="a2ui-card-header">
+        <span class="a2ui-card-icon">${card.icon || '🔀'}</span>
+        <span class="a2ui-card-title">${escapeHtml(card.title)}</span>
+      </div>
+      ${card.description ? `
+        <div class="a2ui-card-body">
+          <p class="a2ui-card-desc">${escapeHtml(card.description)}</p>
+        </div>
+      ` : ''}
+      ${card.actions?.length ? `
+        <div class="a2ui-card-actions vertical">
+          ${card.actions.map((action) => `
+            <button class="a2ui-action-btn ${action.type}" data-action="${action.id}" data-card-id="${card.id}">
+              ${escapeHtml(action.label)}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function attachCardEventListeners(): void {
+  // Action buttons
+  cardContainer.querySelectorAll('.a2ui-action-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const target = e.currentTarget as HTMLElement;
+      const action = target.dataset.action;
+      const cardId = target.dataset.cardId;
+      if (action && cardId) {
+        handleCardAction(cardId, action);
+      }
+    });
+  });
+
+  // Dismiss buttons
+  cardContainer.querySelectorAll('.a2ui-card-dismiss').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const target = e.currentTarget as HTMLElement;
+      const cardId = target.dataset.cardId;
+      if (cardId) {
+        removeCard(cardId);
+      }
+    });
+  });
+}
+
+function scrollToBottom(): void {
+  cardContainer.scrollTop = cardContainer.scrollHeight;
+}
+
+// ============ Card Action Handlers ============
+
+async function handleCardAction(cardId: string, action: string): Promise<void> {
+  const card = cards.find((c) => c.id === cardId);
+  if (!card) return;
+
+  switch (action) {
+    case 'generate_plan':
+      await handleGeneratePlan(card);
+      break;
+    case 'reject':
+      handleRejectIntent(card);
+      break;
+    case 'execute':
+      await handleExecutePlan();
+      break;
+    case 'reject_plan':
+      await handleRejectPlan();
+      break;
+    case 'pause':
+      await handlePauseExecution();
+      break;
+    case 'cancel':
+      await handleCancelExecution();
+      break;
+    case 'done':
+      handleDone(cardId);
+      break;
+    case 'retry':
+      handleRetry();
+      break;
+    case 'dismiss':
+      removeCard(cardId);
+      break;
+    default:
+      console.log('Unknown action:', action);
+  }
+}
+
+async function handleGeneratePlan(card: A2UICard): Promise<void> {
+  const intentId = card.data?.intentId as string;
+  if (!intentId) return;
+
+  // Remove the suggestion card
+  removeCard(card.id);
+
+  // Show loading card
+  addCard({
+    id: 'loading-plan',
+    type: 'progress',
+    title: 'Generating Plan',
+    icon: '🔄',
+    progress: { current: 0, total: 1, percentage: 0, stepDescription: 'Analyzing intent...' },
+  });
+
+  // Send feedback to accept this intent
+  await chrome.runtime.sendMessage({
+    type: 'intent-feedback',
+    intentId,
+    feedback: 'accept',
+  });
+}
+
+function handleRejectIntent(card: A2UICard): void {
+  const intentId = card.data?.intentId as string;
+  if (!intentId) return;
+
+  chrome.runtime.sendMessage({
+    type: 'intent-feedback',
+    intentId,
+    feedback: 'irrelevant',
+  });
+
+  removeCard(card.id);
+}
+
+async function handleExecutePlan(): Promise<void> {
+  if (!currentPlan) return;
+
+  // Remove preview card, show progress card
+  removeCard('plan-preview');
+
+  addCard({
+    id: 'execution-progress',
+    type: 'progress',
+    title: 'Executing Plan',
+    icon: '⚙️',
+    progress: { current: 0, total: currentPlan.steps.length, percentage: 0, stepDescription: 'Starting...' },
+    actions: [
+      { id: 'pause', label: 'Pause', type: 'secondary' },
+      { id: 'cancel', label: 'Cancel', type: 'danger' },
+    ],
+  });
+
+  const response = await chrome.runtime.sendMessage({ type: 'confirm-plan' });
+  if (!response.success) {
+    removeCard('execution-progress');
+    addCard({
+      id: 'execution-error',
+      type: 'error',
+      title: 'Execution Failed',
+      description: response.error || 'Failed to start execution',
+      icon: '❌',
+      actions: [{ id: 'dismiss', label: 'Dismiss', type: 'secondary' }],
+    });
+  }
+}
+
+async function handleRejectPlan(): Promise<void> {
+  await chrome.runtime.sendMessage({
+    type: 'reject-plan',
+    reason: 'User rejected',
+  });
+  currentPlan = null;
+  removeCard('plan-preview');
+}
+
+async function handlePauseExecution(): Promise<void> {
+  if (!currentExecutionId) return;
+  await chrome.runtime.sendMessage({
+    type: 'pause-execution',
+    executionId: currentExecutionId,
+  });
+}
+
+async function handleCancelExecution(): Promise<void> {
+  if (!currentExecutionId) return;
+  await chrome.runtime.sendMessage({
+    type: 'cancel-execution',
+    executionId: currentExecutionId,
+  });
+  removeCard('execution-progress');
+  currentPlan = null;
   currentExecutionId = null;
+}
+
+function handleDone(cardId: string): void {
+  removeCard(cardId);
+  currentPlan = null;
+  currentExecutionId = null;
+}
+
+function handleRetry(): void {
+  removeCard('execution-error');
+  if (currentPlan) {
+    addCard(planToPreviewCard(currentPlan));
+  }
+}
+
+// ============ Intent/Plan to Card Converters ============
+
+function intentToSuggestionCard(intent: UserIntent): A2UICard {
+  const typeIcons: Record<string, string> = {
+    code_explanation: '💭',
+    file_operation: '📁',
+    search: '🔍',
+    navigation: '🧭',
+    editing: '✏️',
+    default: '💡',
+  };
+
+  return {
+    id: `intent-${intent.id}`,
+    type: 'suggestion',
+    title: intent.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    description: intent.description,
+    icon: typeIcons[intent.type] || typeIcons.default,
+    metadata: {
+      confidence: intent.confidence,
+      source: 'page_analysis',
+    },
+    data: { intentId: intent.id },
+    actions: [
+      { id: 'generate_plan', label: 'Generate Plan', type: 'primary' },
+      { id: 'reject', label: 'Not Relevant', type: 'secondary' },
+    ],
+  };
+}
+
+function planToPreviewCard(plan: ExecutionPlan): A2UICard {
+  return {
+    id: 'plan-preview',
+    type: 'preview',
+    title: plan.title,
+    description: plan.description,
+    icon: '📋',
+    data: plan as unknown as Record<string, unknown>,
+    actions: [
+      { id: 'execute', label: 'Execute', type: 'primary' },
+      { id: 'reject_plan', label: 'Cancel', type: 'secondary' },
+    ],
+  };
+}
+
+// ============ Connection Status ============
+
+function updateConnectionStatus(connected: boolean): void {
+  isConnected = connected;
+  statusDot.classList.toggle('connected', connected);
+  statusDot.classList.toggle('disconnected', !connected);
+  statusText.textContent = getMessage(connected ? 'connected' : 'disconnected');
 }
 
 // ============ Settings ============
 
-function loadSettingsToForm() {
+function showSettings(): void {
+  settingsPanel.classList.remove('hidden');
+  loadSettingsToForm();
+}
+
+function hideSettings(): void {
+  settingsPanel.classList.add('hidden');
+}
+
+function loadSettingsToForm(): void {
   hostInput.value = config.desktopHost;
   portInput.value = config.desktopPort.toString();
   floatingBtnCheck.checked = config.showFloatingButton;
   notificationsCheck.checked = config.enableNotifications;
 }
 
-async function saveSettings() {
+async function saveSettings(): Promise<void> {
   config.desktopHost = hostInput.value || 'localhost';
   config.desktopPort = parseInt(portInput.value) || 9527;
   config.showFloatingButton = floatingBtnCheck.checked;
@@ -350,100 +698,157 @@ async function saveSettings() {
     config,
   });
 
-  showView('main');
+  hideSettings();
 }
 
-// ============ Event Handlers ============
+// ============ Quick Actions ============
 
-// Settings
-settingsBtn.addEventListener('click', () => showView('settings'));
-backFromSettings.addEventListener('click', () => showView('main'));
-saveSettingsBtn.addEventListener('click', saveSettings);
-cancelSettingsBtn.addEventListener('click', () => showView('main'));
+async function handleRefresh(): Promise<void> {
+  clearCards();
+  currentIntents = [];
+  currentPlan = null;
 
-// Observe
-observeBtn.addEventListener('click', async () => {
+  addCard({
+    id: 'refreshing',
+    type: 'info',
+    title: 'Refreshing',
+    description: 'Checking for new suggestions...',
+    icon: '🔄',
+  });
+
+  // Request new intents
+  const response = await chrome.runtime.sendMessage({ type: 'get-intents' });
+  removeCard('refreshing');
+
+  if (response.intents?.length > 0) {
+    currentIntents = response.intents;
+    currentIntents.forEach((intent) => {
+      addCard(intentToSuggestionCard(intent));
+    });
+  }
+}
+
+async function handleAnalyze(): Promise<void> {
   if (!isConnected) {
-    alert(getMessage('desktopNotConnected'));
+    addCard({
+      id: 'not-connected',
+      type: 'error',
+      title: 'Not Connected',
+      description: 'Please connect to Hawkeye Desktop first',
+      icon: '🔌',
+      actions: [{ id: 'dismiss', label: 'Dismiss', type: 'secondary' }],
+    });
     return;
   }
 
-  loading.classList.remove('hidden');
-  intentsList.innerHTML = '';
-  observeBtn.disabled = true;
+  clearCards();
+  addCard({
+    id: 'analyzing',
+    type: 'progress',
+    title: 'Analyzing Page',
+    icon: '👁️',
+    progress: { current: 0, total: 1, percentage: 0, stepDescription: 'Observing page content...' },
+  });
 
   try {
     const response = await chrome.runtime.sendMessage({ type: 'analyze-page' });
+    removeCard('analyzing');
 
     if (!response.success) {
       throw new Error(response.error);
     }
 
-    if (response.intents) {
+    if (response.intents?.length > 0) {
       currentIntents = response.intents;
-      renderIntents(currentIntents);
+      currentIntents.forEach((intent) => {
+        addCard(intentToSuggestionCard(intent));
+      });
+    } else {
+      addCard({
+        id: 'no-intents',
+        type: 'info',
+        title: 'No Suggestions',
+        description: 'No actionable items found on this page',
+        icon: '🤷',
+      });
     }
   } catch (error) {
-    intentsList.innerHTML = `
-      <div class="error-state">
-        ${getMessage('errorPrefix', (error as Error).message)}
-      </div>
-    `;
-  } finally {
-    loading.classList.add('hidden');
-    observeBtn.disabled = false;
+    removeCard('analyzing');
+    addCard({
+      id: 'analyze-error',
+      type: 'error',
+      title: 'Analysis Failed',
+      description: (error as Error).message,
+      icon: '❌',
+      actions: [{ id: 'dismiss', label: 'Dismiss', type: 'secondary' }],
+    });
   }
-});
+}
 
-// Plan
-backFromPlan.addEventListener('click', () => {
-  currentPlan = null;
-  showView('main');
-});
-
-executePlanBtn.addEventListener('click', async () => {
-  if (!currentPlan) return;
-
-  const response = await chrome.runtime.sendMessage({ type: 'confirm-plan' });
-  if (response.success) {
-    resetExecution();
-    showView('execution');
+async function handleClipboard(): Promise<void> {
+  if (!isConnected) {
+    addCard({
+      id: 'not-connected',
+      type: 'error',
+      title: 'Not Connected',
+      description: 'Please connect to Hawkeye Desktop first',
+      icon: '🔌',
+      actions: [{ id: 'dismiss', label: 'Dismiss', type: 'secondary' }],
+    });
+    return;
   }
-});
 
-rejectPlanBtn.addEventListener('click', async () => {
-  if (!currentPlan) return;
-
-  await chrome.runtime.sendMessage({
-    type: 'reject-plan',
-    reason: 'User rejected',
+  addCard({
+    id: 'clipboard-analyzing',
+    type: 'progress',
+    title: 'Analyzing Clipboard',
+    icon: '📋',
+    progress: { current: 0, total: 1, percentage: 0, stepDescription: 'Reading clipboard...' },
   });
-  currentPlan = null;
-  showView('main');
-});
 
-// Execution
-pauseBtn.addEventListener('click', async () => {
-  if (!currentExecutionId) return;
-  await chrome.runtime.sendMessage({
-    type: 'pause-execution',
-    executionId: currentExecutionId,
-  });
-});
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'analyze-clipboard' });
+    removeCard('clipboard-analyzing');
 
-cancelBtn.addEventListener('click', async () => {
-  if (!currentExecutionId) return;
-  await chrome.runtime.sendMessage({
-    type: 'cancel-execution',
-    executionId: currentExecutionId,
-  });
-});
+    if (!response.success) {
+      throw new Error(response.error);
+    }
 
-doneBtn.addEventListener('click', () => {
-  currentPlan = null;
-  currentExecutionId = null;
-  showView('main');
-});
+    if (response.intents?.length > 0) {
+      response.intents.forEach((intent: UserIntent) => {
+        addCard(intentToSuggestionCard(intent));
+      });
+    } else {
+      addCard({
+        id: 'clipboard-empty',
+        type: 'info',
+        title: 'No Clipboard Data',
+        description: 'Clipboard is empty or contains no actionable content',
+        icon: '📋',
+      });
+    }
+  } catch (error) {
+    removeCard('clipboard-analyzing');
+    addCard({
+      id: 'clipboard-error',
+      type: 'error',
+      title: 'Clipboard Analysis Failed',
+      description: (error as Error).message,
+      icon: '❌',
+      actions: [{ id: 'dismiss', label: 'Dismiss', type: 'secondary' }],
+    });
+  }
+}
+
+// ============ Event Handlers ============
+
+settingsBtn.addEventListener('click', showSettings);
+backFromSettings.addEventListener('click', hideSettings);
+saveSettingsBtn.addEventListener('click', saveSettings);
+cancelSettingsBtn.addEventListener('click', hideSettings);
+refreshBtn.addEventListener('click', handleRefresh);
+analyzeBtn.addEventListener('click', handleAnalyze);
+clipboardBtn.addEventListener('click', handleClipboard);
 
 // ============ Message Handlers ============
 
@@ -454,27 +859,61 @@ chrome.runtime.onMessage.addListener((message) => {
       break;
 
     case 'intents_updated':
+      removeCard('loading-plan');
+      removeCard('analyzing');
       currentIntents = message.intents;
-      loading.classList.add('hidden');
-      renderIntents(currentIntents);
+      currentIntents.forEach((intent) => {
+        addCard(intentToSuggestionCard(intent));
+      });
       break;
 
     case 'plan_updated':
+      removeCard('loading-plan');
       currentPlan = message.plan;
-      loading.classList.add('hidden');
-      showView('plan');
+      if (currentPlan) {
+        addCard(planToPreviewCard(currentPlan));
+      }
       break;
 
     case 'execution_progress':
-      updateExecutionProgress(message);
+      currentExecutionId = message.executionId;
+      updateCard('execution-progress', {
+        progress: {
+          current: message.currentStep,
+          total: message.totalSteps,
+          percentage: message.progress,
+          stepDescription: message.stepDescription,
+        },
+      });
       break;
 
     case 'execution_completed':
-      showExecutionResult(true);
+      removeCard('execution-progress');
+      addCard({
+        id: 'execution-result',
+        type: 'result',
+        title: 'Execution Completed',
+        description: 'All steps completed successfully',
+        icon: '✓',
+        data: { success: true },
+        actions: [{ id: 'done', label: 'Done', type: 'primary' }],
+      });
       break;
 
     case 'execution_failed':
-      showExecutionResult(false, message.error);
+      removeCard('execution-progress');
+      addCard({
+        id: 'execution-result',
+        type: 'result',
+        title: 'Execution Failed',
+        description: message.error || 'An error occurred during execution',
+        icon: '✕',
+        data: { success: false },
+        actions: [
+          { id: 'retry', label: 'Retry', type: 'primary' },
+          { id: 'done', label: 'Dismiss', type: 'secondary' },
+        ],
+      });
       break;
   }
 });
@@ -495,7 +934,7 @@ function escapeHtml(text: string): string {
 
 // ============ Initialization ============
 
-async function init() {
+async function init(): Promise<void> {
   localizeUI();
 
   // Load config
@@ -512,17 +951,22 @@ async function init() {
   const intentsResponse = await chrome.runtime.sendMessage({ type: 'get-intents' });
   if (intentsResponse.intents?.length > 0) {
     currentIntents = intentsResponse.intents;
-    renderIntents(currentIntents);
+    currentIntents.forEach((intent) => {
+      addCard(intentToSuggestionCard(intent));
+    });
   }
 
   // Check for existing plan
   const planResponse = await chrome.runtime.sendMessage({ type: 'get-plan' });
   if (planResponse.plan) {
     currentPlan = planResponse.plan;
-    showView('plan');
-  } else {
-    showView('main');
+    if (currentPlan) {
+      addCard(planToPreviewCard(currentPlan));
+    }
   }
+
+  // Render initial state
+  renderCards();
 }
 
 init();

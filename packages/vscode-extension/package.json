@@ -2,7 +2,7 @@
   "name": "hawkeye-assistant",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "hawkeye",
   "repository": {
     "type": "git",
@@ -140,6 +140,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@hawkeye/core": "workspace:*",
     "@vscode/l10n": "^0.0.18",
     "ws": "^8.16.0"
   }

@@ -1,6 +1,6 @@
 {
   "name": "@hawkeye/chrome-extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Hawkeye Chrome Extension - Intelligent Task Assistant for the Browser",
   "private": true,
   "scripts": {

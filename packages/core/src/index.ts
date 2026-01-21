@@ -53,6 +53,9 @@ export * from './sync';
 // 行为追踪模块
 export * from './behavior';
 
+// A2UI 零输入交互模块
+export * from './a2ui';
+
 // 认证与权限模块
 export * from './auth';
 

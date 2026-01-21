@@ -1,6 +1,6 @@
 {
   "name": "hawkeye",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Hawkeye - Intelligent Task Perception and Execution Assistant",
   "private": true,
   "workspaces": [
@@ -15,7 +15,7 @@
     "build:vscode": "pnpm --filter @hawkeye/vscode-extension build",
     "build:desktop": "pnpm --filter @hawkeye/desktop build",
     "lint": "pnpm -r lint",
-    "test": "echo \"No tests configured yet\"",
+    "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean"
   },

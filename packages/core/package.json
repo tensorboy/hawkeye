@@ -1,6 +1,6 @@
 {
   "name": "@hawkeye/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Hawkeye Core Engine - Perception, Reasoning, Execution",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -32,6 +32,9 @@
     "build": "tsup src/index.ts --format cjs,esm",
     "lint": "eslint src/ || true",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -47,7 +50,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@vitest/coverage-v8": "^2.0.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0"
   }
 }

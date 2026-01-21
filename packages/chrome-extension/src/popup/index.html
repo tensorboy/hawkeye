@@ -8,9 +8,18 @@
 </head>
 <body>
   <div id="app">
+    <!-- Header -->
     <header class="header">
-      <h1>Hawkeye</h1>
+      <div class="header-brand">
+        <span class="brand-icon">🦅</span>
+        <h1>Hawkeye</h1>
+      </div>
       <div class="header-actions">
+        <!-- Status Indicator -->
+        <div id="statusIndicator" class="status-indicator">
+          <span id="statusDot" class="status-dot"></span>
+          <span id="statusText" class="status-text" data-i18n="disconnected"></span>
+        </div>
         <button id="settingsBtn" class="icon-btn" data-i18n-title="settings">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
@@ -20,134 +29,67 @@
       </div>
     </header>
 
-    <!-- Connection Status Banner -->
-    <div id="connectionBanner" class="connection-banner disconnected">
-      <span class="connection-dot"></span>
-      <span id="connectionText" data-i18n="disconnected"></span>
-    </div>
-
-    <!-- Settings Panel -->
-    <div id="settingsPanel" class="panel hidden">
-      <button id="backFromSettings" class="back-btn">
-        <span>←</span>
-        <span data-i18n="back"></span>
-      </button>
-      <h2 data-i18n="settings"></h2>
-
-      <div class="form-group">
-        <label data-i18n="desktopHost"></label>
-        <input type="text" id="hostInput" placeholder="localhost" />
-      </div>
-
-      <div class="form-group">
-        <label data-i18n="desktopPort"></label>
-        <input type="number" id="portInput" placeholder="9527" />
-      </div>
-
-      <div class="form-group checkbox-group">
-        <label>
-          <input type="checkbox" id="floatingBtnCheck" />
-          <span data-i18n="showFloatingButton"></span>
-        </label>
-      </div>
-
-      <div class="form-group checkbox-group">
-        <label>
-          <input type="checkbox" id="notificationsCheck" />
-          <span data-i18n="enableNotifications"></span>
-        </label>
-      </div>
-
-      <div class="actions">
-        <button id="saveSettingsBtn" class="btn primary" data-i18n="save"></button>
-        <button id="cancelSettingsBtn" class="btn secondary" data-i18n="cancel"></button>
-      </div>
-    </div>
-
-    <!-- Main Panel - Intents View -->
-    <div id="mainPanel" class="panel">
-      <div class="actions">
-        <button id="observeBtn" class="btn primary full-width">
-          <span class="btn-icon">👁</span>
-          <span data-i18n="observePage"></span>
+    <!-- Settings Panel (overlay) -->
+    <div id="settingsPanel" class="settings-panel hidden">
+      <div class="settings-header">
+        <button id="backFromSettings" class="back-btn">
+          <span>←</span>
+          <span data-i18n="back"></span>
         </button>
+        <h2 data-i18n="settings"></h2>
       </div>
 
-      <div id="loading" class="loading hidden">
-        <div class="spinner"></div>
-        <p data-i18n="analyzing"></p>
-      </div>
+      <div class="settings-content">
+        <div class="form-group">
+          <label data-i18n="desktopHost"></label>
+          <input type="text" id="hostInput" placeholder="localhost" />
+        </div>
 
-      <div id="intentsList" class="intents-list">
-        <p class="empty-state" data-i18n="emptyStateIntents"></p>
+        <div class="form-group">
+          <label data-i18n="desktopPort"></label>
+          <input type="number" id="portInput" placeholder="9527" />
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="floatingBtnCheck" />
+            <span data-i18n="showFloatingButton"></span>
+          </label>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="notificationsCheck" />
+            <span data-i18n="enableNotifications"></span>
+          </label>
+        </div>
+
+        <div class="settings-actions">
+          <button id="saveSettingsBtn" class="btn primary" data-i18n="save"></button>
+          <button id="cancelSettingsBtn" class="btn secondary" data-i18n="cancel"></button>
+        </div>
       </div>
     </div>
 
-    <!-- Plan Panel -->
-    <div id="planPanel" class="panel hidden">
-      <button id="backFromPlan" class="back-btn">
-        <span>←</span>
-        <span data-i18n="back"></span>
+    <!-- A2UI Card Container -->
+    <div id="cardContainer" class="a2ui-card-container">
+      <!-- Cards will be rendered here dynamically -->
+    </div>
+
+    <!-- Quick Actions Bar -->
+    <div id="quickActions" class="a2ui-quick-actions">
+      <button id="refreshBtn" class="quick-action-btn" data-i18n-title="observePage">
+        <span class="quick-action-icon">🔄</span>
+        <span class="quick-action-label" data-i18n="refresh"></span>
       </button>
-
-      <div id="planContent">
-        <h2 id="planTitle"></h2>
-        <p id="planDesc" class="plan-desc"></p>
-
-        <div class="plan-section">
-          <h3 data-i18n="steps"></h3>
-          <ol id="planSteps" class="steps-list"></ol>
-        </div>
-
-        <div class="plan-section pros-cons">
-          <div class="pros">
-            <h4 data-i18n="pros"></h4>
-            <ul id="planPros"></ul>
-          </div>
-          <div class="cons">
-            <h4 data-i18n="cons"></h4>
-            <ul id="planCons"></ul>
-          </div>
-        </div>
-
-        <div class="plan-section">
-          <h3 data-i18n="impact"></h3>
-          <div id="planImpact" class="impact-grid"></div>
-        </div>
-
-        <div class="plan-actions">
-          <button id="executePlanBtn" class="btn primary" data-i18n="execute"></button>
-          <button id="rejectPlanBtn" class="btn secondary" data-i18n="reject"></button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Execution Panel -->
-    <div id="executionPanel" class="panel hidden">
-      <div id="executionProgress" class="execution-view">
-        <div class="execution-icon">⚙️</div>
-        <h2 id="executionTitle" data-i18n="executing"></h2>
-        <p id="executionStep" class="execution-step"></p>
-
-        <div class="progress-container">
-          <div class="progress-bar">
-            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
-          </div>
-          <span id="progressText" class="progress-text">0%</span>
-        </div>
-
-        <div class="execution-actions">
-          <button id="pauseBtn" class="btn secondary" data-i18n="pause"></button>
-          <button id="cancelBtn" class="btn danger" data-i18n="cancel"></button>
-        </div>
-      </div>
-
-      <div id="executionResult" class="execution-result hidden">
-        <div id="resultIcon" class="result-icon">✓</div>
-        <h2 id="resultTitle"></h2>
-        <p id="resultDesc"></p>
-        <button id="doneBtn" class="btn primary" data-i18n="done"></button>
-      </div>
+      <button id="analyzeBtn" class="quick-action-btn" data-i18n-title="observePage">
+        <span class="quick-action-icon">👁️</span>
+        <span class="quick-action-label" data-i18n="analyze"></span>
+      </button>
+      <button id="clipboardBtn" class="quick-action-btn" data-i18n-title="analyzeClipboard">
+        <span class="quick-action-icon">📋</span>
+        <span class="quick-action-label" data-i18n="clipboard"></span>
+      </button>
     </div>
   </div>
 
