@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Hawkeye",
+    "loading": "画面を分析中...",
+    "empty": "意図が検出されていません",
+    "observeScreen": "画面を観察",
+    "hint": "または {{shortcut}} を押す",
+    "execute": "実行",
+    "refresh": "更新",
+    "generatePlan": "計画を生成",
+    "reject": "拒否",
+    "markIrrelevant": "無関係としてマーク",
+    "executing": "実行中...",
+    "step": "ステップ",
+    "executionCompleted": "実行が正常に完了しました！",
+    "executionFailed": "実行に失敗しました",
+    "done": "完了",
+    "back": "戻る",
+    "pause": "一時停止",
+    "cancel": "キャンセル",
+    "steps": "実行ステップ",
+    "pros": "メリット",
+    "cons": "注意事項",
+    "impact": "影響分析",
+    "filesAffected": "影響ファイル数",
+    "reversible": "元に戻せる",
+    "systemChanges": "システム設定を変更します",
+    "requiresNetwork": "ネットワークアクセスが必要"
+  },
+  "settings": {
+    "title": "設定",
+    "aiProvider": "AI プロバイダー",
+    "ollamaHost": "Ollama サーバー",
+    "ollamaModel": "Ollama モデル",
+    "geminiApiKey": "Gemini API キー",
+    "geminiModel": "Gemini モデル",
+    "getApiKey": "API キーを取得",
+    "apiKey": {
+      "label": "API キー",
+      "placeholder": "sk-ant-..."
+    },
+    "language": {
+      "label": "言語"
+    },
+    "save": "保存",
+    "cancel": "キャンセル"
+  },
+  "tray": {
+    "observeScreen": "画面を観察",
+    "showSuggestions": "提案を表示",
+    "settings": "設定",
+    "quit": "終了",
+    "tooltip": "Hawkeye - インテリジェントタスクアシスタント"
+  },
+  "error": {
+    "configureApiKey": "まず API キーを設定してください",
+    "engineNotInitialized": "エンジンが初期化されていません",
+    "notInitialized": "Hawkeye が初期化されていません",
+    "intentNotFound": "意図が見つかりません",
+    "planNotFound": "計画が見つかりません"
+  }
+}

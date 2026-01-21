@@ -1,0 +1,16 @@
+{
+  "displayName": "Hawkeye",
+  "description": "Assistente inteligente de percepção e execução de tarefas para VS Code",
+  "command.observe.title": "Hawkeye: Observar tela",
+  "command.showSuggestions.title": "Hawkeye: Mostrar sugestões",
+  "command.execute.title": "Hawkeye: Executar sugestão selecionada",
+  "command.configure.title": "Hawkeye: Configurar chave API",
+  "viewContainer.hawkeye.title": "Hawkeye",
+  "view.suggestions.name": "Sugestões",
+  "config.title": "Hawkeye",
+  "config.apiKey.description": "Chave API da Anthropic para Claude",
+  "config.model.description": "Modelo Claude a usar",
+  "config.autoObserve.description": "Observar tela automaticamente em intervalos",
+  "config.observeInterval.description": "Intervalo de auto-observação (ms)",
+  "config.requireConfirmation.description": "Requer confirmação antes de executar tarefas"
+}

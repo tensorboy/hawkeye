@@ -10,39 +10,143 @@
   <div id="app">
     <header class="header">
       <h1>Hawkeye</h1>
-      <button id="settingsBtn" class="icon-btn" title="Settings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"></path>
-        </svg>
-      </button>
+      <div class="header-actions">
+        <button id="settingsBtn" class="icon-btn" data-i18n-title="settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"></path>
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <!-- API Key Setup -->
-    <div id="setupPanel" class="panel hidden">
-      <h2>Setup</h2>
-      <p>Enter your Anthropic API key to get started.</p>
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
-      <button id="saveApiKeyBtn" class="btn primary">Save API Key</button>
-      <p class="hint">Your API key is stored locally and never sent anywhere except Anthropic's API.</p>
+    <!-- Connection Status Banner -->
+    <div id="connectionBanner" class="connection-banner disconnected">
+      <span class="connection-dot"></span>
+      <span id="connectionText" data-i18n="disconnected"></span>
     </div>
 
-    <!-- Main Panel -->
+    <!-- Settings Panel -->
+    <div id="settingsPanel" class="panel hidden">
+      <button id="backFromSettings" class="back-btn">
+        <span>←</span>
+        <span data-i18n="back"></span>
+      </button>
+      <h2 data-i18n="settings"></h2>
+
+      <div class="form-group">
+        <label data-i18n="desktopHost"></label>
+        <input type="text" id="hostInput" placeholder="localhost" />
+      </div>
+
+      <div class="form-group">
+        <label data-i18n="desktopPort"></label>
+        <input type="number" id="portInput" placeholder="9527" />
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" id="floatingBtnCheck" />
+          <span data-i18n="showFloatingButton"></span>
+        </label>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" id="notificationsCheck" />
+          <span data-i18n="enableNotifications"></span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="saveSettingsBtn" class="btn primary" data-i18n="save"></button>
+        <button id="cancelSettingsBtn" class="btn secondary" data-i18n="cancel"></button>
+      </div>
+    </div>
+
+    <!-- Main Panel - Intents View -->
     <div id="mainPanel" class="panel">
       <div class="actions">
         <button id="observeBtn" class="btn primary full-width">
           <span class="btn-icon">👁</span>
-          Observe Page
+          <span data-i18n="observePage"></span>
         </button>
       </div>
 
       <div id="loading" class="loading hidden">
         <div class="spinner"></div>
-        <p>Analyzing page...</p>
+        <p data-i18n="analyzing"></p>
       </div>
 
-      <div id="suggestionsList" class="suggestions-list">
-        <p class="empty-state">Click "Observe Page" to analyze the current page and get suggestions.</p>
+      <div id="intentsList" class="intents-list">
+        <p class="empty-state" data-i18n="emptyStateIntents"></p>
+      </div>
+    </div>
+
+    <!-- Plan Panel -->
+    <div id="planPanel" class="panel hidden">
+      <button id="backFromPlan" class="back-btn">
+        <span>←</span>
+        <span data-i18n="back"></span>
+      </button>
+
+      <div id="planContent">
+        <h2 id="planTitle"></h2>
+        <p id="planDesc" class="plan-desc"></p>
+
+        <div class="plan-section">
+          <h3 data-i18n="steps"></h3>
+          <ol id="planSteps" class="steps-list"></ol>
+        </div>
+
+        <div class="plan-section pros-cons">
+          <div class="pros">
+            <h4 data-i18n="pros"></h4>
+            <ul id="planPros"></ul>
+          </div>
+          <div class="cons">
+            <h4 data-i18n="cons"></h4>
+            <ul id="planCons"></ul>
+          </div>
+        </div>
+
+        <div class="plan-section">
+          <h3 data-i18n="impact"></h3>
+          <div id="planImpact" class="impact-grid"></div>
+        </div>
+
+        <div class="plan-actions">
+          <button id="executePlanBtn" class="btn primary" data-i18n="execute"></button>
+          <button id="rejectPlanBtn" class="btn secondary" data-i18n="reject"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Execution Panel -->
+    <div id="executionPanel" class="panel hidden">
+      <div id="executionProgress" class="execution-view">
+        <div class="execution-icon">⚙️</div>
+        <h2 id="executionTitle" data-i18n="executing"></h2>
+        <p id="executionStep" class="execution-step"></p>
+
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+          </div>
+          <span id="progressText" class="progress-text">0%</span>
+        </div>
+
+        <div class="execution-actions">
+          <button id="pauseBtn" class="btn secondary" data-i18n="pause"></button>
+          <button id="cancelBtn" class="btn danger" data-i18n="cancel"></button>
+        </div>
+      </div>
+
+      <div id="executionResult" class="execution-result hidden">
+        <div id="resultIcon" class="result-icon">✓</div>
+        <h2 id="resultTitle"></h2>
+        <p id="resultDesc"></p>
+        <button id="doneBtn" class="btn primary" data-i18n="done"></button>
       </div>
     </div>
   </div>

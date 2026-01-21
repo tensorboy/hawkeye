@@ -3,6 +3,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as l10n from '@vscode/l10n';
 import type { TaskSuggestion } from '@hawkeye/core';
 
 export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
@@ -28,7 +29,7 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-    // 处理来自 webview 的消息
+    // Handle messages from webview
     webviewView.webview.onDidReceiveMessage((data) => {
       switch (data.type) {
         case 'select':
@@ -45,7 +46,7 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * 更新建议列表
+   * Update suggestions list
    */
   public updateSuggestions(suggestions: TaskSuggestion[]) {
     this._suggestions = suggestions;
@@ -54,7 +55,7 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * 刷新视图
+   * Refresh view
    */
   public refresh() {
     if (this._view) {
@@ -67,13 +68,23 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * 获取选中的建议 ID
+   * Get selected suggestion ID
    */
   public getSelectedSuggestionId(): string | undefined {
     return this._selectedId;
   }
 
   private _getHtmlForWebview(webview: vscode.Webview): string {
+    // Get localized strings for webview
+    const i18n = {
+      suggestions: l10n.t('Suggestions'),
+      observe: l10n.t('Observe'),
+      noSuggestions: l10n.t('No suggestions yet'),
+      clickObserve: l10n.t('Click "Observe" to analyze your screen'),
+      typeLabel: l10n.t('Type: {0}', ''),
+      executeSelected: l10n.t('Execute Selected'),
+    };
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -193,20 +204,21 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
   <div class="header">
-    <h3>🦅 Suggestions</h3>
-    <button class="btn" onclick="observe()">Observe</button>
+    <h3>🦅 ${i18n.suggestions}</h3>
+    <button class="btn" onclick="observe()">${i18n.observe}</button>
   </div>
 
   <div id="content">
     <div class="empty-state">
       <div class="icon">👁️</div>
-      <p>No suggestions yet</p>
-      <p style="font-size: 12px;">Click "Observe" to analyze your screen</p>
+      <p>${i18n.noSuggestions}</p>
+      <p style="font-size: 12px;">${i18n.clickObserve}</p>
     </div>
   </div>
 
   <script>
     const vscode = acquireVsCodeApi();
+    const i18n = ${JSON.stringify(i18n)};
 
     let suggestions = [];
     let selectedId = null;
@@ -234,8 +246,8 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
         content.innerHTML = \`
           <div class="empty-state">
             <div class="icon">👁️</div>
-            <p>No suggestions yet</p>
-            <p style="font-size: 12px;">Click "Observe" to analyze your screen</p>
+            <p>\${i18n.noSuggestions}</p>
+            <p style="font-size: 12px;">\${i18n.clickObserve}</p>
           </div>
         \`;
         return;
@@ -251,13 +263,13 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
                 <span class="suggestion-confidence">\${Math.round(s.confidence * 100)}%</span>
               </div>
               <div class="suggestion-desc">\${escapeHtml(s.description)}</div>
-              <div class="suggestion-type">Type: \${s.type}</div>
+              <div class="suggestion-type">\${i18n.typeLabel.replace('{0}', '')}\${s.type}</div>
             </li>
           \`).join('')}
         </ul>
         <div class="actions">
           <button class="btn btn-execute" onclick="executeSuggestion()" \${!selectedId ? 'disabled' : ''}>
-            ▶️ Execute Selected
+            ▶️ \${i18n.executeSelected}
           </button>
         </div>
       \`;
@@ -269,7 +281,7 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
       return div.innerHTML;
     }
 
-    // 接收来自扩展的消息
+    // Receive messages from extension
     window.addEventListener('message', event => {
       const message = event.data;
       switch (message.type) {
@@ -281,7 +293,7 @@ export class SuggestionsViewProvider implements vscode.WebviewViewProvider {
       }
     });
 
-    // 初始渲染
+    // Initial render
     render();
   </script>
 </body>

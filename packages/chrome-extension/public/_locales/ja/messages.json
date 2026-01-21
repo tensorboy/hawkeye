@@ -1,0 +1,135 @@
+{
+  "extensionName": {
+    "message": "Hawkeye"
+  },
+  "extensionDescription": {
+    "message": "インテリジェントタスク認識・実行アシスタント"
+  },
+  "actionTitle": {
+    "message": "Hawkeye"
+  },
+  "commandObservePage": {
+    "message": "現在のページを観察"
+  },
+  "connected": {
+    "message": "デスクトップに接続済み"
+  },
+  "disconnected": {
+    "message": "デスクトップ未接続"
+  },
+  "desktopNotConnected": {
+    "message": "Hawkeye デスクトップが起動し、接続されていることを確認してください"
+  },
+  "settings": {
+    "message": "設定"
+  },
+  "back": {
+    "message": "戻る"
+  },
+  "desktopHost": {
+    "message": "デスクトップホスト"
+  },
+  "desktopPort": {
+    "message": "デスクトップポート"
+  },
+  "showFloatingButton": {
+    "message": "ページにフローティングボタンを表示"
+  },
+  "enableNotifications": {
+    "message": "通知を有効にする"
+  },
+  "save": {
+    "message": "保存"
+  },
+  "cancel": {
+    "message": "キャンセル"
+  },
+  "observePage": {
+    "message": "ページを観察"
+  },
+  "analyzing": {
+    "message": "ページを分析中..."
+  },
+  "emptyStateIntents": {
+    "message": "「ページを観察」をクリックして現在のページを分析し、ユーザー意図を検出します"
+  },
+  "generatePlan": {
+    "message": "プランを生成"
+  },
+  "markIrrelevant": {
+    "message": "関連なし"
+  },
+  "steps": {
+    "message": "実行ステップ"
+  },
+  "pros": {
+    "message": "メリット"
+  },
+  "cons": {
+    "message": "注意点"
+  },
+  "impact": {
+    "message": "影響分析"
+  },
+  "filesAffected": {
+    "message": "影響を受けるファイル"
+  },
+  "reversible": {
+    "message": "元に戻せる"
+  },
+  "systemChanges": {
+    "message": "システム設定を変更します"
+  },
+  "requiresNetwork": {
+    "message": "ネットワークアクセスが必要"
+  },
+  "execute": {
+    "message": "実行"
+  },
+  "reject": {
+    "message": "拒否"
+  },
+  "executing": {
+    "message": "実行中..."
+  },
+  "step": {
+    "message": "ステップ"
+  },
+  "pause": {
+    "message": "一時停止"
+  },
+  "executionCompleted": {
+    "message": "実行が完了しました！"
+  },
+  "executionFailed": {
+    "message": "実行に失敗しました"
+  },
+  "done": {
+    "message": "完了"
+  },
+  "errorPrefix": {
+    "message": "エラー: $error$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "contextMenuAnalyzeSelection": {
+    "message": "Hawkeye: 選択を分析"
+  },
+  "contextMenuAnalyzePage": {
+    "message": "Hawkeye: ページを分析"
+  },
+  "foundIntents": {
+    "message": "$count$ 件の意図が見つかりました",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationError": {
+    "message": "Hawkeye エラー"
+  }
+}

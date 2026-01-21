@@ -1,0 +1,16 @@
+{
+  "displayName": "Hawkeye",
+  "description": "VS Code 智慧任務感知與執行助手",
+  "command.observe.title": "Hawkeye: 觀察螢幕",
+  "command.showSuggestions.title": "Hawkeye: 顯示建議",
+  "command.execute.title": "Hawkeye: 執行選取的建議",
+  "command.configure.title": "Hawkeye: 設定 API 金鑰",
+  "viewContainer.hawkeye.title": "Hawkeye",
+  "view.suggestions.name": "建議",
+  "config.title": "Hawkeye",
+  "config.apiKey.description": "Claude 的 Anthropic API 金鑰",
+  "config.model.description": "要使用的 Claude 模型",
+  "config.autoObserve.description": "自動定期觀察螢幕",
+  "config.observeInterval.description": "自動觀察間隔（毫秒）",
+  "config.requireConfirmation.description": "執行任務前需要確認"
+}

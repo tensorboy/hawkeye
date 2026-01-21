@@ -246,4 +246,97 @@ export class AutomationExecutor {
       };
     }
   }
+
+  /**
+   * 设置剪贴板内容 (别名)
+   */
+  async setClipboard(content: string): Promise<ExecutionResult> {
+    return this.copyToClipboard(content);
+  }
+
+  /**
+   * 关闭应用程序
+   */
+  async closeApp(appName: string): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    try {
+      switch (this.platform) {
+        case 'darwin':
+          await execAsync(`osascript -e 'quit app "${appName}"'`);
+          break;
+        case 'win32':
+          await execAsync(`taskkill /IM "${appName}.exe" /F`);
+          break;
+        case 'linux':
+          await execAsync(`pkill -f "${appName}"`);
+          break;
+        default:
+          throw new Error(`不支持的平台: ${this.platform}`);
+      }
+      return {
+        success: true,
+        output: `已关闭应用: ${appName}`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 模拟按键
+   */
+  async pressKey(key: string, modifiers?: string[]): Promise<ExecutionResult> {
+    const startTime = Date.now();
+
+    try {
+      switch (this.platform) {
+        case 'darwin': {
+          const modifierScript = modifiers?.length
+            ? modifiers.map(m => `${m} down`).join(', ') + ', '
+            : '';
+          const script = `tell application "System Events" to key code ${this.getKeyCode(key)} using {${modifierScript.slice(0, -2)}}`;
+          await execAsync(`osascript -e '${script}'`);
+          break;
+        }
+        case 'win32': {
+          const modifierKeys = modifiers?.map(m => `{${m}}`).join('') || '';
+          await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('${modifierKeys}${key}')"`);
+          break;
+        }
+        default:
+          throw new Error(`按键模拟在 ${this.platform} 上不支持`);
+      }
+      return {
+        success: true,
+        output: `已按下: ${modifiers?.join('+')}+${key}`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 获取 macOS 按键代码
+   */
+  private getKeyCode(key: string): number {
+    const keyCodes: Record<string, number> = {
+      'a': 0, 'b': 11, 'c': 8, 'd': 2, 'e': 14, 'f': 3, 'g': 5,
+      'h': 4, 'i': 34, 'j': 38, 'k': 40, 'l': 37, 'm': 46, 'n': 45,
+      'o': 31, 'p': 35, 'q': 12, 'r': 15, 's': 1, 't': 17, 'u': 32,
+      'v': 9, 'w': 13, 'x': 7, 'y': 16, 'z': 6,
+      'return': 36, 'tab': 48, 'space': 49, 'delete': 51, 'escape': 53,
+      'up': 126, 'down': 125, 'left': 123, 'right': 124,
+    };
+    return keyCodes[key.toLowerCase()] || 0;
+  }
 }

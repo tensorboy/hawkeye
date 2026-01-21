@@ -1,109 +1,392 @@
 /**
  * Hawkeye Chrome Extension - Popup Script
+ * New intent-plan-execution flow
  */
 
-interface TaskSuggestion {
+interface UserIntent {
+  id: string;
+  type: string;
+  description: string;
+  confidence: number;
+  entities?: Array<{ type: string; value: string }>;
+}
+
+interface ExecutionPlan {
   id: string;
   title: string;
   description: string;
-  type: string;
-  confidence: number;
+  steps: Array<{
+    order: number;
+    description: string;
+    actionType: string;
+    riskLevel: 'low' | 'medium' | 'high';
+  }>;
+  pros: string[];
+  cons: string[];
+  impact: {
+    filesAffected: number;
+    systemChanges: boolean;
+    requiresNetwork: boolean;
+    fullyReversible: boolean;
+  };
+}
+
+interface ExecutionProgress {
+  executionId: string;
+  currentStep: number;
+  totalSteps: number;
+  stepDescription: string;
+  progress: number;
+}
+
+interface ExtensionConfig {
+  connectionMode: 'desktop' | 'standalone';
+  desktopHost: string;
+  desktopPort: number;
+  showFloatingButton: boolean;
+  enableNotifications: boolean;
+}
+
+// State
+type ViewMode = 'main' | 'settings' | 'plan' | 'execution';
+let currentView: ViewMode = 'main';
+let isConnected = false;
+let currentIntents: UserIntent[] = [];
+let currentPlan: ExecutionPlan | null = null;
+let currentExecutionId: string | null = null;
+let config: ExtensionConfig = {
+  connectionMode: 'desktop',
+  desktopHost: 'localhost',
+  desktopPort: 9527,
+  showFloatingButton: false,
+  enableNotifications: true,
+};
+
+// i18n helper
+function getMessage(key: string, substitutions?: string | string[]): string {
+  return chrome.i18n.getMessage(key, substitutions) || key;
+}
+
+// Localize UI
+function localizeUI(): void {
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (key) el.textContent = getMessage(key);
+  });
+
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-title');
+    if (key) el.setAttribute('title', getMessage(key));
+  });
 }
 
 // DOM Elements
-const setupPanel = document.getElementById('setupPanel') as HTMLDivElement;
+const connectionBanner = document.getElementById('connectionBanner') as HTMLDivElement;
+const connectionText = document.getElementById('connectionText') as HTMLSpanElement;
 const mainPanel = document.getElementById('mainPanel') as HTMLDivElement;
-const apiKeyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
-const saveApiKeyBtn = document.getElementById('saveApiKeyBtn') as HTMLButtonElement;
-const settingsBtn = document.getElementById('settingsBtn') as HTMLButtonElement;
-const observeBtn = document.getElementById('observeBtn') as HTMLButtonElement;
+const settingsPanel = document.getElementById('settingsPanel') as HTMLDivElement;
+const planPanel = document.getElementById('planPanel') as HTMLDivElement;
+const executionPanel = document.getElementById('executionPanel') as HTMLDivElement;
 const loading = document.getElementById('loading') as HTMLDivElement;
-const suggestionsList = document.getElementById('suggestionsList') as HTMLDivElement;
+const intentsList = document.getElementById('intentsList') as HTMLDivElement;
 
-let selectedId: string | null = null;
+// Settings elements
+const settingsBtn = document.getElementById('settingsBtn') as HTMLButtonElement;
+const backFromSettings = document.getElementById('backFromSettings') as HTMLButtonElement;
+const hostInput = document.getElementById('hostInput') as HTMLInputElement;
+const portInput = document.getElementById('portInput') as HTMLInputElement;
+const floatingBtnCheck = document.getElementById('floatingBtnCheck') as HTMLInputElement;
+const notificationsCheck = document.getElementById('notificationsCheck') as HTMLInputElement;
+const saveSettingsBtn = document.getElementById('saveSettingsBtn') as HTMLButtonElement;
+const cancelSettingsBtn = document.getElementById('cancelSettingsBtn') as HTMLButtonElement;
 
-// Initialize
-async function init() {
-  const response = await chrome.runtime.sendMessage({ type: 'get-config' });
+// Main panel elements
+const observeBtn = document.getElementById('observeBtn') as HTMLButtonElement;
 
-  if (!response.hasApiKey) {
-    showSetupPanel();
-  } else {
-    showMainPanel();
-    loadSuggestions();
+// Plan panel elements
+const backFromPlan = document.getElementById('backFromPlan') as HTMLButtonElement;
+const planTitle = document.getElementById('planTitle') as HTMLHeadingElement;
+const planDesc = document.getElementById('planDesc') as HTMLParagraphElement;
+const planSteps = document.getElementById('planSteps') as HTMLOListElement;
+const planPros = document.getElementById('planPros') as HTMLUListElement;
+const planCons = document.getElementById('planCons') as HTMLUListElement;
+const planImpact = document.getElementById('planImpact') as HTMLDivElement;
+const executePlanBtn = document.getElementById('executePlanBtn') as HTMLButtonElement;
+const rejectPlanBtn = document.getElementById('rejectPlanBtn') as HTMLButtonElement;
+
+// Execution panel elements
+const executionProgress = document.getElementById('executionProgress') as HTMLDivElement;
+const executionResult = document.getElementById('executionResult') as HTMLDivElement;
+const executionStep = document.getElementById('executionStep') as HTMLParagraphElement;
+const progressFill = document.getElementById('progressFill') as HTMLDivElement;
+const progressText = document.getElementById('progressText') as HTMLSpanElement;
+const pauseBtn = document.getElementById('pauseBtn') as HTMLButtonElement;
+const cancelBtn = document.getElementById('cancelBtn') as HTMLButtonElement;
+const resultIcon = document.getElementById('resultIcon') as HTMLDivElement;
+const resultTitle = document.getElementById('resultTitle') as HTMLHeadingElement;
+const resultDesc = document.getElementById('resultDesc') as HTMLParagraphElement;
+const doneBtn = document.getElementById('doneBtn') as HTMLButtonElement;
+
+// ============ View Management ============
+
+function showView(view: ViewMode) {
+  currentView = view;
+  mainPanel.classList.add('hidden');
+  settingsPanel.classList.add('hidden');
+  planPanel.classList.add('hidden');
+  executionPanel.classList.add('hidden');
+
+  switch (view) {
+    case 'main':
+      mainPanel.classList.remove('hidden');
+      break;
+    case 'settings':
+      settingsPanel.classList.remove('hidden');
+      loadSettingsToForm();
+      break;
+    case 'plan':
+      planPanel.classList.remove('hidden');
+      renderPlan();
+      break;
+    case 'execution':
+      executionPanel.classList.remove('hidden');
+      break;
   }
 }
 
-function showSetupPanel() {
-  setupPanel.classList.remove('hidden');
-  mainPanel.classList.add('hidden');
+function updateConnectionStatus(connected: boolean) {
+  isConnected = connected;
+  connectionBanner.classList.toggle('connected', connected);
+  connectionBanner.classList.toggle('disconnected', !connected);
+  connectionText.textContent = getMessage(connected ? 'connected' : 'disconnected');
 }
 
-function showMainPanel() {
-  setupPanel.classList.add('hidden');
-  mainPanel.classList.remove('hidden');
-}
+// ============ Intents ============
 
-// Save API Key
-saveApiKeyBtn.addEventListener('click', async () => {
-  const apiKey = apiKeyInput.value.trim();
-  if (!apiKey) {
-    alert('Please enter a valid API key');
+function renderIntents(intents: UserIntent[]) {
+  if (!intents || intents.length === 0) {
+    intentsList.innerHTML = `
+      <p class="empty-state">${getMessage('emptyStateIntents')}</p>
+    `;
     return;
   }
 
-  await chrome.runtime.sendMessage({ type: 'set-api-key', apiKey });
-  showMainPanel();
-});
+  intentsList.innerHTML = intents.map((intent) => `
+    <div class="intent-item" data-id="${intent.id}">
+      <div class="intent-header">
+        <span class="intent-type">${intent.type}</span>
+        <span class="intent-confidence ${getConfidenceClass(intent.confidence)}">
+          ${Math.round(intent.confidence * 100)}%
+        </span>
+      </div>
+      <div class="intent-desc">${escapeHtml(intent.description)}</div>
+      <div class="intent-actions">
+        <button class="btn primary generate-plan-btn" data-id="${intent.id}">
+          ${getMessage('generatePlan')}
+        </button>
+        <button class="btn secondary mark-irrelevant-btn" data-id="${intent.id}">
+          ${getMessage('markIrrelevant')}
+        </button>
+      </div>
+    </div>
+  `).join('');
 
-// Settings button
-settingsBtn.addEventListener('click', () => {
-  showSetupPanel();
-});
+  // Add event listeners
+  intentsList.querySelectorAll('.generate-plan-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.currentTarget as HTMLElement).dataset.id;
+      if (id) {
+        await requestGeneratePlan(id);
+      }
+    });
+  });
 
-// Observe Page
-observeBtn.addEventListener('click', async () => {
+  intentsList.querySelectorAll('.mark-irrelevant-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const id = (e.currentTarget as HTMLElement).dataset.id;
+      if (id) {
+        sendIntentFeedback(id, 'irrelevant');
+        // Remove from list
+        currentIntents = currentIntents.filter((i) => i.id !== id);
+        renderIntents(currentIntents);
+      }
+    });
+  });
+}
+
+async function requestGeneratePlan(intentId: string) {
   loading.classList.remove('hidden');
-  suggestionsList.innerHTML = '';
+  intentsList.innerHTML = '';
+
+  // Send feedback to accept this intent
+  await sendIntentFeedback(intentId, 'accept');
+
+  // Wait for plan to be generated (will come through message)
+  // The plan_updated message handler will call showView('plan')
+}
+
+async function sendIntentFeedback(intentId: string, feedback: 'accept' | 'reject' | 'irrelevant') {
+  await chrome.runtime.sendMessage({
+    type: 'intent-feedback',
+    intentId,
+    feedback,
+  });
+}
+
+// ============ Plan ============
+
+function renderPlan() {
+  if (!currentPlan) return;
+
+  planTitle.textContent = currentPlan.title;
+  planDesc.textContent = currentPlan.description;
+
+  // Steps
+  planSteps.innerHTML = currentPlan.steps.map((step) => `
+    <li class="step-item">
+      <span class="step-number">${step.order}</span>
+      <div class="step-content">
+        <span class="step-desc">${escapeHtml(step.description)}</span>
+        <div class="step-meta">
+          <span class="step-action">${step.actionType}</span>
+          <span class="step-risk ${step.riskLevel}">${step.riskLevel}</span>
+        </div>
+      </div>
+    </li>
+  `).join('');
+
+  // Pros
+  planPros.innerHTML = currentPlan.pros.map((pro) =>
+    `<li>${escapeHtml(pro)}</li>`
+  ).join('');
+
+  // Cons
+  planCons.innerHTML = currentPlan.cons.map((con) =>
+    `<li>${escapeHtml(con)}</li>`
+  ).join('');
+
+  // Impact
+  const impact = currentPlan.impact;
+  planImpact.innerHTML = `
+    <div class="impact-item">
+      <span class="impact-icon">📁</span>
+      <span>${getMessage('filesAffected')}: ${impact.filesAffected}</span>
+    </div>
+    <div class="impact-item">
+      <span class="impact-icon">${impact.fullyReversible ? '✓' : '⚠️'}</span>
+      <span class="impact-value ${impact.fullyReversible ? 'positive' : 'warning'}">
+        ${getMessage('reversible')}: ${impact.fullyReversible ? 'Yes' : 'No'}
+      </span>
+    </div>
+    ${impact.systemChanges ? `
+    <div class="impact-item">
+      <span class="impact-icon">⚙️</span>
+      <span class="impact-value warning">${getMessage('systemChanges')}</span>
+    </div>
+    ` : ''}
+    ${impact.requiresNetwork ? `
+    <div class="impact-item">
+      <span class="impact-icon">🌐</span>
+      <span>${getMessage('requiresNetwork')}</span>
+    </div>
+    ` : ''}
+  `;
+}
+
+// ============ Execution ============
+
+function updateExecutionProgress(progress: ExecutionProgress) {
+  currentExecutionId = progress.executionId;
+  executionStep.textContent = `${getMessage('step')} ${progress.currentStep}/${progress.totalSteps}: ${progress.stepDescription}`;
+  progressFill.style.width = `${progress.progress}%`;
+  progressText.textContent = `${Math.round(progress.progress)}%`;
+}
+
+function showExecutionResult(success: boolean, message?: string) {
+  executionProgress.classList.add('hidden');
+  executionResult.classList.remove('hidden');
+
+  if (success) {
+    resultIcon.textContent = '✓';
+    resultIcon.classList.add('success');
+    resultIcon.classList.remove('error');
+    resultTitle.textContent = getMessage('executionCompleted');
+  } else {
+    resultIcon.textContent = '✕';
+    resultIcon.classList.add('error');
+    resultIcon.classList.remove('success');
+    resultTitle.textContent = getMessage('executionFailed');
+  }
+
+  resultDesc.textContent = message || '';
+}
+
+function resetExecution() {
+  executionProgress.classList.remove('hidden');
+  executionResult.classList.add('hidden');
+  progressFill.style.width = '0%';
+  progressText.textContent = '0%';
+  executionStep.textContent = '';
+  currentExecutionId = null;
+}
+
+// ============ Settings ============
+
+function loadSettingsToForm() {
+  hostInput.value = config.desktopHost;
+  portInput.value = config.desktopPort.toString();
+  floatingBtnCheck.checked = config.showFloatingButton;
+  notificationsCheck.checked = config.enableNotifications;
+}
+
+async function saveSettings() {
+  config.desktopHost = hostInput.value || 'localhost';
+  config.desktopPort = parseInt(portInput.value) || 9527;
+  config.showFloatingButton = floatingBtnCheck.checked;
+  config.enableNotifications = notificationsCheck.checked;
+
+  await chrome.runtime.sendMessage({
+    type: 'save-config',
+    config,
+  });
+
+  showView('main');
+}
+
+// ============ Event Handlers ============
+
+// Settings
+settingsBtn.addEventListener('click', () => showView('settings'));
+backFromSettings.addEventListener('click', () => showView('main'));
+saveSettingsBtn.addEventListener('click', saveSettings);
+cancelSettingsBtn.addEventListener('click', () => showView('main'));
+
+// Observe
+observeBtn.addEventListener('click', async () => {
+  if (!isConnected) {
+    alert(getMessage('desktopNotConnected'));
+    return;
+  }
+
+  loading.classList.remove('hidden');
+  intentsList.innerHTML = '';
   observeBtn.disabled = true;
 
   try {
-    // Get current tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab.id) throw new Error('No active tab');
-
-    // Get page content
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => ({
-        content: document.body.innerText.substring(0, 10000),
-        selection: window.getSelection()?.toString() || '',
-      }),
-    });
-
-    const pageData = results[0]?.result;
-    if (!pageData) throw new Error('Could not read page content');
-
-    // Send to background for analysis
-    const response = await chrome.runtime.sendMessage({
-      type: 'analyze',
-      context: {
-        url: tab.url,
-        title: tab.title,
-        content: pageData.content,
-        selection: pageData.selection,
-      },
-    });
+    const response = await chrome.runtime.sendMessage({ type: 'analyze-page' });
 
     if (!response.success) {
       throw new Error(response.error);
     }
 
-    renderSuggestions(response.suggestions);
+    if (response.intents) {
+      currentIntents = response.intents;
+      renderIntents(currentIntents);
+    }
   } catch (error) {
-    suggestionsList.innerHTML = `
-      <div class="empty-state" style="color: #c62828;">
-        Error: ${(error as Error).message}
+    intentsList.innerHTML = `
+      <div class="error-state">
+        ${getMessage('errorPrefix', (error as Error).message)}
       </div>
     `;
   } finally {
@@ -112,77 +395,91 @@ observeBtn.addEventListener('click', async () => {
   }
 });
 
-// Load existing suggestions
-async function loadSuggestions() {
-  const response = await chrome.runtime.sendMessage({ type: 'get-suggestions' });
-  if (response.suggestions?.length > 0) {
-    renderSuggestions(response.suggestions);
+// Plan
+backFromPlan.addEventListener('click', () => {
+  currentPlan = null;
+  showView('main');
+});
+
+executePlanBtn.addEventListener('click', async () => {
+  if (!currentPlan) return;
+
+  const response = await chrome.runtime.sendMessage({ type: 'confirm-plan' });
+  if (response.success) {
+    resetExecution();
+    showView('execution');
   }
-}
+});
 
-// Render suggestions
-function renderSuggestions(suggestions: TaskSuggestion[]) {
-  if (!suggestions || suggestions.length === 0) {
-    suggestionsList.innerHTML = `
-      <div class="empty-state">
-        No suggestions found. Try selecting some text and clicking "Observe Page".
-      </div>
-    `;
-    return;
+rejectPlanBtn.addEventListener('click', async () => {
+  if (!currentPlan) return;
+
+  await chrome.runtime.sendMessage({
+    type: 'reject-plan',
+    reason: 'User rejected',
+  });
+  currentPlan = null;
+  showView('main');
+});
+
+// Execution
+pauseBtn.addEventListener('click', async () => {
+  if (!currentExecutionId) return;
+  await chrome.runtime.sendMessage({
+    type: 'pause-execution',
+    executionId: currentExecutionId,
+  });
+});
+
+cancelBtn.addEventListener('click', async () => {
+  if (!currentExecutionId) return;
+  await chrome.runtime.sendMessage({
+    type: 'cancel-execution',
+    executionId: currentExecutionId,
+  });
+});
+
+doneBtn.addEventListener('click', () => {
+  currentPlan = null;
+  currentExecutionId = null;
+  showView('main');
+});
+
+// ============ Message Handlers ============
+
+chrome.runtime.onMessage.addListener((message) => {
+  switch (message.type) {
+    case 'connection_status':
+      updateConnectionStatus(message.connected);
+      break;
+
+    case 'intents_updated':
+      currentIntents = message.intents;
+      loading.classList.add('hidden');
+      renderIntents(currentIntents);
+      break;
+
+    case 'plan_updated':
+      currentPlan = message.plan;
+      loading.classList.add('hidden');
+      showView('plan');
+      break;
+
+    case 'execution_progress':
+      updateExecutionProgress(message);
+      break;
+
+    case 'execution_completed':
+      showExecutionResult(true);
+      break;
+
+    case 'execution_failed':
+      showExecutionResult(false, message.error);
+      break;
   }
+});
 
-  suggestionsList.innerHTML = suggestions
-    .map(
-      (s) => `
-    <div class="suggestion-item ${s.id === selectedId ? 'selected' : ''}" data-id="${s.id}">
-      <div class="suggestion-header">
-        <span class="suggestion-title">${escapeHtml(s.title)}</span>
-        <span class="suggestion-confidence ${getConfidenceClass(s.confidence)}">
-          ${Math.round(s.confidence * 100)}%
-        </span>
-      </div>
-      <div class="suggestion-desc">${escapeHtml(s.description)}</div>
-      <div class="suggestion-type">${s.type}</div>
-      <div class="suggestion-execute">
-        <button class="btn primary full-width execute-btn" data-id="${s.id}">
-          Execute
-        </button>
-      </div>
-    </div>
-  `
-    )
-    .join('');
-
-  // Add click handlers
-  suggestionsList.querySelectorAll('.suggestion-item').forEach((item) => {
-    item.addEventListener('click', (e) => {
-      const target = e.currentTarget as HTMLElement;
-      const id = target.dataset.id;
-
-      // Deselect all
-      suggestionsList.querySelectorAll('.suggestion-item').forEach((i) => {
-        i.classList.remove('selected');
-      });
-
-      // Select this one
-      target.classList.add('selected');
-      selectedId = id || null;
-    });
-  });
-
-  // Add execute button handlers
-  suggestionsList.querySelectorAll('.execute-btn').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = (e.currentTarget as HTMLElement).dataset.id;
-      if (id) {
-        // TODO: Implement execution logic
-        console.log('Execute:', id);
-        alert('Task execution coming soon!');
-      }
-    });
-  });
-}
+// ============ Helpers ============
 
 function getConfidenceClass(confidence: number): string {
   if (confidence >= 0.7) return 'high';
@@ -196,12 +493,36 @@ function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
-// Listen for updates from background
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === 'suggestions-updated') {
-    renderSuggestions(message.suggestions);
-  }
-});
+// ============ Initialization ============
 
-// Initialize
+async function init() {
+  localizeUI();
+
+  // Load config
+  const configResponse = await chrome.runtime.sendMessage({ type: 'get-config' });
+  if (configResponse.config) {
+    config = configResponse.config;
+  }
+
+  // Check connection status
+  const statusResponse = await chrome.runtime.sendMessage({ type: 'get-connection-status' });
+  updateConnectionStatus(statusResponse.connected);
+
+  // Load existing intents
+  const intentsResponse = await chrome.runtime.sendMessage({ type: 'get-intents' });
+  if (intentsResponse.intents?.length > 0) {
+    currentIntents = intentsResponse.intents;
+    renderIntents(currentIntents);
+  }
+
+  // Check for existing plan
+  const planResponse = await chrome.runtime.sendMessage({ type: 'get-plan' });
+  if (planResponse.plan) {
+    currentPlan = planResponse.plan;
+    showView('plan');
+  } else {
+    showView('main');
+  }
+}
+
 init();

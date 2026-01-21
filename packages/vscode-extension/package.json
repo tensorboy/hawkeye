@@ -1,7 +1,7 @@
 {
   "name": "@hawkeye/vscode-extension",
-  "displayName": "Hawkeye",
-  "description": "Intelligent Task Perception and Execution Assistant for VS Code",
+  "displayName": "%displayName%",
+  "description": "%description%",
   "version": "0.1.0",
   "publisher": "hawkeye",
   "engines": {
@@ -14,32 +14,50 @@
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
+  "l10n": "./l10n",
   "contributes": {
     "commands": [
       {
         "command": "hawkeye.observe",
-        "title": "Hawkeye: Observe Screen",
+        "title": "%command.observe.title%",
         "icon": "$(eye)"
       },
       {
-        "command": "hawkeye.showSuggestions",
-        "title": "Hawkeye: Show Suggestions",
-        "icon": "$(lightbulb)"
+        "command": "hawkeye.showStatus",
+        "title": "%command.showStatus.title%",
+        "icon": "$(info)"
       },
       {
-        "command": "hawkeye.execute",
-        "title": "Hawkeye: Execute Selected Suggestion"
+        "command": "hawkeye.generatePlan",
+        "title": "%command.generatePlan.title%",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "hawkeye.executePlan",
+        "title": "%command.executePlan.title%",
+        "icon": "$(play)"
+      },
+      {
+        "command": "hawkeye.rejectPlan",
+        "title": "%command.rejectPlan.title%",
+        "icon": "$(close)"
       },
       {
         "command": "hawkeye.configure",
-        "title": "Hawkeye: Configure API Key"
+        "title": "%command.configure.title%",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "hawkeye.reconnect",
+        "title": "%command.reconnect.title%",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "hawkeye",
-          "title": "Hawkeye",
+          "title": "%viewContainer.hawkeye.title%",
           "icon": "$(eye)"
         }
       ]
@@ -47,39 +65,35 @@
     "views": {
       "hawkeye": [
         {
-          "id": "hawkeye.suggestions",
-          "name": "Suggestions",
+          "id": "hawkeye.intents",
+          "name": "%view.intents.name%",
           "type": "webview"
         }
       ]
     },
     "configuration": {
-      "title": "Hawkeye",
+      "title": "%config.title%",
       "properties": {
-        "hawkeye.apiKey": {
+        "hawkeye.connectionMode": {
           "type": "string",
-          "default": "",
-          "description": "Anthropic API Key for Claude"
+          "enum": ["desktop", "standalone"],
+          "default": "desktop",
+          "description": "%config.connectionMode.description%"
         },
-        "hawkeye.model": {
+        "hawkeye.desktopHost": {
           "type": "string",
-          "default": "claude-sonnet-4-20250514",
-          "description": "Claude model to use"
+          "default": "localhost",
+          "description": "%config.desktopHost.description%"
         },
-        "hawkeye.autoObserve": {
-          "type": "boolean",
-          "default": false,
-          "description": "Automatically observe screen at intervals"
-        },
-        "hawkeye.observeInterval": {
+        "hawkeye.desktopPort": {
           "type": "number",
-          "default": 60000,
-          "description": "Interval for auto-observation (ms)"
+          "default": 9527,
+          "description": "%config.desktopPort.description%"
         },
-        "hawkeye.requireConfirmation": {
+        "hawkeye.enableNotifications": {
           "type": "boolean",
           "default": true,
-          "description": "Require confirmation before executing tasks"
+          "description": "%config.enableNotifications.description%"
         }
       }
     },
@@ -89,7 +103,20 @@
         "key": "ctrl+shift+h",
         "mac": "cmd+shift+h"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "hawkeye.observe",
+          "when": "view == hawkeye.intents",
+          "group": "navigation"
+        },
+        {
+          "command": "hawkeye.configure",
+          "when": "view == hawkeye.intents"
+        }
+      ]
+    }
   },
   "scripts": {
     "dev": "npm run watch",
@@ -100,13 +127,15 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
     "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.10",
+    "@vscode/vsce": "^2.22.0",
     "esbuild": "^0.19.11",
-    "typescript": "^5.3.3",
-    "@vscode/vsce": "^2.22.0"
+    "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@hawkeye/core": "workspace:*"
+    "@vscode/l10n": "^0.0.18",
+    "ws": "^8.16.0"
   }
 }

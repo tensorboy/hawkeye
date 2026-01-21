@@ -9,6 +9,9 @@ export * from './perception';
 // 推理模块
 export * from './reasoning';
 
+// AI 模块
+export * from './ai';
+
 // 执行模块
 export * from './execution';
 
@@ -24,5 +27,14 @@ export * from './sync';
 // 核心类型
 export * from './types';
 
-// 主引擎
+// 主引擎（旧版兼容）
 export { YanliqinEngine, YanliqinEngine as HawkeyeEngine } from './engine';
+
+// 新版统一引擎
+export {
+  Hawkeye,
+  type HawkeyeConfig,
+  type HawkeyeStatus,
+  getHawkeye,
+  createHawkeye,
+} from './hawkeye';

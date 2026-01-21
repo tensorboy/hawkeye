@@ -289,3 +289,472 @@ body {
   display: flex;
   gap: 12px;
 }
+
+/* Intent List */
+.intent-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.intent-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.intent-item:hover {
+  border-color: var(--accent);
+  transform: translateX(4px);
+}
+
+.intent-item.selected {
+  border-color: var(--accent);
+  background: var(--bg-card);
+}
+
+.intent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.intent-type {
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  background: rgba(233, 69, 96, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.intent-desc {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.intent-confidence {
+  font-size: 12px;
+  color: var(--success);
+}
+
+.intent-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.intent-actions .btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card);
+}
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.btn-danger:hover {
+  background: rgba(233, 69, 96, 0.1);
+}
+
+/* Plan View */
+.plan-view {
+  padding: 20px;
+}
+
+.plan-header {
+  margin-bottom: 20px;
+}
+
+.plan-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.plan-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.plan-section {
+  margin-bottom: 20px;
+}
+
+.plan-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Steps List */
+.steps-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-desc {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.step-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.step-action {
+  color: var(--accent);
+}
+
+.step-risk {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.step-risk.low {
+  background: rgba(0, 217, 165, 0.1);
+  color: var(--success);
+}
+
+.step-risk.medium {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.step-risk.high {
+  background: rgba(233, 69, 96, 0.1);
+  color: var(--accent);
+}
+
+/* Pros and Cons */
+.pros-cons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.pros, .cons {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.pros h4, .cons h4 {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.pros h4 {
+  color: var(--success);
+}
+
+.cons h4 {
+  color: #ffc107;
+}
+
+.pros ul, .cons ul {
+  list-style: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.pros li, .cons li {
+  padding: 4px 0;
+  padding-left: 16px;
+  position: relative;
+}
+
+.pros li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--success);
+}
+
+.cons li::before {
+  content: '!';
+  position: absolute;
+  left: 0;
+  color: #ffc107;
+}
+
+/* Impact Analysis */
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.impact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.impact-icon {
+  font-size: 16px;
+}
+
+.impact-value {
+  color: var(--text-secondary);
+}
+
+.impact-value.positive {
+  color: var(--success);
+}
+
+.impact-value.warning {
+  color: #ffc107;
+}
+
+/* Plan Actions */
+.plan-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+.plan-actions .btn {
+  flex: 1;
+}
+
+/* Execution View */
+.execution-view {
+  padding: 20px;
+  text-align: center;
+}
+
+.execution-status {
+  margin-bottom: 24px;
+}
+
+.execution-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.execution-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.execution-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Progress Bar */
+.progress-container {
+  margin: 24px 0;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Current Step */
+.current-step {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.current-step-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.current-step-desc {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Execution Actions */
+.execution-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+/* Completed/Failed States */
+.execution-completed .execution-icon {
+  color: var(--success);
+}
+
+.execution-failed .execution-icon {
+  color: var(--accent);
+}
+
+/* Settings Enhancements */
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.provider-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.provider-section h4 {
+  font-size: 14px;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.api-key-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.api-key-link:hover {
+  text-decoration: underline;
+}
+
+/* Back Button */
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+
+.back-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
