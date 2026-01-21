@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/tensorboy/hawkeye"
   },
-  "main": "./dist/main/index.js",
+  "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",

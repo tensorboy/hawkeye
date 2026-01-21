@@ -198,14 +198,14 @@ jobs:
         uses: pnpm/action-setup@v4
 
       - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm install
         working-directory: packages/vscode-extension
 
       - name: Install vsce
         run: npm install -g @vscode/vsce
 
       - name: Build VS Code Extension
-        run: pnpm build
+        run: npm run build
         working-directory: packages/vscode-extension
 
       - name: Package VSIX
