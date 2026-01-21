@@ -5,6 +5,10 @@ export default defineConfig({
   main: {
     build: {
       rollupOptions: {
+        input: {
+          bootstrap: 'src/main/bootstrap.ts',
+          index: 'src/main/index.ts',
+        },
         external: ['@hawkeye/core'],
       },
     },

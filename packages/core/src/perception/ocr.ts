@@ -560,12 +560,31 @@ export class OCRManager extends EventEmitter {
       throw new Error('OCR 未初始化');
     }
 
+    // 日志：输入信息
+    const inputSize = typeof imageData === 'string'
+      ? imageData.length
+      : imageData.length;
+    const inputType = typeof imageData === 'string' ? 'base64' : 'buffer';
+    console.log(`[OCR] ====== 开始识别 ======`);
+    console.log(`[OCR] 输入类型: ${inputType}`);
+    console.log(`[OCR] 输入大小: ${(inputSize / 1024).toFixed(2)} KB`);
+    console.log(`[OCR] 使用后端: ${this.activeBackend.name}`);
+
     const result = await this.activeBackend.recognize(imageData);
 
     // 过滤低置信度结果
     result.regions = result.regions.filter(
       r => r.confidence >= this.config.confidenceThreshold * 100
     );
+
+    // 日志：输出信息
+    console.log(`[OCR] ====== 识别完成 ======`);
+    console.log(`[OCR] 耗时: ${result.duration} ms`);
+    console.log(`[OCR] 置信度: ${result.confidence.toFixed(2)}%`);
+    console.log(`[OCR] 区域数量: ${result.regions.length}`);
+    console.log(`[OCR] 识别文本 (前500字符):`);
+    console.log(`[OCR] ${result.text.slice(0, 500)}${result.text.length > 500 ? '...' : ''}`);
+    console.log(`[OCR] ========================`);
 
     this.emit('recognized', result);
     return result;

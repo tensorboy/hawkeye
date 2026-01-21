@@ -13,6 +13,7 @@ import type {
 } from './types';
 import { OllamaProvider, type OllamaConfig } from './providers/ollama';
 import { GeminiProvider, type GeminiConfig } from './providers/gemini';
+import { OpenAICompatibleProvider, type OpenAICompatibleConfig } from './providers/openai-compatible';
 
 export interface AIManagerConfig {
   /** Provider 配置列表 */
@@ -93,7 +94,10 @@ export class AIManager extends EventEmitter {
       this._isReady = true;
       this.emit('ready', this.currentProvider);
     } else {
-      throw new Error('没有可用的 AI Provider');
+      // No AI provider available - the app can still run with limited functionality
+      console.warn('没有可用的 AI Provider，AI 功能已禁用');
+      this._isReady = false;
+      this.emit('no-provider');
     }
   }
 
@@ -245,6 +249,8 @@ export class AIManager extends EventEmitter {
         return new OllamaProvider(config as OllamaConfig);
       case 'gemini':
         return new GeminiProvider(config as GeminiConfig);
+      case 'openai':
+        return new OpenAICompatibleProvider(config as OpenAICompatibleConfig);
       default:
         throw new Error(`不支持的 Provider 类型: ${config.type}`);
     }
