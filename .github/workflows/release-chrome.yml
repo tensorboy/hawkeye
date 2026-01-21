@@ -1,0 +1,104 @@
+name: Release Chrome Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.0)'
+        required: true
+        default: '0.1.0'
+
+jobs:
+  build-chrome-extension:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install Dependencies
+        run: pnpm install
+        working-directory: packages/chrome-extension
+
+      - name: Build Chrome Extension
+        run: pnpm build
+        working-directory: packages/chrome-extension
+
+      # Create ZIP for Chrome Web Store
+      - name: Create Extension ZIP
+        run: |
+          cd packages/chrome-extension/dist
+          zip -r ../hawkeye-chrome-extension.zip .
+
+      - name: Upload Chrome Extension Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hawkeye-chrome-extension
+          path: packages/chrome-extension/hawkeye-chrome-extension.zip
+
+      # Optional: Upload to Chrome Web Store (requires API keys)
+      - name: Upload to Chrome Web Store
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: mnao305/chrome-extension-upload@v5.0.0
+        with:
+          file-path: packages/chrome-extension/hawkeye-chrome-extension.zip
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        continue-on-error: true  # Don't fail if store upload fails
+
+  # Build Firefox extension (optional)
+  build-firefox-extension:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install Dependencies
+        run: pnpm install
+        working-directory: packages/chrome-extension
+
+      - name: Build Firefox Extension
+        run: pnpm build:firefox
+        working-directory: packages/chrome-extension
+        continue-on-error: true  # Firefox build is optional
+
+      - name: Create Firefox XPI
+        run: |
+          if [ -d "packages/chrome-extension/dist-firefox" ]; then
+            cd packages/chrome-extension/dist-firefox
+            zip -r ../hawkeye-firefox-extension.xpi .
+          fi
+        continue-on-error: true
+
+      - name: Upload Firefox Extension Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hawkeye-firefox-extension
+          path: packages/chrome-extension/hawkeye-firefox-extension.xpi
+          if-no-files-found: ignore
