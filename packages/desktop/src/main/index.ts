@@ -5,6 +5,8 @@
 
 import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import {
   Hawkeye,
   createHawkeye,
@@ -12,7 +14,22 @@ import {
   type UserIntent,
   type ExecutionPlan,
 } from '@hawkeye/core';
+
+// Debug logging helper (log file is managed by bootstrap)
+const debugLogPath = path.join(os.homedir(), 'hawkeye_debug.log');
+function debugLog(msg: string) {
+  const timestamp = new Date().toISOString();
+  try {
+    fs.appendFileSync(debugLogPath, `[${timestamp}] ${msg}\n`);
+  } catch (e) {
+    // Ignore write errors
+  }
+}
+
+debugLog('index.ts loaded, @hawkeye/core imported successfully');
+
 import { initI18n, t } from './i18n';
+debugLog('i18n module imported');
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -20,21 +37,28 @@ let hawkeye: Hawkeye | null = null;
 
 // 配置存储
 interface AppConfig {
-  aiProvider: 'ollama' | 'gemini';
+  aiProvider: 'ollama' | 'gemini' | 'openai';
   ollamaHost?: string;
   ollamaModel?: string;
   geminiApiKey?: string;
   geminiModel?: string;
+  openaiBaseUrl?: string;
+  openaiApiKey?: string;
+  openaiModel?: string;
   syncPort: number;
   autoStartSync: boolean;
 }
 
 const defaultConfig: AppConfig = {
-  aiProvider: 'ollama',
+  aiProvider: 'openai',
   ollamaHost: 'http://localhost:11434',
   ollamaModel: 'qwen2.5vl:7b',
   geminiApiKey: '',
   geminiModel: 'gemini-2.0-flash-exp',
+  // Antigravity API configuration
+  openaiBaseUrl: 'http://74.48.133.20:8045',
+  openaiApiKey: 'sk-antigravity-pickfrom2026',
+  openaiModel: 'gemini-2.5-flash',
   syncPort: 23789,
   autoStartSync: true,
 };
@@ -61,22 +85,65 @@ function createWindow() {
   // 开发模式下加载本地服务器
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
+    // DevTools 可通过 Cmd+Option+I 手动打开
+    // mainWindow.webContents.openDevTools({ mode: 'detach' });
+
+    // 开发模式下自动显示窗口
+    mainWindow.once('ready-to-show', () => {
+      mainWindow?.show();
+      mainWindow?.focus();
+    });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
-  // 失去焦点时隐藏窗口
+  // 失去焦点时隐藏窗口（开发模式下禁用，方便调试）
   mainWindow.on('blur', () => {
-    if (mainWindow && !mainWindow.webContents.isDevToolsOpened()) {
+    if (process.env.NODE_ENV !== 'development' && mainWindow && !mainWindow.webContents.isDevToolsOpened()) {
       mainWindow.hide();
     }
   });
 }
 
 function createTray() {
-  // Create tray icon (using empty icon as placeholder)
-  const icon = nativeImage.createEmpty();
+  // Create tray icon - use a proper icon for macOS menu bar
+  let icon: Electron.NativeImage;
+
+  // Determine icon path based on environment
+  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+  const iconPath = isDev
+    ? path.join(__dirname, '../../resources/icon.png')
+    : path.join(process.resourcesPath, 'resources/icon.png');
+
+  console.log('Loading tray icon from:', iconPath);
+
+  try {
+    icon = nativeImage.createFromPath(iconPath);
+    console.log('Icon loaded, isEmpty:', icon.isEmpty(), 'size:', icon.getSize());
+    if (!icon.isEmpty()) {
+      // Resize for menu bar (macOS recommends 16x16 or 22x22)
+      icon = icon.resize({ width: 18, height: 18 });
+      // Set as template image for proper dark/light mode support on macOS
+      icon.setTemplateImage(true);
+    }
+  } catch (e) {
+    console.error('Failed to load icon:', e);
+    icon = nativeImage.createEmpty();
+  }
+
+  // If icon is still empty, create a simple fallback icon (a small colored square)
+  if (icon.isEmpty()) {
+    console.warn('Failed to load tray icon, using fallback');
+    // Create a simple 16x16 PNG with a colored circle (base64 encoded)
+    // This is a simple 16x16 gray circle PNG
+    const fallbackIconBase64 = 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA' +
+      'BHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3' +
+      'Lmlua3NjYXBlLm9yZ5vuPBoAAABfSURBVDiNY2CgNmBkZPzPQCbABOWMJFcIBv9JdAETI4' +
+      'GA8v8Z/jMwMv5n/M/AwAAGUEEGRgYGCE2KARjNDAyU+4CRkZERbgAy+E9FAwbIgEEZhANN' +
+      'AEACP8JAHLQAAAAASUVORK5CYII=';
+    icon = nativeImage.createFromDataURL(`data:image/png;base64,${fallbackIconBase64}`);
+  }
+
   tray = new Tray(icon);
 
   const contextMenu = Menu.buildFromTemplate([
@@ -173,8 +240,8 @@ async function initializeHawkeye(): Promise<void> {
     autoStartSync: appConfig.autoStartSync,
   };
 
-  // 添加 Ollama Provider
-  if (appConfig.ollamaHost) {
+  // 添加 Ollama Provider (只有当明确选择 ollama 时才添加)
+  if (appConfig.aiProvider === 'ollama' && appConfig.ollamaHost) {
     config.ai.providers.push({
       type: 'ollama',
       baseUrl: appConfig.ollamaHost,
@@ -182,8 +249,8 @@ async function initializeHawkeye(): Promise<void> {
     } as any);
   }
 
-  // 添加 Gemini Provider
-  if (appConfig.geminiApiKey) {
+  // 添加 Gemini Provider (只有当明确选择 gemini 时才添加)
+  if (appConfig.aiProvider === 'gemini' && appConfig.geminiApiKey) {
     config.ai.providers.push({
       type: 'gemini',
       apiKey: appConfig.geminiApiKey,
@@ -191,12 +258,23 @@ async function initializeHawkeye(): Promise<void> {
     } as any);
   }
 
-  // 如果没有配置任何 provider，默认添加 ollama
+  // 添加 OpenAI Compatible Provider (e.g., antigravity)
+  if (appConfig.aiProvider === 'openai' && appConfig.openaiBaseUrl && appConfig.openaiApiKey) {
+    config.ai.providers.push({
+      type: 'openai',
+      baseUrl: appConfig.openaiBaseUrl,
+      apiKey: appConfig.openaiApiKey,
+      model: appConfig.openaiModel || 'gemini-2.5-flash',
+    } as any);
+  }
+
+  // 如果没有配置任何 provider，默认添加 openai (antigravity)
   if (config.ai.providers.length === 0) {
     config.ai.providers.push({
-      type: 'ollama',
-      baseUrl: 'http://localhost:11434',
-      model: 'qwen2.5vl:7b',
+      type: 'openai',
+      baseUrl: 'http://74.48.133.20:8045',
+      apiKey: 'sk-antigravity-pickfrom2026',
+      model: 'gemini-2.5-flash',
     } as any);
   }
 
@@ -346,7 +424,7 @@ ipcMain.handle('save-config', async (_event, newConfig: Partial<AppConfig>) => {
 });
 
 // 切换 AI Provider
-ipcMain.handle('switch-ai-provider', async (_event, provider: 'ollama' | 'gemini') => {
+ipcMain.handle('switch-ai-provider', async (_event, provider: 'ollama' | 'gemini' | 'openai') => {
   return hawkeye?.switchAIProvider(provider) ?? false;
 });
 
@@ -409,19 +487,46 @@ ipcMain.handle('setApiKey', async (_event, apiKey: string) => {
   }
 });
 
+// Prevent app from quitting when all windows are closed (since we're a tray app)
+app.on('window-all-closed', (e: Event) => {
+  debugLog('window-all-closed event received');
+  // Don't quit on macOS - we're a tray app
+  if (process.platform === 'darwin') {
+    e.preventDefault();
+    debugLog('Prevented app quit on macOS');
+  }
+});
+
 // Application startup
+debugLog('Setting up app.whenReady...');
+
 app.whenReady().then(async () => {
-  initI18n();
-  createWindow();
-  createTray();
+  debugLog('App is ready, initializing...');
 
-  // 注册全局快捷键
-  globalShortcut.register('CommandOrControl+Shift+H', () => {
-    observeScreen();
-  });
+  try {
+    initI18n();
+    debugLog('i18n initialized');
 
-  // 初始化 Hawkeye
-  await initializeHawkeye();
+    createWindow();
+    debugLog('Window created');
+
+    createTray();
+    debugLog('Tray created');
+
+    // 注册全局快捷键
+    globalShortcut.register('CommandOrControl+Shift+H', () => {
+      observeScreen();
+    });
+    debugLog('Global shortcut registered');
+
+    // 初始化 Hawkeye
+    debugLog('Initializing Hawkeye...');
+    await initializeHawkeye();
+    debugLog('Hawkeye initialized successfully');
+  } catch (error) {
+    debugLog(`Error during initialization: ${error}`);
+    throw error;
+  }
 });
 
 // 退出时清理
@@ -433,11 +538,7 @@ app.on('will-quit', async () => {
   }
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+// Note: window-all-closed is handled earlier to prevent quit on macOS
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {

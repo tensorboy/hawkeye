@@ -102,14 +102,24 @@ export interface TaskAction {
  * 动作类型
  */
 export type ActionType =
-  | 'run_shell'       // 执行 Shell 命令
-  | 'read_file'       // 读取文件
-  | 'write_file'      // 写入文件
-  | 'edit_file'       // 编辑文件
-  | 'open_url'        // 打开 URL
-  | 'open_app'        // 打开应用
-  | 'click'           // 鼠标点击
-  | 'type_text';      // 键入文本
+  | 'run_shell'         // 执行 Shell 命令
+  | 'read_file'         // 读取文件
+  | 'write_file'        // 写入文件
+  | 'edit_file'         // 编辑文件
+  | 'open_url'          // 打开 URL
+  | 'open_app'          // 打开应用
+  | 'click'             // 鼠标点击
+  | 'type_text'         // 键入文本
+  // MCP 浏览器自动化动作
+  | 'browser_navigate'  // 浏览器导航
+  | 'browser_click'     // 浏览器元素点击
+  | 'browser_type'      // 浏览器输入
+  | 'browser_fill_form' // 浏览器填写表单
+  | 'browser_screenshot'// 浏览器截图
+  | 'browser_snapshot'  // 浏览器快照
+  | 'browser_wait'      // 浏览器等待
+  | 'browser_evaluate'  // 浏览器执行 JS
+  | 'browser_scroll';   // 浏览器滚动
 
 // ============ 执行相关类型 ============
 

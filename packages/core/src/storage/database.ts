@@ -126,8 +126,11 @@ export class HawkeyeDatabase {
 
       this.isInitialized = true;
     } catch (error) {
-      console.warn('SQLite 不可用，使用 JSON 文件存储作为后备:', error);
-      throw error;
+      // SQLite not available - gracefully degrade to no-op mode
+      // All database operations will return empty/null results
+      console.warn('SQLite 不可用，数据库功能已禁用。功能将以只读/无持久化模式运行:', (error as Error).message);
+      this.db = null;
+      this.isInitialized = true;
     }
   }
 

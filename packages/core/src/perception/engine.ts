@@ -76,7 +76,7 @@ export class PerceptionEngine extends EventEmitter {
       enableWindow: true,
       enableClipboard: true,
       enableFileWatch: true,
-      enableOCR: false,  // 默认关闭，需要用户启用
+      enableOCR: true,  // 默认开启 OCR
       enableVision: false,  // 默认关闭，需要 AI Manager 配置
       screenInterval: 5000,
       clipboardInterval: 1000,
@@ -222,9 +222,12 @@ export class PerceptionEngine extends EventEmitter {
           // OCR 识别
           if (this.config.enableOCR && screenshot.imageData) {
             try {
+              console.log('[PerceptionEngine] 开始 OCR 识别...');
+              console.log(`[PerceptionEngine] 截图数据大小: ${(screenshot.imageData.length / 1024).toFixed(2)} KB`);
               context.ocr = await this.ocrManager.recognize(screenshot.imageData);
+              console.log(`[PerceptionEngine] OCR 识别成功，文本长度: ${context.ocr.text.length} 字符`);
             } catch (err) {
-              console.warn('OCR 识别失败:', err);
+              console.warn('[PerceptionEngine] OCR 识别失败:', err);
             }
           }
         }).catch(err => {

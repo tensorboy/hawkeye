@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      better-sqlite3:
+        specifier: ^12.6.2
+        version: 12.6.2
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -49,7 +53,7 @@ importers:
         version: 8.18.1
       chokidar:
         specifier: ^3.5.3
-        version: 3.6.0
+        version: 3.5.3
       screenshot-desktop:
         specifier: ^1.15.0
         version: 1.15.3
@@ -57,8 +61,8 @@ importers:
         specifier: ^0.9.4
         version: 0.9.4
       uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
+        specifier: 9.0.1
+        version: 9.0.1
       ws:
         specifier: ^8.19.0
         version: 8.19.0
@@ -88,18 +92,144 @@ importers:
       '@hawkeye/core':
         specifier: workspace:*
         version: link:../core
+      abort-controller:
+        specifier: 3.0.0
+        version: 3.0.0
+      agentkeepalive:
+        specifier: 4.5.0
+        version: 4.5.0
+      anymatch:
+        specifier: 3.1.3
+        version: 3.1.3
+      balanced-match:
+        specifier: 1.0.2
+        version: 1.0.2
+      binary-extensions:
+        specifier: 2.2.0
+        version: 2.2.0
+      brace-expansion:
+        specifier: 1.1.11
+        version: 1.1.11
+      braces:
+        specifier: 3.0.2
+        version: 3.0.2
+      chokidar:
+        specifier: 3.5.3
+        version: 3.5.3
+      concat-map:
+        specifier: 0.0.1
+        version: 0.0.1
+      event-target-shim:
+        specifier: 5.0.1
+        version: 5.0.1
+      fill-range:
+        specifier: 7.0.1
+        version: 7.0.1
+      form-data-encoder:
+        specifier: 1.7.2
+        version: 1.7.2
+      formdata-node:
+        specifier: 4.4.1
+        version: 4.4.1
+      fs.realpath:
+        specifier: 1.0.0
+        version: 1.0.0
+      glob:
+        specifier: 7.2.3
+        version: 7.2.3
+      glob-parent:
+        specifier: 5.1.2
+        version: 5.1.2
+      humanize-ms:
+        specifier: 1.2.1
+        version: 1.2.1
       i18next:
         specifier: ^25.8.0
         version: 25.8.0(typescript@5.9.3)
       i18next-browser-languagedetector:
         specifier: ^8.2.0
         version: 8.2.0
+      inflight:
+        specifier: 1.0.6
+        version: 1.0.6
+      inherits:
+        specifier: 2.0.4
+        version: 2.0.4
+      is-binary-path:
+        specifier: 2.1.0
+        version: 2.1.0
+      is-extglob:
+        specifier: 2.1.1
+        version: 2.1.1
+      is-glob:
+        specifier: 4.0.3
+        version: 4.0.3
+      is-number:
+        specifier: 7.0.0
+        version: 7.0.0
+      minimatch:
+        specifier: 3.1.2
+        version: 3.1.2
+      minimist:
+        specifier: 1.2.8
+        version: 1.2.8
+      mkdirp:
+        specifier: 0.5.6
+        version: 0.5.6
+      ms:
+        specifier: 2.1.3
+        version: 2.1.3
+      node-domexception:
+        specifier: 1.0.0
+        version: 1.0.0
+      node-fetch:
+        specifier: 2.7.0
+        version: 2.7.0
+      normalize-path:
+        specifier: 3.0.0
+        version: 3.0.0
+      once:
+        specifier: 1.4.0
+        version: 1.4.0
+      path-is-absolute:
+        specifier: 1.0.1
+        version: 1.0.1
+      picomatch:
+        specifier: 2.3.1
+        version: 2.3.1
       react-i18next:
         specifier: ^16.5.3
         version: 16.5.3(i18next@25.8.0(typescript@5.9.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
+      readdirp:
+        specifier: 3.6.0
+        version: 3.6.0
+      rimraf:
+        specifier: 2.6.3
+        version: 2.6.3
       temp:
         specifier: ^0.9.4
         version: 0.9.4
+      to-regex-range:
+        specifier: 5.0.1
+        version: 5.0.1
+      tr46:
+        specifier: 0.0.3
+        version: 0.0.3
+      uuid:
+        specifier: 9.0.1
+        version: 9.0.1
+      web-streams-polyfill:
+        specifier: 4.0.0-beta.3
+        version: 4.0.0-beta.3
+      webidl-conversions:
+        specifier: 3.0.1
+        version: 3.0.1
+      whatwg-url:
+        specifier: 5.0.0
+        version: 5.0.0
+      wrappy:
+        specifier: 1.0.2
+        version: 1.0.2
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -114,8 +244,8 @@ importers:
         specifier: ^4.2.1
         version: 4.7.0(vite@5.4.21(@types/node@20.19.30))
       electron:
-        specifier: ^28.1.0
-        version: 28.3.3
+        specifier: ^27.0.0
+        version: 27.3.11
       electron-builder:
         specifier: ^24.9.1
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -1208,8 +1338,8 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  agentkeepalive@4.6.0:
-    resolution: {integrity: sha512-kja8j7PjmncONqaTsB8fQ+wE2mSU2DJ9D4XKoJ5PFWIdRMa6SLSN1ff4mOr4jCbfRSsxR4keIiySJU0N9T5hIQ==}
+  agentkeepalive@4.5.0:
+    resolution: {integrity: sha512-5GG/5IbQQpC9FpkRGsSvZI5QYeSCzlJHdpBQntCsuTOxhKD8lqKhrleg2Yi7yvMIf82Ycmmqln9U8V9qwEiJew==}
     engines: {node: '>= 8.0.0'}
 
   ajv-keywords@3.5.2:
@@ -1310,13 +1440,20 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.9.16:
-    resolution: {integrity: sha512-KeUZdBuxngy825i8xvzaK1Ncnkx0tBmb3k8DkEuqjKRkmtvNTjey2ZsNeh8Dw4lfKvbCOu9oeNx2TKm2vHqcRw==}
+  baseline-browser-mapping@2.9.17:
+    resolution: {integrity: sha512-agD0MgJFUP/4nvjqzIB29zRPUuCF7Ge6mEv9s8dHrtYD7QWXRcx75rOADE/d5ah1NI+0vkDl0yorDd5U852IQQ==}
     hasBin: true
 
-  binary-extensions@2.3.0:
-    resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
+  better-sqlite3@12.6.2:
+    resolution: {integrity: sha512-8VYKM3MjCa9WcaSAI3hzwhmyHVlH8tiGFwf0RlTsZPWJ1I5MkzjiudCo4KC4DxOaL/53A5B1sI/IbldNFDbsKA==}
+    engines: {node: 20.x || 22.x || 23.x || 24.x || 25.x}
+
+  binary-extensions@2.2.0:
+    resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}
     engines: {node: '>=8'}
+
+  bindings@1.5.0:
+    resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
 
   bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
@@ -1334,11 +1471,15 @@ packages:
     resolution: {integrity: sha512-d0II/GO9uf9lfUHH2BQsjxzRJZBdsjgsBiW4BvhWk/3qoKwQFjIDVN19PfX8F2D/r9PCMTtLWjYVCFrpeYUzsw==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
-  brace-expansion@1.1.12:
-    resolution: {integrity: sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg==}
+  brace-expansion@1.1.11:
+    resolution: {integrity: sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==}
 
   brace-expansion@2.0.2:
     resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
+
+  braces@3.0.2:
+    resolution: {integrity: sha512-b8um+L1RzM3WDSzvhm6gIz1yfTbBt6YTlcEKAvsmqCZZFw46z626lVj9j1yEPW33H5H+lBQpZMP1k8l+78Ha0A==}
+    engines: {node: '>=8'}
 
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
@@ -1431,8 +1572,8 @@ packages:
     resolution: {integrity: sha512-IkxPpb5rS/d1IiLbHMgfPuS0FgiWTtFIm/Nj+2woXDLTZ7fOT2eqzgYbdMlLweqlHbsZjxEChoVK+7iph7jyQg==}
     engines: {node: '>=20.18.1'}
 
-  chokidar@3.6.0:
-    resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
+  chokidar@3.5.3:
+    resolution: {integrity: sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==}
     engines: {node: '>= 8.10.0'}
 
   chokidar@4.0.3:
@@ -1699,8 +1840,8 @@ packages:
       '@swc/core':
         optional: true
 
-  electron@28.3.3:
-    resolution: {integrity: sha512-ObKMLSPNhomtCOBAxFS8P2DW/4umkh72ouZUlUKzXGtYuPzgr1SYhskhFWgzAsPtUzhL2CzyV2sfbHcEW4CXqw==}
+  electron@27.3.11:
+    resolution: {integrity: sha512-E1SiyEoI8iW5LW/MigCr7tJuQe7+0105UjqY7FkmCD12e2O6vtUbQ0j05HaBh2YgvkcEVgvQ2A8suIq5b5m6Gw==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -1725,6 +1866,10 @@ packages:
 
   entities@6.0.1:
     resolution: {integrity: sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g==}
+    engines: {node: '>=0.12'}
+
+  entities@7.0.1:
+    resolution: {integrity: sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA==}
     engines: {node: '>=0.12'}
 
   env-paths@2.2.1:
@@ -1838,8 +1983,15 @@ packages:
       picomatch:
         optional: true
 
+  file-uri-to-path@1.0.0:
+    resolution: {integrity: sha512-0Zt+s3L7Vf1biwWZ29aARiVYLx7iMGnEUl9x33fbB/j3jR81u/O2LbqK+Bm1CDSNDKVtJ/YjwY7TUd5SkeLQLw==}
+
   filelist@1.0.4:
     resolution: {integrity: sha512-w1cEuf3S+DrLCQL7ET6kz+gmlJdbq9J7yXCSjK/OZCPA+qEN1WyF4ZAf0YYJa4/shHJra2t/d/r8SV4Ji+x+8Q==}
+
+  fill-range@7.0.1:
+    resolution: {integrity: sha512-qOo9F+dMUmC2Lcb4BbVvnKJxTPjCm+RRpe4gDuGrzkL7mEVl/djYSu2OdQ2Pa302N4oqkSg9ir6jaLWJ2USVpQ==}
+    engines: {node: '>=8'}
 
   fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
@@ -1980,8 +2132,8 @@ packages:
   html-parse-stringify@3.0.1:
     resolution: {integrity: sha512-KknJ50kTInJ7qIScF3jeaFRpMpE8/lfiTdzf/twXyPBLAGrLRTmkz3AdTnKeh40X8k9L2fdYwEp/42WGXIRGcg==}
 
-  htmlparser2@10.0.0:
-    resolution: {integrity: sha512-TwAZM+zE5Tq3lrEHvOlvwgj1XLWQCtaaibSN11Q+gGBAS7Y1uZSWwXXRe4iF6OXnaq1riyQAPFOBtYc77Mxq0g==}
+  htmlparser2@10.1.0:
+    resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
 
   http-cache-semantics@4.2.0:
     resolution: {integrity: sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==}
@@ -2234,8 +2386,8 @@ packages:
   lodash.union@4.6.0:
     resolution: {integrity: sha512-c4pB2CdGrGdjMKYLA+XiRDO7Y0PRQbm/Gzg8qMj+QH+pFVAoTp5sBpO0odL3FjoPCGjK96p6qsP+yQoiLoOBcw==}
 
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+  lodash@4.17.23:
+    resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
 
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
@@ -2992,8 +3144,8 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
-  undici@7.18.2:
-    resolution: {integrity: sha512-y+8YjDFzWdQlSE9N5nzKMT3g4a5UBX1HKowfdXh0uvAnTaqqwqB92Jt4UXBAeKekDs5IaDKyJFR4X1gYVCgXcw==}
+  undici@7.19.0:
+    resolution: {integrity: sha512-Heho1hJD81YChi+uS2RkSjcVO+EQLmLSyUlHyp7Y/wFbxQaGb4WXVKD073JytrjXJVkSZVzoE2MCSOKugFGtOQ==}
     engines: {node: '>=20.18.1'}
 
   universalify@0.1.2:
@@ -3027,12 +3179,12 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  uuid@13.0.0:
-    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
-    hasBin: true
-
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    hasBin: true
+
+  uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
 
   verror@1.10.1:
@@ -3218,7 +3370,7 @@ snapshots:
       '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
       abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
+      agentkeepalive: 4.5.0
       digest-fetch: 1.3.0
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
@@ -3232,7 +3384,7 @@ snapshots:
       '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
       abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
+      agentkeepalive: 4.5.0
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
       node-fetch: 2.7.0
@@ -3775,7 +3927,7 @@ snapshots:
     dependencies:
       debug: 4.4.3
       fs-extra: 9.1.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       tmp-promise: 3.0.3
     transitivePeerDependencies:
       - supports-color
@@ -3996,7 +4148,7 @@ snapshots:
 
   '@types/uuid@11.0.0':
     dependencies:
-      uuid: 13.0.0
+      uuid: 9.0.1
 
   '@types/verror@1.10.11':
     optional: true
@@ -4184,7 +4336,7 @@ snapshots:
 
   agent-base@7.1.4: {}
 
-  agentkeepalive@4.6.0:
+  agentkeepalive@4.5.0:
     dependencies:
       humanize-ms: 1.2.1
 
@@ -4321,9 +4473,18 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.9.16: {}
+  baseline-browser-mapping@2.9.17: {}
 
-  binary-extensions@2.3.0: {}
+  better-sqlite3@12.6.2:
+    dependencies:
+      bindings: 1.5.0
+      prebuild-install: 7.1.3
+
+  binary-extensions@2.2.0: {}
+
+  bindings@1.5.0:
+    dependencies:
+      file-uri-to-path: 1.0.0
 
   bl@4.1.0:
     dependencies:
@@ -4342,7 +4503,7 @@ snapshots:
   boolean@3.2.0:
     optional: true
 
-  brace-expansion@1.1.12:
+  brace-expansion@1.1.11:
     dependencies:
       balanced-match: 1.0.2
       concat-map: 0.0.1
@@ -4351,13 +4512,17 @@ snapshots:
     dependencies:
       balanced-match: 1.0.2
 
+  braces@3.0.2:
+    dependencies:
+      fill-range: 7.0.1
+
   braces@3.0.3:
     dependencies:
       fill-range: 7.1.1
 
   browserslist@4.28.1:
     dependencies:
-      baseline-browser-mapping: 2.9.16
+      baseline-browser-mapping: 2.9.17
       caniuse-lite: 1.0.30001765
       electron-to-chromium: 1.5.267
       node-releases: 2.0.27
@@ -4478,17 +4643,17 @@ snapshots:
       domhandler: 5.0.3
       domutils: 3.2.2
       encoding-sniffer: 0.2.1
-      htmlparser2: 10.0.0
+      htmlparser2: 10.1.0
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 7.18.2
+      undici: 7.19.0
       whatwg-mimetype: 4.0.0
 
-  chokidar@3.6.0:
+  chokidar@3.5.3:
     dependencies:
       anymatch: 3.1.3
-      braces: 3.0.3
+      braces: 3.0.2
       glob-parent: 5.1.2
       is-binary-path: 2.1.0
       is-glob: 4.0.3
@@ -4501,8 +4666,7 @@ snapshots:
     dependencies:
       readdirp: 4.1.2
 
-  chownr@1.1.4:
-    optional: true
+  chownr@1.1.4: {}
 
   chownr@2.0.0: {}
 
@@ -4632,8 +4796,7 @@ snapshots:
 
   deep-eql@5.0.2: {}
 
-  deep-extend@0.6.0:
-    optional: true
+  deep-extend@0.6.0: {}
 
   default-browser-id@5.0.1: {}
 
@@ -4662,8 +4825,7 @@ snapshots:
 
   delayed-stream@1.0.0: {}
 
-  detect-libc@2.1.2:
-    optional: true
+  detect-libc@2.1.2: {}
 
   detect-node@2.1.0:
     optional: true
@@ -4795,7 +4957,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@28.3.3:
+  electron@27.3.11:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 18.19.130
@@ -4821,6 +4983,8 @@ snapshots:
   entities@4.5.0: {}
 
   entities@6.0.1: {}
+
+  entities@7.0.1: {}
 
   env-paths@2.2.1: {}
 
@@ -4944,8 +5108,7 @@ snapshots:
 
   event-target-shim@5.0.1: {}
 
-  expand-template@2.0.3:
-    optional: true
+  expand-template@2.0.3: {}
 
   expect-type@1.3.0: {}
 
@@ -4986,9 +5149,15 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.3
 
+  file-uri-to-path@1.0.0: {}
+
   filelist@1.0.4:
     dependencies:
       minimatch: 5.1.6
+
+  fill-range@7.0.1:
+    dependencies:
+      to-regex-range: 5.0.1
 
   fill-range@7.1.1:
     dependencies:
@@ -5078,8 +5247,7 @@ snapshots:
     dependencies:
       pump: 3.0.3
 
-  github-from-package@0.0.0:
-    optional: true
+  github-from-package@0.0.0: {}
 
   glob-parent@5.1.2:
     dependencies:
@@ -5166,12 +5334,12 @@ snapshots:
     dependencies:
       void-elements: 3.1.0
 
-  htmlparser2@10.0.0:
+  htmlparser2@10.1.0:
     dependencies:
       domelementtype: 2.3.0
       domhandler: 5.0.3
       domutils: 3.2.2
-      entities: 6.0.1
+      entities: 7.0.1
 
   http-cache-semantics@4.2.0: {}
 
@@ -5242,12 +5410,11 @@ snapshots:
 
   inherits@2.0.4: {}
 
-  ini@1.3.8:
-    optional: true
+  ini@1.3.8: {}
 
   is-binary-path@2.1.0:
     dependencies:
-      binary-extensions: 2.3.0
+      binary-extensions: 2.2.0
 
   is-buffer@1.1.6: {}
 
@@ -5421,7 +5588,7 @@ snapshots:
 
   lodash.union@4.6.0: {}
 
-  lodash@4.17.21: {}
+  lodash@4.17.23: {}
 
   loose-envify@1.4.0:
     dependencies:
@@ -5505,7 +5672,7 @@ snapshots:
 
   minimatch@3.1.2:
     dependencies:
-      brace-expansion: 1.1.12
+      brace-expansion: 1.1.11
 
   minimatch@5.1.6:
     dependencies:
@@ -5530,8 +5697,7 @@ snapshots:
       minipass: 3.3.6
       yallist: 4.0.0
 
-  mkdirp-classic@0.5.3:
-    optional: true
+  mkdirp-classic@0.5.3: {}
 
   mkdirp@0.5.6:
     dependencies:
@@ -5560,13 +5726,11 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  napi-build-utils@2.0.0:
-    optional: true
+  napi-build-utils@2.0.0: {}
 
   node-abi@3.87.0:
     dependencies:
       semver: 7.7.3
-    optional: true
 
   node-addon-api@1.7.2:
     optional: true
@@ -5692,7 +5856,6 @@ snapshots:
       simple-get: 4.0.1
       tar-fs: 2.1.4
       tunnel-agent: 0.6.0
-    optional: true
 
   process-nextick-args@2.0.1: {}
 
@@ -5726,7 +5889,6 @@ snapshots:
       ini: 1.3.8
       minimist: 1.2.8
       strip-json-comments: 2.0.1
-    optional: true
 
   react-dom@18.3.1(react@18.3.1):
     dependencies:
@@ -5933,15 +6095,13 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  simple-concat@1.0.1:
-    optional: true
+  simple-concat@1.0.1: {}
 
   simple-get@4.0.1:
     dependencies:
       decompress-response: 6.0.0
       once: 1.4.0
       simple-concat: 1.0.1
-    optional: true
 
   simple-update-notifier@2.0.0:
     dependencies:
@@ -6009,8 +6169,7 @@ snapshots:
     dependencies:
       ansi-regex: 6.2.2
 
-  strip-json-comments@2.0.1:
-    optional: true
+  strip-json-comments@2.0.1: {}
 
   sucrase@3.35.1:
     dependencies:
@@ -6042,7 +6201,6 @@ snapshots:
       mkdirp-classic: 0.5.3
       pump: 3.0.3
       tar-stream: 2.2.0
-    optional: true
 
   tar-stream@2.2.0:
     dependencies:
@@ -6153,7 +6311,6 @@ snapshots:
   tunnel-agent@0.6.0:
     dependencies:
       safe-buffer: 5.2.1
-    optional: true
 
   tunnel@0.0.6: {}
 
@@ -6180,7 +6337,7 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici@7.18.2: {}
+  undici@7.19.0: {}
 
   universalify@0.1.2: {}
 
@@ -6206,9 +6363,9 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  uuid@13.0.0: {}
-
   uuid@8.3.2: {}
+
+  uuid@9.0.1: {}
 
   verror@1.10.1:
     dependencies:

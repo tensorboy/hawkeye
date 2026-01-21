@@ -1,2 +1,7 @@
 packages:
-  - 'packages/*'
+  - packages/*
+
+ignoreScripts: false
+
+ignoredBuiltDependencies:
+  - electron

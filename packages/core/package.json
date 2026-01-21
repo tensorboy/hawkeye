@@ -43,7 +43,7 @@
     "chokidar": "^3.5.3",
     "screenshot-desktop": "^1.15.0",
     "temp": "^0.9.4",
-    "uuid": "^13.0.0",
+    "uuid": "9.0.1",
     "ws": "^8.19.0"
   },
   "optionalDependencies": {
