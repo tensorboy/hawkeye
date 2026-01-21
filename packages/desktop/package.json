@@ -2,7 +2,10 @@
   "name": "@hawkeye/desktop",
   "version": "0.2.0",
   "description": "Hawkeye Desktop Application - Intelligent Task Assistant",
-  "author": "Hawkeye Team",
+  "author": {
+    "name": "Hawkeye Team",
+    "email": "hawkeye@example.com"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/tensorboy/hawkeye"

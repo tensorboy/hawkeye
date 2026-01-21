@@ -30,7 +30,7 @@ jobs:
             platform: darwin
             arch: arm64
             artifact_name: hawkeye-desktop-mac-arm64
-          - os: macos-13
+          - os: macos-15
             platform: darwin
             arch: x64
             artifact_name: hawkeye-desktop-mac-x64
