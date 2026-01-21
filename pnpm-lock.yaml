@@ -53,6 +53,9 @@ importers:
       screenshot-desktop:
         specifier: ^1.15.0
         version: 1.15.3
+      temp:
+        specifier: ^0.9.4
+        version: 0.9.4
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
