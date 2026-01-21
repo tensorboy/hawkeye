@@ -30,10 +30,12 @@ jobs:
             platform: darwin
             arch: arm64
             artifact_name: hawkeye-desktop-mac-arm64
-          - os: macos-15
+            electron_args: ""
+          - os: macos-latest
             platform: darwin
             arch: x64
             artifact_name: hawkeye-desktop-mac-x64
+            electron_args: "--x64"
           - os: windows-latest
             platform: win32
             arch: x64
@@ -84,7 +86,7 @@ jobs:
 
       - name: Build Desktop App (macOS)
         if: matrix.platform == 'darwin'
-        run: pnpm package:mac
+        run: pnpm package:mac ${{ matrix.electron_args }}
         working-directory: packages/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
