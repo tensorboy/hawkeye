@@ -61,7 +61,8 @@
     },
     "linux": {
       "category": "Utility",
-      "target": ["AppImage", "deb"]
+      "target": ["AppImage", "deb"],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     }
   }
 }
