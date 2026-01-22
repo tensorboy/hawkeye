@@ -3,7 +3,8 @@
  * 使用新版 Hawkeye 统一引擎
  */
 
-import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage } from 'electron';
+import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, dialog } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -34,6 +35,75 @@ debugLog('i18n module imported');
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let hawkeye: Hawkeye | null = null;
+
+// ============= 自动更新配置 =============
+function setupAutoUpdater() {
+  // 配置自动更新日志
+  autoUpdater.logger = console;
+
+  // 不自动下载，让用户确认
+  autoUpdater.autoDownload = false;
+
+  // 检测到新版本
+  autoUpdater.on('update-available', (info) => {
+    debugLog(`Update available: ${info.version}`);
+    dialog.showMessageBox({
+      type: 'info',
+      title: t('updater.updateAvailable'),
+      message: t('updater.newVersionMessage', { version: info.version }),
+      buttons: [t('updater.downloadNow'), t('updater.later')],
+      defaultId: 0,
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate();
+        mainWindow?.webContents.send('update-downloading');
+      }
+    });
+  });
+
+  // 没有新版本
+  autoUpdater.on('update-not-available', () => {
+    debugLog('No update available');
+  });
+
+  // 下载进度
+  autoUpdater.on('download-progress', (progress) => {
+    debugLog(`Download progress: ${progress.percent}%`);
+    mainWindow?.webContents.send('update-progress', progress.percent);
+  });
+
+  // 下载完成
+  autoUpdater.on('update-downloaded', () => {
+    debugLog('Update downloaded');
+    dialog.showMessageBox({
+      type: 'info',
+      title: t('updater.updateReady'),
+      message: t('updater.restartMessage'),
+      buttons: [t('updater.restartNow'), t('updater.later')],
+      defaultId: 0,
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  // 更新错误
+  autoUpdater.on('error', (error) => {
+    debugLog(`Update error: ${error.message}`);
+    console.error('Auto-update error:', error);
+  });
+
+  // 检查更新（非开发模式）
+  if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'development') {
+    // 启动后延迟 3 秒检查更新
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch((err) => {
+        debugLog(`Check for updates failed: ${err.message}`);
+      });
+    }, 3000);
+  }
+}
 
 // 扩展 app 类型以添加 isQuitting 标志
 declare module 'electron' {
@@ -498,6 +568,21 @@ ipcMain.handle('setApiKey', async (_event, apiKey: string) => {
   }
 });
 
+// 手动检查更新
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { success: true, version: result?.updateInfo?.version };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// 获取当前版本
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
 // Prevent app from quitting when all windows are closed (since we're a tray app)
 app.on('window-all-closed', (e: Event) => {
   debugLog('window-all-closed event received');
@@ -534,6 +619,10 @@ app.whenReady().then(async () => {
     debugLog('Initializing Hawkeye...');
     await initializeHawkeye();
     debugLog('Hawkeye initialized successfully');
+
+    // 设置自动更新
+    setupAutoUpdater();
+    debugLog('Auto-updater setup complete');
   } catch (error) {
     debugLog(`Error during initialization: ${error}`);
     throw error;

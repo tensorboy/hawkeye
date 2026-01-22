@@ -34,6 +34,7 @@
     "braces": "3.0.2",
     "chokidar": "3.5.3",
     "concat-map": "0.0.1",
+    "electron-updater": "^6.7.3",
     "event-target-shim": "5.0.1",
     "fill-range": "7.0.1",
     "form-data-encoder": "1.7.2",
@@ -88,7 +89,12 @@
   "build": {
     "appId": "com.hawkeye.app",
     "productName": "Hawkeye",
-    "publish": null,
+    "publish": {
+      "provider": "github",
+      "owner": "tensorboy",
+      "repo": "hawkeye",
+      "releaseType": "release"
+    },
     "directories": {
       "output": "release",
       "buildResources": "build"

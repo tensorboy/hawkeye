@@ -246,6 +246,58 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true; // Keep channel open for async response
 });
 
+// ============ Auto Update Check (GitHub Releases) ============
+
+interface GitHubRelease {
+  tag_name: string;
+  html_url: string;
+  name: string;
+  prerelease: boolean;
+  draft: boolean;
+}
+
+async function checkForUpdates(): Promise<{ hasUpdate: boolean; latestVersion?: string; downloadUrl?: string }> {
+  try {
+    const response = await fetch(
+      'https://api.github.com/repos/tensorboy/hawkeye/releases/latest',
+      { headers: { 'Accept': 'application/vnd.github.v3+json' } }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch release info');
+    }
+
+    const release: GitHubRelease = await response.json();
+    const latestVersion = release.tag_name.replace(/^v/, '');
+    const currentVersion = chrome.runtime.getManifest().version;
+
+    // Compare versions (simple comparison)
+    const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
+
+    return {
+      hasUpdate,
+      latestVersion,
+      downloadUrl: release.html_url,
+    };
+  } catch (error) {
+    console.warn('Update check failed:', error);
+    return { hasUpdate: false };
+  }
+}
+
+function compareVersions(a: string, b: string): number {
+  const partsA = a.split('.').map(Number);
+  const partsB = b.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const partA = partsA[i] || 0;
+    const partB = partsB[i] || 0;
+    if (partA > partB) return 1;
+    if (partA < partB) return -1;
+  }
+  return 0;
+}
+
 async function handleMessage(
   message: { type: string; [key: string]: unknown },
   sendResponse: (response: unknown) => void
@@ -367,6 +419,29 @@ async function handleMessage(
       }
 
       sendResponse({ success: true });
+      break;
+
+    // Version and updates
+    case 'get-version':
+      sendResponse({
+        version: chrome.runtime.getManifest().version,
+        name: chrome.runtime.getManifest().name,
+      });
+      break;
+
+    case 'check-for-updates':
+      const updateInfo = await checkForUpdates();
+      sendResponse(updateInfo);
+
+      // Show notification if update available
+      if (updateInfo.hasUpdate && config.enableNotifications) {
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'icons/icon48.png',
+          title: 'Hawkeye Update Available',
+          message: `New version ${updateInfo.latestVersion} is available!`,
+        });
+      }
       break;
 
     default:
