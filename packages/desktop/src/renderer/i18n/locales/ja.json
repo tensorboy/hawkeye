@@ -42,6 +42,8 @@
     "language": {
       "label": "言語"
     },
+    "autoUpdate": "自動アップデート",
+    "autoUpdateDesc": "バックグラウンドで自動的にアップデートを確認してダウンロードします",
     "save": "保存",
     "cancel": "キャンセル"
   },

@@ -41,24 +41,14 @@ function setupAutoUpdater() {
   // 配置自动更新日志
   autoUpdater.logger = console;
 
-  // 不自动下载，让用户确认
-  autoUpdater.autoDownload = false;
+  // 后台静默下载更新
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
 
-  // 检测到新版本
+  // 检测到新版本 - 静默处理，只记录日志
   autoUpdater.on('update-available', (info) => {
-    debugLog(`Update available: ${info.version}`);
-    dialog.showMessageBox({
-      type: 'info',
-      title: t('updater.updateAvailable'),
-      message: t('updater.newVersionMessage', { version: info.version }),
-      buttons: [t('updater.downloadNow'), t('updater.later')],
-      defaultId: 0,
-    }).then((result) => {
-      if (result.response === 0) {
-        autoUpdater.downloadUpdate();
-        mainWindow?.webContents.send('update-downloading');
-      }
-    });
+    debugLog(`Update available: ${info.version}, downloading in background...`);
+    mainWindow?.webContents.send('update-available', { version: info.version });
   });
 
   // 没有新版本
@@ -66,42 +56,64 @@ function setupAutoUpdater() {
     debugLog('No update available');
   });
 
-  // 下载进度
+  // 下载进度 - 静默记录
   autoUpdater.on('download-progress', (progress) => {
-    debugLog(`Download progress: ${progress.percent}%`);
+    debugLog(`Download progress: ${progress.percent.toFixed(1)}%`);
     mainWindow?.webContents.send('update-progress', progress.percent);
   });
 
-  // 下载完成
-  autoUpdater.on('update-downloaded', () => {
-    debugLog('Update downloaded');
-    dialog.showMessageBox({
-      type: 'info',
-      title: t('updater.updateReady'),
-      message: t('updater.restartMessage'),
-      buttons: [t('updater.restartNow'), t('updater.later')],
-      defaultId: 0,
-    }).then((result) => {
-      if (result.response === 0) {
+  // 下载完成 - 只在托盘显示小提示，不弹窗打扰用户
+  autoUpdater.on('update-downloaded', (info) => {
+    debugLog(`Update downloaded: ${info.version}`);
+    mainWindow?.webContents.send('update-downloaded', { version: info.version });
+
+    // 通知用户更新已就绪（非模态提示）
+    if (tray) {
+      tray.setToolTip(`Hawkeye - ${t('updater.updateReady')} (v${info.version})`);
+    }
+
+    // 可选：显示系统通知而不是弹窗
+    const { Notification } = require('electron');
+    if (Notification.isSupported()) {
+      const notification = new Notification({
+        title: t('updater.updateReady'),
+        body: t('updater.restartMessage'),
+        silent: true,
+      });
+      notification.on('click', () => {
         autoUpdater.quitAndInstall();
-      }
-    });
+      });
+      notification.show();
+    }
   });
 
-  // 更新错误
+  // 更新错误 - 静默处理
   autoUpdater.on('error', (error) => {
     debugLog(`Update error: ${error.message}`);
     console.error('Auto-update error:', error);
   });
 
-  // 检查更新（非开发模式）
+  // 检查更新（非开发模式 且 用户开启了自动更新）
   if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'development') {
-    // 启动后延迟 3 秒检查更新
-    setTimeout(() => {
-      autoUpdater.checkForUpdates().catch((err) => {
-        debugLog(`Check for updates failed: ${err.message}`);
-      });
-    }, 3000);
+    if (appConfig.autoUpdate) {
+      // 启动后延迟 5 秒检查更新
+      setTimeout(() => {
+        autoUpdater.checkForUpdates().catch((err) => {
+          debugLog(`Check for updates failed: ${err.message}`);
+        });
+      }, 5000);
+
+      // 每 4 小时自动检查一次更新
+      setInterval(() => {
+        if (appConfig.autoUpdate) {
+          autoUpdater.checkForUpdates().catch((err) => {
+            debugLog(`Periodic update check failed: ${err.message}`);
+          });
+        }
+      }, 4 * 60 * 60 * 1000);
+    } else {
+      debugLog('Auto-update disabled by user settings');
+    }
   }
 }
 
@@ -124,6 +136,7 @@ interface AppConfig {
   openaiModel?: string;
   syncPort: number;
   autoStartSync: boolean;
+  autoUpdate: boolean;  // 自动更新开关
 }
 
 const defaultConfig: AppConfig = {
@@ -138,6 +151,7 @@ const defaultConfig: AppConfig = {
   openaiModel: 'gemini-2.5-flash',
   syncPort: 23789,
   autoStartSync: true,
+  autoUpdate: true,  // 默认开启自动更新
 };
 
 let appConfig: AppConfig = { ...defaultConfig };

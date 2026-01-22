@@ -81,6 +81,7 @@ interface AppConfig {
   geminiModel?: string;
   syncPort: number;
   autoStartSync: boolean;
+  autoUpdate: boolean;
   hasOllama: boolean;
   hasGemini: boolean;
 }
@@ -683,6 +684,21 @@ export default function App() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 自动更新 */}
+          <div className="form-group checkbox-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={tempConfig.autoUpdate !== false}
+                onChange={(e) =>
+                  setTempConfig({ ...tempConfig, autoUpdate: e.target.checked })
+                }
+              />
+              <span>{t('settings.autoUpdate')}</span>
+            </label>
+            <small className="form-hint">{t('settings.autoUpdateDesc')}</small>
           </div>
 
           {/* 状态显示 */}

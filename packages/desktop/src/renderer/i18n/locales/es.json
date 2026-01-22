@@ -42,6 +42,8 @@
     "language": {
       "label": "Idioma"
     },
+    "autoUpdate": "Actualización automática",
+    "autoUpdateDesc": "Verificar y descargar actualizaciones automáticamente en segundo plano",
     "save": "Guardar",
     "cancel": "Cancelar"
   },

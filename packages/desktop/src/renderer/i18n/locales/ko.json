@@ -42,6 +42,8 @@
     "language": {
       "label": "언어"
     },
+    "autoUpdate": "자동 업데이트",
+    "autoUpdateDesc": "백그라운드에서 자동으로 업데이트 확인 및 다운로드",
     "save": "저장",
     "cancel": "취소"
   },

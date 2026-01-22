@@ -42,6 +42,8 @@
     "language": {
       "label": "语言"
     },
+    "autoUpdate": "自动更新",
+    "autoUpdateDesc": "在后台自动检查并下载更新",
     "save": "保存",
     "cancel": "取消"
   },
