@@ -11,7 +11,11 @@ export type AIProviderType =
   | 'openai'      // OpenAI GPT
   | 'deepseek'    // DeepSeek
   | 'qwen'        // 通义千问
-  | 'doubao';     // 豆包
+  | 'doubao'      // 豆包
+  | 'groq'        // Groq 快速推理
+  | 'together'    // Together AI
+  | 'fireworks'   // Fireworks AI
+  | 'mistral';    // Mistral AI
 
 export interface AIProviderConfig {
   /** Provider 类型 */
@@ -115,6 +119,8 @@ export interface IntentContext {
   clipboardType?: 'text' | 'code' | 'url' | 'file' | 'image';
   /** 用户活动状态 */
   activityState?: 'coding' | 'browsing' | 'writing' | 'organizing' | 'idle';
+  /** 感知上下文（用于插件等高级功能）*/
+  perceptionContext?: unknown;
 }
 
 // ============ 计划类型 ============
@@ -145,8 +151,10 @@ export interface ExecutionPlan {
 }
 
 export interface PlanStep {
+  /** 步骤 ID (可选，用于标识) */
+  id?: string;
   /** 步骤序号 */
-  order: number;
+  order?: number;
   /** 步骤描述 */
   description: string;
   /** 动作类型 */
@@ -161,7 +169,7 @@ export interface PlanStep {
     params: Record<string, unknown>;
   };
   /** 风险等级 */
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: 'safe' | 'low' | 'medium' | 'high';
 }
 
 export type ActionType =

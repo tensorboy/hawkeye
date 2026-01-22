@@ -14,7 +14,7 @@ import type {
   TaskExecution,
 } from './types';
 
-export interface HawkeyeEngineConfig extends EngineConfig {
+export interface HawkeyeEngineConfig extends Omit<EngineConfig, 'perception' | 'execution'> {
   perception?: PerceptionEngineConfig;
   reasoning?: Omit<ReasoningEngineConfig, 'apiKey'>;
   execution?: ExecutionEngineConfig;

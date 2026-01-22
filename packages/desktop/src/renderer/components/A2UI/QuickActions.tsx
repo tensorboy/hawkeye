@@ -55,12 +55,6 @@ export const defaultQuickActions: QuickAction[] = [
     tooltip: '重新分析当前环境',
   },
   {
-    id: 'screenshot',
-    label: '截屏分析',
-    icon: '📸',
-    tooltip: '分析当前屏幕内容',
-  },
-  {
     id: 'clipboard',
     label: '剪贴板',
     icon: '📋',

@@ -134,7 +134,9 @@ export interface ExecutionResult {
   /** 错误信息 */
   error?: string;
   /** 执行耗时 (ms) */
-  duration: number;
+  duration?: number;
+  /** 额外元数据 */
+  metadata?: Record<string, unknown>;
 }
 
 /**

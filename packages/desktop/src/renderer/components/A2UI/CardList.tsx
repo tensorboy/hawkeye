@@ -10,6 +10,7 @@ import { PreviewCard } from './PreviewCard';
 import { ResultCard } from './ResultCard';
 import { ProgressCard } from './ProgressCard';
 import { ConfirmationCard } from './ConfirmationCard';
+import logoIcon from '../../assets/icon.png';
 
 interface CardListProps {
   cards: A2UICard[];
@@ -181,7 +182,7 @@ export const CardList: React.FC<CardListProps> = ({
     <div className="a2ui-card-list" ref={listRef}>
       {visibleCards.length === 0 ? (
         <div className="a2ui-empty-state">
-          <div className="empty-icon">🦅</div>
+          <img src={logoIcon} alt="Hawkeye" className="empty-icon" />
           <p className="empty-message">{emptyMessage}</p>
           <div className="empty-hint">
             <span className="pulse-dot" />

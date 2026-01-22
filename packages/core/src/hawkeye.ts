@@ -17,6 +17,13 @@ import { MemOSManager, type MemOSConfig } from './memory';
 import { DashboardManager, type DashboardManagerConfig } from './dashboard';
 import { WorkflowManager, type WorkflowManagerConfig } from './workflow';
 import { PluginManager, type PluginManagerConfig } from './plugin';
+import {
+  AutonomousManager,
+  createAutonomousManager,
+  type AutonomousConfig,
+  type SuggestedAction,
+  type AutonomousAnalysisResult,
+} from './autonomous';
 import type {
   UserIntent,
   ExecutionPlan,
@@ -58,6 +65,9 @@ export interface HawkeyeConfig {
   /** 插件系统配置 */
   plugin?: PluginManagerConfig;
 
+  /** 自主能力配置 */
+  autonomous?: Partial<AutonomousConfig>;
+
   /** 是否自动启动 WebSocket 服务器 */
   autoStartSync?: boolean;
 
@@ -78,6 +88,9 @@ export interface HawkeyeConfig {
 
   /** 是否启用插件系统 */
   enablePlugins?: boolean;
+
+  /** 是否启用自主能力 (无需 Prompt 的自动建议) */
+  enableAutonomous?: boolean;
 }
 
 export interface HawkeyeStatus {
@@ -93,6 +106,8 @@ export interface HawkeyeStatus {
   workflowEnabled: boolean;
   pluginsEnabled: boolean;
   loadedPlugins: number;
+  autonomousEnabled: boolean;
+  activeSuggestions: number;
 }
 
 export class Hawkeye extends EventEmitter {
@@ -112,6 +127,7 @@ export class Hawkeye extends EventEmitter {
   private dashboardManager: DashboardManager | null = null;
   private workflowManager: WorkflowManager | null = null;
   private pluginManager: PluginManager | null = null;
+  private autonomousManager: AutonomousManager | null = null;
 
   private _initialized: boolean = false;
   private _syncRunning: boolean = false;
@@ -159,6 +175,11 @@ export class Hawkeye extends EventEmitter {
     if (config.enablePlugins !== false) {
       this.pluginManager = new PluginManager(config.plugin);
     }
+
+    // 初始化自主能力管理器
+    if (config.enableAutonomous !== false) {
+      this.autonomousManager = createAutonomousManager(config.autonomous);
+    }
   }
 
   get isInitialized(): boolean {
@@ -200,15 +221,11 @@ export class Hawkeye extends EventEmitter {
       this.emit('module:ready', 'ai');
 
       // 4. 配置 Intent Engine 和 Plan Generator 使用 AI
-      this.intentEngine = new IntentEngine({
-        aiManager: this.aiManager,
-        useAI: true,
-      });
+      this.intentEngine = new IntentEngine();
+      this.intentEngine.setAIManager(this.aiManager);
 
-      this.planGenerator = new PlanGenerator({
-        aiManager: this.aiManager,
-        useAI: true,
-      });
+      this.planGenerator = new PlanGenerator();
+      this.planGenerator.setAIManager(this.aiManager);
 
       // 5. 配置 AI 嵌入函数（如果启用）
       if (this.config.enableAIEmbedding && this.aiManager) {
@@ -276,6 +293,13 @@ export class Hawkeye extends EventEmitter {
         this.emit('module:ready', 'plugin');
       }
 
+      // 13. 初始化自主能力管理器
+      if (this.autonomousManager) {
+        this.autonomousManager.start();
+        this.setupAutonomousEvents();
+        this.emit('module:ready', 'autonomous');
+      }
+
       this._initialized = true;
       this.emit('ready');
     } catch (error) {
@@ -302,9 +326,10 @@ export class Hawkeye extends EventEmitter {
     this.database.saveContext({
       id: `ctx_${Date.now()}`,
       timestamp: Date.now(),
-      activeWindow: context.activeWindow,
+      appName: context.activeWindow?.appName,
+      windowTitle: context.activeWindow?.title,
       clipboard: context.clipboard,
-      screenshot: context.screenshot,
+      screenshot: context.screenshot?.imageData,
     });
 
     // 3. 识别意图
@@ -360,8 +385,9 @@ export class Hawkeye extends EventEmitter {
       intentId: intent.id,
       title: plan.title,
       description: plan.description,
-      steps: plan.steps,
-      impact: plan.impact,
+      steps: JSON.stringify(plan.steps),
+      pros: JSON.stringify(plan.pros),
+      cons: JSON.stringify(plan.cons),
       status: 'pending',
       createdAt: Date.now(),
     });
@@ -373,11 +399,11 @@ export class Hawkeye extends EventEmitter {
           id: plan.id,
           title: plan.title,
           description: plan.description,
-          steps: plan.steps.map(s => ({
-            order: s.order,
+          steps: plan.steps.map((s, index) => ({
+            order: s.order ?? index + 1,
             description: s.description,
             actionType: s.actionType,
-            riskLevel: s.riskLevel,
+            riskLevel: s.riskLevel === 'safe' ? 'low' : s.riskLevel,
           })),
           pros: plan.pros,
           cons: plan.cons,
@@ -408,8 +434,9 @@ export class Hawkeye extends EventEmitter {
       intentId: plan.id.replace('plan_', 'intent_'),
       title: plan.title,
       description: plan.description,
-      steps: plan.steps,
-      impact: plan.impact,
+      steps: JSON.stringify(plan.steps),
+      pros: JSON.stringify(plan.pros),
+      cons: JSON.stringify(plan.cons),
       status: execution.status === 'completed' ? 'completed' : 'failed',
       createdAt: Date.now(),
     });
@@ -493,6 +520,7 @@ export class Hawkeye extends EventEmitter {
    * 获取当前状态
    */
   getStatus(): HawkeyeStatus {
+    const autonomousStatus = this.autonomousManager?.getStatus();
     return {
       initialized: this._initialized,
       aiReady: this.aiManager?.isReady ?? false,
@@ -506,6 +534,8 @@ export class Hawkeye extends EventEmitter {
       workflowEnabled: this.workflowManager !== null,
       pluginsEnabled: this.pluginManager !== null,
       loadedPlugins: this.pluginManager?.getLoadedPlugins().length ?? 0,
+      autonomousEnabled: this.autonomousManager !== null,
+      activeSuggestions: autonomousStatus?.suggestionsCount ?? 0,
     };
   }
 
@@ -624,6 +654,65 @@ export class Hawkeye extends EventEmitter {
     return this.pluginManager?.getLoadedPlugins() ?? [];
   }
 
+  // ============ 自主能力相关 ============
+
+  /**
+   * 获取自主能力管理器
+   */
+  getAutonomousManager(): AutonomousManager | null {
+    return this.autonomousManager;
+  }
+
+  /**
+   * 分析上下文并获取自动建议 (无需 Prompt)
+   */
+  async analyzeAndSuggest(): Promise<AutonomousAnalysisResult | null> {
+    if (!this.autonomousManager) return null;
+
+    const context = await this.perception.perceive();
+    return this.autonomousManager.analyze(context);
+  }
+
+  /**
+   * 获取当前建议列表
+   */
+  getSuggestions(limit?: number): SuggestedAction[] {
+    return this.autonomousManager?.getSuggestions(limit) ?? [];
+  }
+
+  /**
+   * 执行建议
+   */
+  async executeSuggestion(suggestionId: string): Promise<void> {
+    if (!this.autonomousManager) return;
+
+    const result = await this.autonomousManager.executeSuggestion(suggestionId);
+    if (result.metadata?.action) {
+      // 使用 PlanExecutor 执行实际操作
+      const step = result.metadata.action as any;
+      const execResult = await this.planExecutor.executeSingleAction(step);
+
+      // 提供反馈
+      this.autonomousManager.provideFeedback(suggestionId, execResult.success, execResult);
+
+      this.emit('suggestion:executed', { suggestionId, result: execResult });
+    }
+  }
+
+  /**
+   * 忽略建议
+   */
+  dismissSuggestion(suggestionId: string): void {
+    this.autonomousManager?.dismissSuggestion(suggestionId);
+  }
+
+  /**
+   * 获取检测到的行为模式
+   */
+  getDetectedPatterns() {
+    return this.autonomousManager?.getPatterns() ?? [];
+  }
+
   /**
    * 获取可用的 AI Provider
    */
@@ -667,6 +756,13 @@ export class Hawkeye extends EventEmitter {
   }
 
   /**
+   * 获取执行历史记录
+   */
+  getExecutionHistory(limit: number = 20) {
+    return this.database.getRecentExecutions(limit);
+  }
+
+  /**
    * 关闭引擎
    */
   async shutdown(): Promise<void> {
@@ -691,6 +787,11 @@ export class Hawkeye extends EventEmitter {
     // 卸载所有插件
     if (this.pluginManager) {
       await this.pluginManager.destroy();
+    }
+
+    // 停止自主能力
+    if (this.autonomousManager) {
+      this.autonomousManager.stop();
     }
 
     if (this.syncServer) {
@@ -892,6 +993,29 @@ export class Hawkeye extends EventEmitter {
   private setupPluginEvents(): void {
     if (!this.pluginManager) return;
 
+    // 设置感知上下文提供者
+    this.pluginManager.setPerceptionContextProvider(async () => {
+      // 返回最近的感知上下文
+      if (this.currentIntents.length > 0) {
+        const lastIntent = this.currentIntents[this.currentIntents.length - 1];
+        return lastIntent.context?.perceptionContext || null;
+      }
+      return null;
+    });
+
+    // 设置操作执行器
+    this.pluginManager.setActionExecutor(async (step) => {
+      try {
+        const result = await this.planExecutor.executeSingleAction(step);
+        return result;
+      } catch (error: unknown) {
+        return {
+          success: false,
+          error: (error as Error).message || String(error),
+        };
+      }
+    });
+
     this.pluginManager.on('plugin:loaded', (plugin) => {
       this.emit('plugin:loaded', plugin);
     });
@@ -906,6 +1030,51 @@ export class Hawkeye extends EventEmitter {
 
     this.pluginManager.on('plugin:error', (data) => {
       this.emit('plugin:error', data);
+    });
+  }
+
+  private setupAutonomousEvents(): void {
+    if (!this.autonomousManager) return;
+
+    // 建议更新事件
+    this.autonomousManager.on('suggestions:updated', (suggestions: SuggestedAction[]) => {
+      this.emit('autonomous:suggestions', suggestions);
+
+      // 广播到客户端
+      if (this.syncServer) {
+        this.syncServer.broadcast('suggestions', {
+          suggestions: suggestions.map(s => ({
+            id: s.id,
+            type: s.type,
+            title: s.title,
+            description: s.description,
+            confidence: s.confidence,
+            priority: s.priority,
+            riskLevel: s.riskLevel,
+            autoExecutable: s.autoExecutable,
+          })),
+        });
+      }
+    });
+
+    // 意图检测事件
+    this.autonomousManager.on('intent:detected', (intent) => {
+      this.emit('autonomous:intent', intent);
+
+      // 如果置信度很高且可自动执行，考虑自动执行
+      if (intent.autoExecute && intent.confidence >= 0.9) {
+        this.emit('autonomous:auto-execute', intent);
+      }
+    });
+
+    // 模式检测事件
+    this.autonomousManager.on('pattern:detected', (pattern) => {
+      this.emit('autonomous:pattern', pattern);
+    });
+
+    // 分析完成事件
+    this.autonomousManager.on('analysis:complete', (result: AutonomousAnalysisResult) => {
+      this.emit('autonomous:analysis', result);
     });
   }
 }

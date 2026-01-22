@@ -129,7 +129,7 @@ export class PlanExecutor extends EventEmitter {
         execution.stepResults.push({
           step,
           result: stepResult,
-          startedAt: Date.now() - stepResult.duration,
+          startedAt: Date.now() - (stepResult.duration ?? 0),
           completedAt: Date.now(),
         });
 
@@ -222,7 +222,7 @@ export class PlanExecutor extends EventEmitter {
         execution.stepResults.push({
           step,
           result: stepResult,
-          startedAt: Date.now() - stepResult.duration,
+          startedAt: Date.now() - (stepResult.duration ?? 0),
           completedAt: Date.now(),
         });
 
@@ -334,6 +334,13 @@ export class PlanExecutor extends EventEmitter {
   // ============ 私有方法 ============
 
   private async executeStep(step: PlanStep): Promise<ExecutionResult> {
+    return this.executeAction(step.actionType, step.params);
+  }
+
+  /**
+   * 执行单个操作（公开方法，供插件系统使用）
+   */
+  async executeSingleAction(step: PlanStep): Promise<ExecutionResult> {
     return this.executeAction(step.actionType, step.params);
   }
 

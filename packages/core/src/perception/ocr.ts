@@ -565,26 +565,43 @@ export class OCRManager extends EventEmitter {
       ? imageData.length
       : imageData.length;
     const inputType = typeof imageData === 'string' ? 'base64' : 'buffer';
-    console.log(`[OCR] ====== 开始识别 ======`);
+    const startTime = Date.now();
+
+    console.log(`\n[OCR] ════════════════════════════════════════════════════════`);
+    console.log(`[OCR] 🔍 开始 OCR 识别`);
+    console.log(`[OCR] ────────────────────────────────────────────────────────`);
+    console.log(`[OCR] 时间: ${new Date().toISOString()}`);
     console.log(`[OCR] 输入类型: ${inputType}`);
     console.log(`[OCR] 输入大小: ${(inputSize / 1024).toFixed(2)} KB`);
     console.log(`[OCR] 使用后端: ${this.activeBackend.name}`);
+    console.log(`[OCR] 置信度阈值: ${(this.config.confidenceThreshold * 100).toFixed(0)}%`);
+    console.log(`[OCR] ────────────────────────────────────────────────────────`);
+    console.log(`[OCR] 📤 发送图片数据到 ${this.activeBackend.name}...`);
 
     const result = await this.activeBackend.recognize(imageData);
 
     // 过滤低置信度结果
+    const originalRegionCount = result.regions.length;
     result.regions = result.regions.filter(
       r => r.confidence >= this.config.confidenceThreshold * 100
     );
+    const filteredCount = originalRegionCount - result.regions.length;
 
     // 日志：输出信息
-    console.log(`[OCR] ====== 识别完成 ======`);
-    console.log(`[OCR] 耗时: ${result.duration} ms`);
-    console.log(`[OCR] 置信度: ${result.confidence.toFixed(2)}%`);
-    console.log(`[OCR] 区域数量: ${result.regions.length}`);
-    console.log(`[OCR] 识别文本 (前500字符):`);
-    console.log(`[OCR] ${result.text.slice(0, 500)}${result.text.length > 500 ? '...' : ''}`);
-    console.log(`[OCR] ========================`);
+    console.log(`[OCR] 📥 收到识别结果`);
+    console.log(`[OCR] ────────────────────────────────────────────────────────`);
+    console.log(`[OCR] ✅ 识别完成`);
+    console.log(`[OCR] 总耗时: ${result.duration} ms`);
+    console.log(`[OCR] 平均置信度: ${result.confidence.toFixed(2)}%`);
+    console.log(`[OCR] 检测区域: ${originalRegionCount} 个 (过滤后: ${result.regions.length} 个)`);
+    if (filteredCount > 0) {
+      console.log(`[OCR] 低置信度过滤: ${filteredCount} 个区域被过滤`);
+    }
+    console.log(`[OCR] 文本总长度: ${result.text.length} 字符`);
+    console.log(`[OCR] ────────────────────────────────────────────────────────`);
+    console.log(`[OCR] 📝 识别文本内容:`);
+    console.log(`[OCR] ${result.text.slice(0, 800)}${result.text.length > 800 ? '\n[OCR] ... (更多内容已省略)' : ''}`);
+    console.log(`[OCR] ════════════════════════════════════════════════════════\n`);
 
     this.emit('recognized', result);
     return result;

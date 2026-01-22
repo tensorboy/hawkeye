@@ -474,6 +474,48 @@ export class HawkeyeDatabase {
     );
   }
 
+  /**
+   * 获取最近的执行记录（包含计划详情）
+   */
+  getRecentExecutions(limit: number = 20): Array<ExecutionRecord & { plan?: PlanRecord }> {
+    if (!this.db) return [];
+
+    const stmt = this.db.prepare(`
+      SELECT
+        e.id, e.plan_id, e.status, e.step_results, e.error, e.started_at, e.completed_at,
+        p.id as p_id, p.intent_id, p.title, p.description, p.steps, p.pros, p.cons,
+        p.status as p_status, p.created_at as p_created_at, p.completed_at as p_completed_at
+      FROM executions e
+      LEFT JOIN plans p ON e.plan_id = p.id
+      ORDER BY e.started_at DESC
+      LIMIT ?
+    `);
+
+    const rows = stmt.all(limit) as Array<Record<string, unknown>>;
+
+    return rows.map(row => ({
+      id: row.id as string,
+      planId: row.plan_id as string,
+      status: row.status as string,
+      stepResults: row.step_results as string,
+      error: row.error as string | undefined,
+      startedAt: row.started_at as number,
+      completedAt: row.completed_at as number | undefined,
+      plan: row.p_id ? {
+        id: row.p_id as string,
+        intentId: row.intent_id as string,
+        title: row.title as string,
+        description: row.description as string,
+        steps: row.steps as string,
+        pros: row.pros as string,
+        cons: row.cons as string,
+        status: row.p_status as string,
+        createdAt: row.p_created_at as number,
+        completedAt: row.p_completed_at as number | undefined,
+      } : undefined,
+    }));
+  }
+
   // ============ 偏好设置操作 ============
 
   setPreference(key: string, value: unknown): void {

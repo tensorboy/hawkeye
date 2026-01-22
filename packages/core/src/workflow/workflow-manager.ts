@@ -9,6 +9,10 @@ import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import { ShellExecutor } from '../execution/shell';
+import { FileExecutor } from '../execution/file';
 import {
   Workflow,
   WorkflowMetadata,
@@ -57,6 +61,13 @@ export class WorkflowManager extends EventEmitter {
   private executions: Map<string, WorkflowExecution> = new Map();
   private scheduledJobs: Map<string, NodeJS.Timeout> = new Map();
 
+  // 执行器
+  private shellExecutor: ShellExecutor;
+  private fileExecutor: FileExecutor;
+
+  // 事件触发器映射
+  private eventTriggers: Map<string, Set<string>> = new Map(); // eventName -> workflowIds
+
   // 回调处理
   private inputHandler?: (prompt: string, options?: unknown) => Promise<unknown>;
   private notificationHandler?: (title: string, message: string, type: string) => void;
@@ -64,6 +75,8 @@ export class WorkflowManager extends EventEmitter {
   constructor(config?: Partial<WorkflowManagerConfig>) {
     super();
     this.config = { ...DEFAULT_WORKFLOW_CONFIG, ...config };
+    this.shellExecutor = new ShellExecutor();
+    this.fileExecutor = new FileExecutor();
     this.ensureWorkflowDir();
   }
 
@@ -594,9 +607,51 @@ export class WorkflowManager extends EventEmitter {
     execution: WorkflowExecution,
     step: ActionStep
   ): Promise<unknown> {
-    // TODO: 集成执行引擎
-    console.log(`Executing action: ${step.action.type}`);
-    return { success: true };
+    const { actionType, params } = step.action;
+
+    switch (actionType) {
+      case 'shell':
+        // 执行 Shell 命令
+        const shellResult = await this.shellExecutor.execute(
+          params.command as string,
+          {
+            cwd: params.cwd as string | undefined,
+            timeout: params.timeout as number | undefined,
+          }
+        );
+        return shellResult;
+
+      case 'file_read':
+        return await this.fileExecutor.read(params.path as string);
+
+      case 'file_write':
+        return await this.fileExecutor.write(
+          params.path as string,
+          params.content as string
+        );
+
+      case 'file_move':
+        return await this.fileExecutor.move(
+          params.source as string,
+          params.destination as string
+        );
+
+      case 'file_copy':
+        return await this.fileExecutor.copy(
+          params.source as string,
+          params.destination as string
+        );
+
+      case 'file_delete':
+        return await this.fileExecutor.delete(params.path as string);
+
+      case 'folder_create':
+        return await this.fileExecutor.createDir(params.path as string);
+
+      default:
+        console.log(`Executing action: ${actionType}`, params);
+        return { success: true, actionType, params };
+    }
   }
 
   /**
@@ -683,10 +738,60 @@ export class WorkflowManager extends EventEmitter {
     execution: WorkflowExecution,
     step: WaitStep
   ): Promise<void> {
+    // 等待固定时长
     if (step.duration) {
       await new Promise(resolve => setTimeout(resolve, step.duration));
     }
-    // TODO: 支持事件等待和条件等待
+
+    // 等待事件
+    if (step.event) {
+      await new Promise<void>(resolve => {
+        const handler = () => {
+          this.removeListener(step.event!, handler);
+          resolve();
+        };
+        this.on(step.event!, handler);
+
+        // 设置超时 (默认 5 分钟)
+        const timeout = setTimeout(() => {
+          this.removeListener(step.event!, handler);
+          resolve();
+        }, 5 * 60 * 1000);
+
+        // 清理
+        this.once(`execution:${execution.id}:cancelled`, () => {
+          clearTimeout(timeout);
+          this.removeListener(step.event!, handler);
+          resolve();
+        });
+      });
+    }
+
+    // 等待条件满足
+    if (step.condition) {
+      const maxWait = 5 * 60 * 1000; // 5 分钟超时
+      const checkInterval = 500; // 每 500ms 检查一次
+      const startTime = Date.now();
+
+      while (Date.now() - startTime < maxWait) {
+        const conditionMet = this.evaluateConditions(
+          [step.condition],
+          'and',
+          execution.variables
+        );
+
+        if (conditionMet) {
+          break;
+        }
+
+        // 检查是否被取消
+        if (execution.status === 'cancelled') {
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+      }
+    }
   }
 
   /**
@@ -759,8 +864,55 @@ export class WorkflowManager extends EventEmitter {
 
       return result;
     } else if (step.language === 'shell') {
-      // TODO: 执行 shell 脚本
-      throw new Error('Shell script execution not yet implemented');
+      // 执行 shell 脚本
+      const execPromise = promisify(exec);
+
+      // 准备环境变量 (filter out undefined values)
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
+      );
+      if (step.inputs) {
+        for (const [key, varName] of Object.entries(step.inputs)) {
+          const value = execution.variables[varName];
+          if (value !== undefined && value !== null) {
+            env[key] = String(value);
+          }
+        }
+      }
+
+      try {
+        const { stdout, stderr } = await execPromise(step.code, {
+          env,
+          timeout: 30000, // 30 秒超时
+        });
+
+        const result = {
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+          success: true,
+        };
+
+        // 设置输出
+        if (step.outputs) {
+          for (const outputKey of step.outputs) {
+            if (outputKey === 'stdout') {
+              execution.variables[outputKey] = result.stdout;
+            } else if (outputKey === 'stderr') {
+              execution.variables[outputKey] = result.stderr;
+            }
+          }
+        }
+
+        return result;
+      } catch (error: unknown) {
+        const execError = error as { stdout?: string; stderr?: string; message: string };
+        return {
+          stdout: execError.stdout || '',
+          stderr: execError.stderr || execError.message,
+          success: false,
+          error: execError.message,
+        };
+      }
     }
 
     throw new Error(`Unsupported script language: ${step.language}`);
@@ -984,10 +1136,116 @@ export class WorkflowManager extends EventEmitter {
    * 激活触发器
    */
   private activateTrigger(workflow: Workflow, trigger: WorkflowTrigger): void {
-    if (trigger.type === 'schedule') {
-      this.scheduleWorkflow(workflow, trigger);
+    switch (trigger.type) {
+      case 'schedule':
+        this.scheduleWorkflow(workflow, trigger);
+        break;
+
+      case 'event':
+        // 注册事件触发器
+        const eventTrigger = trigger as { type: 'event'; eventName: string };
+        if (!this.eventTriggers.has(eventTrigger.eventName)) {
+          this.eventTriggers.set(eventTrigger.eventName, new Set());
+        }
+        this.eventTriggers.get(eventTrigger.eventName)!.add(workflow.metadata.id);
+        break;
+
+      case 'webhook':
+        // Webhook 触发器由外部 HTTP 服务器处理，这里只记录注册
+        console.log(`Webhook trigger registered for workflow: ${workflow.metadata.id}`);
+        break;
+
+      case 'hotkey':
+        // 快捷键触发器由外部处理（例如 Electron 的 globalShortcut）
+        console.log(`Hotkey trigger registered for workflow: ${workflow.metadata.id}`);
+        break;
+
+      case 'manual':
+        // 手动触发器不需要特殊处理
+        break;
+
+      case 'condition':
+        // 条件触发器：定期检查条件
+        this.setupConditionTrigger(workflow, trigger);
+        break;
     }
-    // TODO: 支持其他触发器类型
+  }
+
+  /**
+   * 设置条件触发器
+   */
+  private setupConditionTrigger(
+    workflow: Workflow,
+    trigger: WorkflowTrigger & { type: 'condition' }
+  ): void {
+    const jobId = `${workflow.metadata.id}:condition:${Math.random()}`;
+    const checkInterval = 10000; // 每 10 秒检查一次
+
+    const job = setInterval(async () => {
+      try {
+        // 创建临时变量上下文
+        const variables: Record<string, unknown> = {};
+
+        const conditionMet = this.evaluateConditions(
+          trigger.conditions,
+          trigger.logic,
+          variables
+        );
+
+        if (conditionMet) {
+          await this.executeWorkflow(workflow.metadata.id);
+        }
+      } catch (error) {
+        console.error(`Condition trigger error for workflow ${workflow.metadata.id}:`, error);
+      }
+    }, checkInterval);
+
+    this.scheduledJobs.set(jobId, job);
+  }
+
+  /**
+   * 触发事件（供外部调用）
+   */
+  triggerEvent(eventName: string, data?: Record<string, unknown>): void {
+    const workflowIds = this.eventTriggers.get(eventName);
+    if (workflowIds) {
+      for (const workflowId of workflowIds) {
+        this.executeWorkflow(workflowId, data).catch(console.error);
+      }
+    }
+    // 同时触发内部事件（用于 wait 步骤）
+    this.emit(eventName, data);
+  }
+
+  /**
+   * 触发 Webhook（供外部 HTTP 服务器调用）
+   */
+  async triggerWebhook(
+    path: string,
+    method: string,
+    data?: Record<string, unknown>
+  ): Promise<{ workflowId: string; executed: boolean }[]> {
+    const results: { workflowId: string; executed: boolean }[] = [];
+
+    for (const workflow of this.workflows.values()) {
+      for (const trigger of workflow.triggers) {
+        if (
+          trigger.type === 'webhook' &&
+          trigger.enabled &&
+          trigger.path === path &&
+          (!trigger.methods || trigger.methods.includes(method as 'GET' | 'POST' | 'PUT' | 'DELETE'))
+        ) {
+          try {
+            await this.executeWorkflow(workflow.metadata.id, data);
+            results.push({ workflowId: workflow.metadata.id, executed: true });
+          } catch {
+            results.push({ workflowId: workflow.metadata.id, executed: false });
+          }
+        }
+      }
+    }
+
+    return results;
   }
 
   /**
@@ -998,13 +1256,82 @@ export class WorkflowManager extends EventEmitter {
     trigger: WorkflowTrigger & { type: 'schedule' }
   ): void {
     if (trigger.interval) {
-      const jobId = `${workflow.metadata.id}:${Math.random()}`;
+      const jobId = `${workflow.metadata.id}:interval:${Math.random()}`;
       const job = setInterval(() => {
         this.executeWorkflow(workflow.metadata.id).catch(console.error);
       }, trigger.interval);
       this.scheduledJobs.set(jobId, job);
     }
-    // TODO: 支持 cron 表达式
+
+    if (trigger.cron) {
+      // 解析 cron 表达式并设置定时任务
+      this.scheduleCronJob(workflow, trigger.cron);
+    }
+  }
+
+  /**
+   * 设置 cron 定时任务
+   * 支持简化的 cron 表达式: minute hour dayOfMonth month dayOfWeek
+   */
+  private scheduleCronJob(workflow: Workflow, cronExpr: string): void {
+    const jobId = `${workflow.metadata.id}:cron:${Math.random()}`;
+
+    // 每分钟检查一次是否匹配 cron 表达式
+    const job = setInterval(() => {
+      const now = new Date();
+      if (this.matchesCron(now, cronExpr)) {
+        this.executeWorkflow(workflow.metadata.id).catch(console.error);
+      }
+    }, 60000); // 每分钟检查
+
+    this.scheduledJobs.set(jobId, job);
+  }
+
+  /**
+   * 检查时间是否匹配 cron 表达式
+   * 简化版本支持: minute hour dayOfMonth month dayOfWeek
+   * 支持 * (任意), 数字, 逗号分隔, 范围(-)
+   */
+  private matchesCron(date: Date, cronExpr: string): boolean {
+    const parts = cronExpr.trim().split(/\s+/);
+    if (parts.length !== 5) {
+      console.warn(`Invalid cron expression: ${cronExpr}`);
+      return false;
+    }
+
+    const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+
+    const matchField = (field: string, value: number): boolean => {
+      if (field === '*') return true;
+
+      // 处理逗号分隔的多个值
+      if (field.includes(',')) {
+        return field.split(',').some(f => matchField(f.trim(), value));
+      }
+
+      // 处理范围
+      if (field.includes('-')) {
+        const [start, end] = field.split('-').map(Number);
+        return value >= start && value <= end;
+      }
+
+      // 处理步长 (*/n)
+      if (field.startsWith('*/')) {
+        const step = parseInt(field.substring(2), 10);
+        return value % step === 0;
+      }
+
+      // 直接数字比较
+      return parseInt(field, 10) === value;
+    };
+
+    return (
+      matchField(minute, date.getMinutes()) &&
+      matchField(hour, date.getHours()) &&
+      matchField(dayOfMonth, date.getDate()) &&
+      matchField(month, date.getMonth() + 1) &&
+      matchField(dayOfWeek, date.getDay())
+    );
   }
 
   /**

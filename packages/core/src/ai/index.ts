@@ -33,3 +33,15 @@ export {
   getAIManager,
   createAIManager,
 } from './manager';
+
+// Context Compressor 导出
+export {
+  ContextCompressor,
+  type ContextCompressorConfig,
+  type ContextChunk,
+  type ContextPriority,
+  type CompressedContext,
+  getContextCompressor,
+  createContextCompressor,
+  setContextCompressor,
+} from './context-compressor';

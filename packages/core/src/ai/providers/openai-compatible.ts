@@ -59,10 +59,7 @@ export class OpenAICompatibleProvider extends EventEmitter implements IAIProvide
   constructor(config: OpenAICompatibleConfig) {
     super();
     this.config = {
-      type: 'openai',
-      baseUrl: config.baseUrl,
-      apiKey: config.apiKey,
-      model: config.model || 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash',
       maxTokens: 4096,
       temperature: 0.7,
       timeout: 60000,

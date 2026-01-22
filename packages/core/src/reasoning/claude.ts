@@ -31,7 +31,7 @@ export class ClaudeClient {
     const messages: Anthropic.MessageParam[] = [];
 
     // 构建消息内容
-    const content: Anthropic.ContentBlockParam[] = [];
+    const content: Array<Anthropic.ImageBlockParam | Anthropic.TextBlockParam> = [];
 
     // 添加系统提示
     const systemPrompt = this.buildSystemPrompt();

@@ -15,6 +15,156 @@ import { OllamaProvider, type OllamaConfig } from './providers/ollama';
 import { GeminiProvider, type GeminiConfig } from './providers/gemini';
 import { OpenAICompatibleProvider, type OpenAICompatibleConfig } from './providers/openai-compatible';
 
+// ============ Provider 注册表 (LiteLLM 模式) ============
+
+/**
+ * Provider 工厂函数类型
+ */
+export type ProviderFactory = (config: AIProviderConfig) => IAIProvider;
+
+/**
+ * Provider 注册表 - 支持动态注册和扩展
+ * 参考 Open Interpreter 的 LiteLLM 模式
+ */
+class ProviderRegistry {
+  private factories: Map<string, ProviderFactory> = new Map();
+  private static instance: ProviderRegistry | null = null;
+
+  private constructor() {
+    // 注册内置 Provider
+    this.registerBuiltinProviders();
+  }
+
+  static getInstance(): ProviderRegistry {
+    if (!ProviderRegistry.instance) {
+      ProviderRegistry.instance = new ProviderRegistry();
+    }
+    return ProviderRegistry.instance;
+  }
+
+  /**
+   * 注册 Provider 工厂
+   */
+  register(type: string, factory: ProviderFactory): void {
+    this.factories.set(type, factory);
+  }
+
+  /**
+   * 取消注册 Provider
+   */
+  unregister(type: string): boolean {
+    return this.factories.delete(type);
+  }
+
+  /**
+   * 检查 Provider 是否已注册
+   */
+  has(type: string): boolean {
+    return this.factories.has(type);
+  }
+
+  /**
+   * 获取所有已注册的 Provider 类型
+   */
+  getRegisteredTypes(): string[] {
+    return Array.from(this.factories.keys());
+  }
+
+  /**
+   * 创建 Provider 实例
+   */
+  create(config: AIProviderConfig): IAIProvider {
+    const factory = this.factories.get(config.type);
+    if (!factory) {
+      throw new Error(
+        `不支持的 Provider 类型: ${config.type}。` +
+        `已注册的类型: ${this.getRegisteredTypes().join(', ')}`
+      );
+    }
+    return factory(config);
+  }
+
+  /**
+   * 注册内置 Provider
+   */
+  private registerBuiltinProviders(): void {
+    // Ollama - 本地 LLM
+    this.register('ollama', (config) => new OllamaProvider(config as OllamaConfig));
+
+    // Gemini - Google AI
+    this.register('gemini', (config) => new GeminiProvider(config as GeminiConfig));
+
+    // OpenAI Compatible - 通用 OpenAI 兼容接口
+    this.register('openai', (config) => new OpenAICompatibleProvider(config as OpenAICompatibleConfig));
+
+    // 其他常见 Provider 别名 (都使用 OpenAI Compatible)
+    this.register('claude', (config) => new OpenAICompatibleProvider({
+      ...config,
+      baseUrl: (config as OpenAICompatibleConfig).baseUrl || 'https://api.anthropic.com/v1',
+    } as OpenAICompatibleConfig));
+
+    this.register('deepseek', (config) => new OpenAICompatibleProvider({
+      ...config,
+      baseUrl: (config as OpenAICompatibleConfig).baseUrl || 'https://api.deepseek.com/v1',
+    } as OpenAICompatibleConfig));
+
+    this.register('qwen', (config) => new OpenAICompatibleProvider({
+      ...config,
+      baseUrl: (config as OpenAICompatibleConfig).baseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    } as OpenAICompatibleConfig));
+
+    this.register('doubao', (config) => new OpenAICompatibleProvider({
+      ...config,
+      baseUrl: (config as OpenAICompatibleConfig).baseUrl || 'https://ark.cn-beijing.volces.com/api/v3',
+    } as OpenAICompatibleConfig));
+
+    // Groq - 快速推理
+    this.register('groq', (config) => new OpenAICompatibleProvider({
+      ...config,
+      baseUrl: (config as OpenAICompatibleConfig).baseUrl || 'https://api.groq.com/openai/v1',
+    } as OpenAICompatibleConfig));
+
+    // Together AI
+    this.register('together', (config) => new OpenAICompatibleProvider({
+      ...config,
+      baseUrl: (config as OpenAICompatibleConfig).baseUrl || 'https://api.together.xyz/v1',
+    } as OpenAICompatibleConfig));
+
+    // Fireworks AI
+    this.register('fireworks', (config) => new OpenAICompatibleProvider({
+      ...config,
+      baseUrl: (config as OpenAICompatibleConfig).baseUrl || 'https://api.fireworks.ai/inference/v1',
+    } as OpenAICompatibleConfig));
+
+    // Mistral AI
+    this.register('mistral', (config) => new OpenAICompatibleProvider({
+      ...config,
+      baseUrl: (config as OpenAICompatibleConfig).baseUrl || 'https://api.mistral.ai/v1',
+    } as OpenAICompatibleConfig));
+  }
+}
+
+/**
+ * 获取全局 Provider 注册表
+ */
+export function getProviderRegistry(): ProviderRegistry {
+  return ProviderRegistry.getInstance();
+}
+
+/**
+ * 注册自定义 Provider
+ */
+export function registerProvider(type: string, factory: ProviderFactory): void {
+  getProviderRegistry().register(type, factory);
+}
+
+/**
+ * 获取所有已注册的 Provider 类型
+ */
+export function getRegisteredProviderTypes(): string[] {
+  return getProviderRegistry().getRegisteredTypes();
+}
+
 export interface AIManagerConfig {
   /** Provider 配置列表 */
   providers: AIProviderConfig[];
@@ -243,18 +393,21 @@ export class AIManager extends EventEmitter {
 
   // ============ 私有方法 ============
 
+  /**
+   * 使用注册表创建 Provider 实例
+   * 支持动态注册的 Provider 类型
+   */
   private createProvider(config: AIProviderConfig): IAIProvider {
-    switch (config.type) {
-      case 'ollama':
-        return new OllamaProvider(config as OllamaConfig);
-      case 'gemini':
-        return new GeminiProvider(config as GeminiConfig);
-      case 'openai':
-        return new OpenAICompatibleProvider(config as OpenAICompatibleConfig);
-      default:
-        throw new Error(`不支持的 Provider 类型: ${config.type}`);
-    }
+    return getProviderRegistry().create(config);
   }
+
+  /**
+   * Provider 优先级列表 - 可通过配置扩展
+   */
+  private static readonly DEFAULT_PRIORITY: AIProviderType[] = [
+    'ollama', 'gemini', 'claude', 'openai', 'deepseek',
+    'qwen', 'doubao', 'groq', 'together', 'fireworks', 'mistral'
+  ];
 
   private selectProvider(): AIProviderType | null {
     // 优先选择首选 provider
@@ -265,12 +418,17 @@ export class AIManager extends EventEmitter {
       }
     }
 
-    // 按优先级选择: ollama > gemini > 其他
-    const priority: AIProviderType[] = ['ollama', 'gemini', 'claude', 'openai', 'deepseek', 'qwen', 'doubao'];
-
-    for (const type of priority) {
+    // 按优先级选择
+    for (const type of AIManager.DEFAULT_PRIORITY) {
       const entry = this.providers.get(type);
       if (entry?.provider.isAvailable) {
+        return type;
+      }
+    }
+
+    // 如果优先级列表中没有，尝试任何已注册的 Provider
+    for (const [type, entry] of this.providers) {
+      if (entry.provider.isAvailable) {
         return type;
       }
     }
@@ -349,13 +507,20 @@ export class AIManager extends EventEmitter {
   }
 
   private selectNextProvider(exclude: Set<AIProviderType>): AIProviderType | null {
-    const priority: AIProviderType[] = ['ollama', 'gemini', 'claude', 'openai', 'deepseek', 'qwen', 'doubao'];
-
-    for (const type of priority) {
+    // 按优先级选择下一个 Provider
+    for (const type of AIManager.DEFAULT_PRIORITY) {
       if (exclude.has(type)) continue;
 
       const entry = this.providers.get(type);
       if (entry?.provider.isAvailable) {
+        return type;
+      }
+    }
+
+    // 如果优先级列表中没有，尝试任何已注册的 Provider
+    for (const [type, entry] of this.providers) {
+      if (exclude.has(type)) continue;
+      if (entry.provider.isAvailable) {
         return type;
       }
     }

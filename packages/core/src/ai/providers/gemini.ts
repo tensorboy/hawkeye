@@ -55,7 +55,6 @@ export class GeminiProvider extends EventEmitter implements IAIProvider {
   constructor(config: GeminiConfig) {
     super();
     this.config = {
-      type: 'gemini',
       model: 'gemini-2.0-flash-exp',  // 最新免费模型
       maxTokens: 8192,
       temperature: 0.7,

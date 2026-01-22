@@ -19,6 +19,8 @@ export class SyncClient extends EventEmitter {
       port: 9527,
       authToken: '',
       heartbeatInterval: 30000,
+      maxReconnectAttempts: 10,
+      reconnectDelay: 1000,
       ...config,
     };
     this.source = source;

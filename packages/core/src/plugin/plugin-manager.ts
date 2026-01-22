@@ -67,6 +67,10 @@ export class PluginManager extends EventEmitter {
   private inputHandler?: (request: InputRequest) => Promise<string | null>;
   private confirmHandler?: (request: ConfirmationRequest) => Promise<boolean>;
 
+  // 引擎集成回调
+  private perceptionContextProvider?: () => Promise<PerceptionContext | null>;
+  private actionExecutor?: (step: PlanStep) => Promise<ExecutionResult>;
+
   constructor(config?: Partial<PluginManagerConfig>) {
     super();
     this.config = { ...DEFAULT_PLUGIN_MANAGER_CONFIG, ...config };
@@ -427,6 +431,20 @@ export class PluginManager extends EventEmitter {
     this.confirmHandler = handler;
   }
 
+  /**
+   * 设置感知上下文提供者
+   */
+  setPerceptionContextProvider(provider: () => Promise<PerceptionContext | null>): void {
+    this.perceptionContextProvider = provider;
+  }
+
+  /**
+   * 设置操作执行器
+   */
+  setActionExecutor(executor: (step: PlanStep) => Promise<ExecutionResult>): void {
+    this.actionExecutor = executor;
+  }
+
   // ============================================================================
   // 插件上下文创建 (Plugin Context Creation)
   // ============================================================================
@@ -534,15 +552,19 @@ export class PluginManager extends EventEmitter {
 
       // 工具 API
       getPerceptionContext: async (): Promise<PerceptionContext | null> => {
-        // TODO: 从主引擎获取感知上下文
+        if (this.perceptionContextProvider) {
+          return this.perceptionContextProvider();
+        }
         return null;
       },
 
       executeAction: async (step: PlanStep): Promise<ExecutionResult> => {
-        // TODO: 通过主引擎执行操作
+        if (this.actionExecutor) {
+          return this.actionExecutor(step);
+        }
         return {
           success: false,
-          error: 'Not implemented',
+          error: 'Action executor not configured',
         };
       },
 

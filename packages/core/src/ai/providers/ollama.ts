@@ -5,6 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
+import * as http from 'http';
 import type {
   IAIProvider,
   AIProviderConfig,
@@ -14,7 +15,7 @@ import type {
 
 export interface OllamaConfig extends AIProviderConfig {
   type: 'ollama';
-  /** Ollama 服务地址，默认 http://localhost:11434 */
+  /** Ollama 服务地址，默认 http://127.0.0.1:11434 */
   baseUrl?: string;
   /** 模型名称，默认 qwen2.5vl:7b (支持视觉) */
   model?: string;
@@ -48,6 +49,68 @@ interface OllamaChatResponse {
   eval_count?: number;
 }
 
+/**
+ * 使用 Node.js http 模块发送请求，解决 Electron 中 fetch 不可靠的问题
+ */
+function httpRequest<T>(
+  url: string,
+  options: {
+    method?: string;
+    body?: string;
+    timeout?: number;
+  } = {}
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url);
+    const reqOptions: http.RequestOptions = {
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port || 80,
+      path: parsedUrl.pathname + parsedUrl.search,
+      method: options.method || 'GET',
+      timeout: options.timeout || 60000,
+      family: 4, // 强制使用 IPv4，避免 IPv6 连接问题
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    const req = http.request(reqOptions, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            resolve(JSON.parse(data) as T);
+          } catch (e) {
+            reject(new Error(`JSON 解析失败: ${data.substring(0, 100)}`));
+          }
+        } else {
+          reject(new Error(`HTTP ${res.statusCode}: ${data.substring(0, 200)}`));
+        }
+      });
+    });
+
+    req.on('error', (err) => {
+      reject(new Error(`网络错误: ${err.message}`));
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('请求超时'));
+    });
+
+    if (options.body) {
+      req.write(options.body);
+    }
+
+    req.end();
+  });
+}
+
 export class OllamaProvider extends EventEmitter implements IAIProvider {
   readonly name = 'ollama' as const;
   private config: Required<OllamaConfig>;
@@ -56,8 +119,7 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
   constructor(config: OllamaConfig) {
     super();
     this.config = {
-      type: 'ollama',
-      baseUrl: 'http://localhost:11434',
+      baseUrl: 'http://127.0.0.1:11434',
       model: 'qwen2.5vl:7b',  // 支持视觉的默认模型
       maxTokens: 4096,
       temperature: 0.7,
@@ -76,15 +138,11 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
   async initialize(): Promise<void> {
     try {
       // 检查 Ollama 服务
-      const response = await fetch(`${this.config.baseUrl}/api/tags`, {
-        signal: AbortSignal.timeout(5000),
-      });
+      const data = await httpRequest<{ models: Array<{ name: string }> }>(
+        `${this.config.baseUrl}/api/tags`,
+        { timeout: 5000 }
+      );
 
-      if (!response.ok) {
-        throw new Error('Ollama 服务响应异常');
-      }
-
-      const data = await response.json();
       const models = data.models || [];
 
       // 检查是否有可用模型
@@ -136,26 +194,22 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
         : msg.content.map(c => c.text || '').join('\n'),
     }));
 
-    const response = await fetch(`${this.config.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: this.config.model,
-        messages: ollamaMessages,
-        stream: false,
-        options: {
-          temperature: this.config.temperature,
-          num_predict: this.config.maxTokens,
-        },
-      }),
-      signal: AbortSignal.timeout(this.config.timeout),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Ollama 请求失败: ${response.status} ${response.statusText}`);
-    }
-
-    const data: OllamaChatResponse = await response.json();
+    const data = await httpRequest<OllamaChatResponse>(
+      `${this.config.baseUrl}/api/chat`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          model: this.config.model,
+          messages: ollamaMessages,
+          stream: false,
+          options: {
+            temperature: this.config.temperature,
+            num_predict: this.config.maxTokens,
+          },
+        }),
+        timeout: this.config.timeout,
+      }
+    );
 
     return {
       text: data.message.content,
@@ -211,26 +265,22 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
       }
     }
 
-    const response = await fetch(`${this.config.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: this.config.model,
-        messages: ollamaMessages,
-        stream: false,
-        options: {
-          temperature: this.config.temperature,
-          num_predict: this.config.maxTokens,
-        },
-      }),
-      signal: AbortSignal.timeout(this.config.timeout),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Ollama 视觉请求失败: ${response.status} ${response.statusText}`);
-    }
-
-    const data: OllamaChatResponse = await response.json();
+    const data = await httpRequest<OllamaChatResponse>(
+      `${this.config.baseUrl}/api/chat`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          model: this.config.model,
+          messages: ollamaMessages,
+          stream: false,
+          options: {
+            temperature: this.config.temperature,
+            num_predict: this.config.maxTokens,
+          },
+        }),
+        timeout: this.config.timeout,
+      }
+    );
 
     return {
       text: data.message.content,
@@ -248,11 +298,9 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
    * 列出可用模型
    */
   async listModels(): Promise<string[]> {
-    const response = await fetch(`${this.config.baseUrl}/api/tags`);
-    if (!response.ok) {
-      throw new Error('获取模型列表失败');
-    }
-    const data = await response.json();
+    const data = await httpRequest<{ models: Array<{ name: string }> }>(
+      `${this.config.baseUrl}/api/tags`
+    );
     return (data.models || []).map((m: { name: string }) => m.name);
   }
 
@@ -260,15 +308,14 @@ export class OllamaProvider extends EventEmitter implements IAIProvider {
    * 下载模型
    */
   async pullModel(modelName: string): Promise<void> {
-    const response = await fetch(`${this.config.baseUrl}/api/pull`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: modelName, stream: false }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`下载模型失败: ${response.statusText}`);
-    }
+    await httpRequest<{ status: string }>(
+      `${this.config.baseUrl}/api/pull`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ name: modelName, stream: false }),
+        timeout: 600000, // 10 分钟超时，下载大模型需要时间
+      }
+    );
   }
 
   async terminate(): Promise<void> {

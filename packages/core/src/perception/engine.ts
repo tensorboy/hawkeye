@@ -45,6 +45,17 @@ export interface ExtendedPerceptionContext extends PerceptionContext {
   contextId: string;
   /** 创建时间 */
   createdAt: number;
+
+  // ============ 便捷属性 (从 activeWindow 派生) ============
+
+  /** 当前活动应用名 (派生自 activeWindow.owner.name) */
+  activeApp?: string;
+  /** 当前窗口标题 (派生自 activeWindow.title) */
+  windowTitle?: string;
+  /** 当前页面 URL (如果是浏览器窗口) */
+  url?: string;
+  /** 最近使用的应用列表 */
+  recentApps?: string[];
 }
 
 // ============ 感知引擎 ============
@@ -202,8 +213,19 @@ export class PerceptionEngine extends EventEmitter {
    * 获取当前完整的感知上下文
    */
   async perceive(): Promise<ExtendedPerceptionContext> {
+    const perceiveStart = Date.now();
+    const contextId = this.generateId();
+
+    console.log(`\n[Perception] ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓`);
+    console.log(`[Perception] 🎯 开始感知流程`);
+    console.log(`[Perception] ────────────────────────────────────────────────`);
+    console.log(`[Perception] 上下文 ID: ${contextId}`);
+    console.log(`[Perception] 时间: ${new Date().toISOString()}`);
+    console.log(`[Perception] 启用模块: ${this.getStatus().enabledModules.join(', ')}`);
+    console.log(`[Perception] ────────────────────────────────────────────────`);
+
     const context: ExtendedPerceptionContext = {
-      contextId: this.generateId(),
+      contextId,
       createdAt: Date.now(),
       metadata: {
         timestamp: Date.now(),
@@ -218,20 +240,21 @@ export class PerceptionEngine extends EventEmitter {
       promises.push(
         this.screenCapture.capture().then(async (screenshot) => {
           context.screenshot = screenshot;
+          console.log(`[Perception] 📸 截图完成: ${screenshot.id}`);
 
           // OCR 识别
           if (this.config.enableOCR && screenshot.imageData) {
             try {
-              console.log('[PerceptionEngine] 开始 OCR 识别...');
-              console.log(`[PerceptionEngine] 截图数据大小: ${(screenshot.imageData.length / 1024).toFixed(2)} KB`);
+              console.log(`[Perception] 🔤 开始 OCR 识别...`);
+              const ocrStart = Date.now();
               context.ocr = await this.ocrManager.recognize(screenshot.imageData);
-              console.log(`[PerceptionEngine] OCR 识别成功，文本长度: ${context.ocr.text.length} 字符`);
+              console.log(`[Perception] ✅ OCR 完成，耗时: ${Date.now() - ocrStart}ms，识别 ${context.ocr.text.length} 字符`);
             } catch (err) {
-              console.warn('[PerceptionEngine] OCR 识别失败:', err);
+              console.warn('[Perception] ❌ OCR 识别失败:', err);
             }
           }
         }).catch(err => {
-          console.warn('屏幕截图失败:', err.message);
+          console.warn('[Perception] ❌ 屏幕截图失败:', err.message);
         })
       );
     }
@@ -266,6 +289,16 @@ export class PerceptionEngine extends EventEmitter {
     }
 
     await Promise.all(promises);
+
+    const totalDuration = Date.now() - perceiveStart;
+    console.log(`[Perception] ────────────────────────────────────────────────`);
+    console.log(`[Perception] ✅ 感知流程完成`);
+    console.log(`[Perception] 总耗时: ${totalDuration}ms`);
+    console.log(`[Perception] 截图: ${context.screenshot ? '✓' : '✗'}`);
+    console.log(`[Perception] OCR: ${context.ocr ? `✓ (${context.ocr.text.length}字)` : '✗'}`);
+    console.log(`[Perception] 窗口: ${context.activeWindow ? `✓ (${context.activeWindow.appName})` : '✗'}`);
+    console.log(`[Perception] 剪贴板: ${context.clipboard ? `✓ (${context.clipboard.length}字)` : '✗'}`);
+    console.log(`[Perception] ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n`);
 
     this.lastContext = context;
     this.emit('context', context);
@@ -315,6 +348,21 @@ export class PerceptionEngine extends EventEmitter {
    */
   getLastContext(): ExtendedPerceptionContext | null {
     return this.lastContext;
+  }
+
+  /**
+   * 获取当前活动窗口
+   * @returns 活动窗口信息，如果获取失败返回 null 并触发 error 事件
+   */
+  async getActiveWindow(): Promise<WindowInfo | null> {
+    try {
+      return await this.windowTracker.getActiveWindow();
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.warn('获取活动窗口失败:', error.message);
+      this.emit('error', { module: 'window', error });
+      return null;
+    }
   }
 
   /**

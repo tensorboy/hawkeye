@@ -145,6 +145,9 @@ contextBridge.exposeInMainWorld('hawkeye', {
   // 清理旧数据
   cleanup: (days: number) => ipcRenderer.invoke('cleanup', days),
 
+  // 获取执行历史
+  getExecutionHistory: (limit?: number) => ipcRenderer.invoke('get-execution-history', limit),
+
   // ============ 旧版兼容 API ============
 
   // 执行建议 (兼容)
@@ -216,5 +219,118 @@ contextBridge.exposeInMainWorld('hawkeye', {
   // 监听建议 (兼容)
   onSuggestions: (callback: (suggestions: unknown[]) => void) => {
     ipcRenderer.on('suggestions', (_event, suggestions) => callback(suggestions));
+  },
+
+  // ============ Ollama 模型管理 ============
+
+  // 检查 Ollama 状态
+  ollamaCheck: () => ipcRenderer.invoke('ollama-check'),
+
+  // 启动 Ollama 服务
+  ollamaStart: () => ipcRenderer.invoke('ollama-start'),
+
+  // 获取已安装的模型列表
+  ollamaListModels: () => ipcRenderer.invoke('ollama-list-models'),
+
+  // 下载/拉取模型
+  ollamaPullModel: (modelName: string) => ipcRenderer.invoke('ollama-pull-model', modelName),
+
+  // 监听模型下载开始
+  onOllamaPullStart: (callback: (model: string) => void) => {
+    ipcRenderer.on('ollama-pull-start', (_event, model) => callback(model));
+  },
+
+  // 监听模型下载进度
+  onOllamaPullProgress: (callback: (data: {
+    model: string;
+    output: string;
+    progress?: number;
+    size?: string;
+    isError?: boolean;
+  }) => void) => {
+    ipcRenderer.on('ollama-pull-progress', (_event, data) => callback(data));
+  },
+
+  // 监听模型下载完成
+  onOllamaPullComplete: (callback: (data: {
+    model: string;
+    success: boolean;
+    error?: string;
+  }) => void) => {
+    ipcRenderer.on('ollama-pull-complete', (_event, data) => callback(data));
+  },
+
+  // ============ Ollama 安装 ============
+
+  // 下载并安装 Ollama
+  downloadOllama: () => ipcRenderer.invoke('download-ollama'),
+
+  // 监听 Ollama 下载开始
+  onOllamaDownloadStart: (callback: (data: { url: string; filename: string }) => void) => {
+    ipcRenderer.on('ollama-download-start', (_event, data) => callback(data));
+  },
+
+  // 监听 Ollama 下载进度
+  onOllamaDownloadProgress: (callback: (data: {
+    progress: number;
+    downloaded: number;
+    total: number;
+    downloadedMB: string;
+    totalMB: string;
+  }) => void) => {
+    ipcRenderer.on('ollama-download-progress', (_event, data) => callback(data));
+  },
+
+  // 监听 Ollama 下载完成
+  onOllamaDownloadComplete: (callback: (data: {
+    path: string;
+    type: 'dmg' | 'exe' | 'script';
+  }) => void) => {
+    ipcRenderer.on('ollama-download-complete', (_event, data) => callback(data));
+  },
+
+  // 监听 Ollama 下载错误
+  onOllamaDownloadError: (callback: (error: string) => void) => {
+    ipcRenderer.on('ollama-download-error', (_event, error) => callback(error));
+  },
+
+  // ============ 应用更新 ============
+
+  // 检查更新
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+
+  // 获取应用版本
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+
+  // ============ 智能观察 ============
+
+  // 启动智能观察
+  startSmartObserve: () => ipcRenderer.invoke('start-smart-observe'),
+
+  // 停止智能观察
+  stopSmartObserve: () => ipcRenderer.invoke('stop-smart-observe'),
+
+  // 获取智能观察状态
+  getSmartObserveStatus: () => ipcRenderer.invoke('get-smart-observe-status'),
+
+  // 切换智能观察
+  toggleSmartObserve: () => ipcRenderer.invoke('toggle-smart-observe'),
+
+  // 监听智能观察状态变化
+  onSmartObserveStatus: (callback: (data: { watching: boolean }) => void) => {
+    ipcRenderer.on('smart-observe-status', (_event, data) => callback(data));
+  },
+
+  // 监听屏幕变化检测
+  onSmartObserveChangeDetected: (callback: () => void) => {
+    ipcRenderer.on('smart-observe-change-detected', () => callback());
+  },
+
+  // 获取当前截屏
+  getScreenshot: () => ipcRenderer.invoke('get-screenshot'),
+
+  // 监听截屏预览
+  onScreenshotPreview: (callback: (data: { dataUrl: string; timestamp: number }) => void) => {
+    ipcRenderer.on('screenshot-preview', (_event, data) => callback(data));
   },
 });

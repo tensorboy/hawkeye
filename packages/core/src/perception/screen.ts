@@ -174,13 +174,24 @@ export class ScreenCapture extends EventEmitter {
    */
   async capture(displayIndex?: number): Promise<ExtendedScreenCapture> {
     const startTime = Date.now();
+    const captureId = this.generateId();
+
+    console.log(`\n[Screenshot] ====== 开始截图 #${this.captureCount + 1} ======`);
+    console.log(`[Screenshot] 截图 ID: ${captureId}`);
+    console.log(`[Screenshot] 时间: ${new Date().toISOString()}`);
+    console.log(`[Screenshot] 显示器索引: ${displayIndex ?? '默认'}`);
 
     try {
       const imgBuffer = await screenshot({ format: 'png', screen: displayIndex });
       const base64Data = imgBuffer.toString('base64');
+      const captureTime = Date.now() - startTime;
+
+      console.log(`[Screenshot] 截图完成，耗时: ${captureTime}ms`);
+      console.log(`[Screenshot] 图片大小: ${(imgBuffer.length / 1024).toFixed(2)} KB`);
+      console.log(`[Screenshot] Base64 长度: ${(base64Data.length / 1024).toFixed(2)} KB`);
 
       const result: ExtendedScreenCapture = {
-        id: this.generateId(),
+        id: captureId,
         imageData: base64Data,
         format: 'png',
         timestamp: Date.now(),
@@ -189,17 +200,24 @@ export class ScreenCapture extends EventEmitter {
 
       // AI 视觉分析
       if (this.config.enableVision && this.visionAnalyzer) {
+        console.log(`[Screenshot] 开始 AI 视觉分析...`);
+        const visionStart = Date.now();
         try {
           result.vision = await this.visionAnalyzer.analyze(base64Data);
+          console.log(`[Screenshot] AI 视觉分析完成，耗时: ${Date.now() - visionStart}ms`);
         } catch (visionError) {
+          console.error(`[Screenshot] AI 视觉分析失败:`, visionError);
           this.emit('vision-error', visionError);
         }
       }
 
+      console.log(`[Screenshot] ====== 截图完成 ======\n`);
       this.emit('capture', result, Date.now() - startTime);
 
       return result;
     } catch (error) {
+      console.error(`[Screenshot] ====== 截图失败 ======`);
+      console.error(`[Screenshot] 错误: ${error instanceof Error ? error.message : String(error)}`);
       const err = new Error(`截图失败: ${error instanceof Error ? error.message : String(error)}`);
       this.emit('error', err);
       throw err;
@@ -212,7 +230,7 @@ export class ScreenCapture extends EventEmitter {
   async listDisplays(): Promise<string[]> {
     try {
       const displays = await screenshot.listDisplays();
-      return displays.map((d: { id: string; name?: string }) => d.name || d.id);
+      return displays.map((d: { id: number; name: string }) => d.name || String(d.id));
     } catch (error) {
       throw new Error(`获取显示器列表失败: ${error instanceof Error ? error.message : String(error)}`);
     }

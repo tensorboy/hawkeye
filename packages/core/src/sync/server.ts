@@ -67,13 +67,16 @@ export class SyncServer extends EventEmitter {
 
     this.server = new WebSocketServer({ port: this.config.port }) as WebSocketServerLike;
 
-    this.server.on('connection', (ws: WebSocketLike, req: unknown) => {
+    this.server.on('connection', ((...args: unknown[]) => {
+      const ws = args[0] as WebSocketLike;
+      const req = args[1];
       this.handleConnection(ws, req);
-    });
+    }) as (...args: unknown[]) => void);
 
-    this.server.on('error', (error: Error) => {
+    this.server.on('error', ((...args: unknown[]) => {
+      const error = args[0] as Error;
       this.emit('error', error);
-    });
+    }) as (...args: unknown[]) => void);
 
     // 启动心跳
     this.startHeartbeat();
@@ -244,7 +247,8 @@ export class SyncServer extends EventEmitter {
         this.clients.delete(ws);
       }, 5000);
 
-      ws.once('message', (data: Buffer) => {
+      ws.once('message', ((...args: unknown[]) => {
+        const data = args[0] as Buffer;
         clearTimeout(authTimeout);
         try {
           const message = JSON.parse(data.toString()) as SyncMessage;
@@ -268,7 +272,7 @@ export class SyncServer extends EventEmitter {
           ws.close(4003, 'Invalid message');
           this.clients.delete(ws);
         }
-      });
+      }) as (...args: unknown[]) => void);
     } else {
       this.setupClientListeners(ws, clientInfo);
     }
@@ -280,7 +284,8 @@ export class SyncServer extends EventEmitter {
       clientType: clientInfo.type,
     });
 
-    ws.on('message', (data: Buffer) => {
+    ws.on('message', ((...args: unknown[]) => {
+      const data = args[0] as Buffer;
       try {
         const message = JSON.parse(data.toString()) as SyncMessage;
         clientInfo.lastSeen = Date.now();
@@ -303,19 +308,20 @@ export class SyncServer extends EventEmitter {
       } catch (error) {
         this.emit('error', error);
       }
-    });
+    }) as (...args: unknown[]) => void);
 
-    ws.on('close', () => {
+    ws.on('close', (() => {
       this.clients.delete(ws);
       this.emit('client-disconnected', {
         clientCount: this.getAuthenticatedClientCount(),
         clientType: clientInfo.type,
       });
-    });
+    }) as (...args: unknown[]) => void);
 
-    ws.on('error', (error: Error) => {
+    ws.on('error', ((...args: unknown[]) => {
+      const error = args[0] as Error;
       this.emit('error', error);
-    });
+    }) as (...args: unknown[]) => void);
 
     // 发送当前状态
     this.sendStatus(ws);

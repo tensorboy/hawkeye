@@ -7,6 +7,63 @@ export { FileExecutor } from './file';
 export { AutomationExecutor } from './automation';
 export { ExecutionEngine, type ExecutionEngineConfig } from './engine';
 
+// 统一动作类型系统
+export {
+  type Point,
+  type MouseButton,
+  type ScrollDirection,
+  type ModifierKey,
+  type GUIAction,
+  type ClickAction,
+  type DoubleClickAction,
+  type RightClickAction,
+  type DragAction,
+  type MoveAction,
+  type ScrollAction,
+  type TypeAction,
+  type HotkeyAction,
+  type KeyPressAction,
+  type WaitAction,
+  type ScreenshotAction,
+  type FocusAction,
+  type HoverAction,
+  type ActionResult,
+  type ActionSequence,
+  type SequenceResult,
+  type CoordinateSystem,
+  type CoordinateConfig,
+  normalizedToAbsolute,
+  absoluteToNormalized,
+  relativeToAbsolute,
+  createClickAction,
+  createTypeAction,
+  createHotkeyAction,
+  createScrollAction,
+  createWaitAction,
+  createActionSequence,
+  COMMON_HOTKEYS,
+  getPlatformHotkey,
+} from './action-types';
+
+// NutJS GUI 执行器
+export {
+  NutJSExecutor,
+  createNutJSExecutor,
+  getNutJSExecutor,
+  setNutJSExecutor,
+  type NutJSExecutorConfig,
+} from './nutjs-executor';
+
+// 动作解析器
+export {
+  ActionParser,
+  createActionParser,
+  getActionParser,
+  setActionParser,
+  type ParseContext,
+  type ParseResult,
+} from './action-parser';
+
 // 计划执行器
 export {
   PlanExecutor,
@@ -45,3 +102,15 @@ export {
   createBrowserActionsExecutor,
   type BrowserActionsConfig,
 } from './mcp';
+
+// Vision Direct 执行器 (参考 UI-TARS 端到端 Vision→Action)
+export {
+  VisionDirectExecutor,
+  createVisionDirectExecutor,
+  getVisionDirectExecutor,
+  setVisionDirectExecutor,
+  type VisionActionType,
+  type VisionAction,
+  type VisionExecutionResult,
+  type VisionDirectConfig,
+} from './vision-direct-executor';

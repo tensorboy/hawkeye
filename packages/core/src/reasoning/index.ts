@@ -13,7 +13,6 @@ export { PlanGenerator, type PlanGeneratorConfig } from './plan-generator';
 // 计划分析器 - 利弊分析、风险评估、习惯对齐
 export {
   PlanAnalyzer,
-  type PlanAnalyzerConfig,
   type ProPoint,
   type ConPoint,
   type RiskAssessment,
