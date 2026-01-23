@@ -1,352 +1,333 @@
-# Hawkeye 🦅 - AI Task Perception Assistant
+<div align="center">
+
+<img src="./logo.png" alt="Hawkeye Logo" width="120" height="120" />
+
+# Hawkeye
+
+### 🦅 The First Proactive AI Assistant for Desktop
+
+**Watch keenly. Act thoughtfully. 10x your productivity.**
+
+[![GitHub Stars](https://img.shields.io/github/stars/anthropics/hawkeye?style=for-the-badge&logo=github&color=yellow)](https://github.com/anthropics/hawkeye)
+[![License](https://img.shields.io/github/license/anthropics/hawkeye?style=for-the-badge&color=blue)](LICENSE)
+[![Build](https://img.shields.io/github/actions/workflow/status/anthropics/hawkeye/ci.yml?style=for-the-badge&label=build)](https://github.com/anthropics/hawkeye/actions)
+
+[🌐 Website](https://hawkiyi.com) · [📖 Documentation](https://hawkiyi.com/docs) · [🐛 Report Bug](https://github.com/anthropics/hawkeye/issues) · [💡 Request Feature](https://github.com/anthropics/hawkeye/issues)
+
+<br/>
+
+![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)
+
+</div>
+
+<br/>
 
 <p align="center">
-  <img src="./logo.png" alt="Hawkeye Logo" width="128" height="128" />
+  <img src="./docs/demo.gif" alt="Hawkeye Demo" width="800"/>
 </p>
-
-English | [中文](./README_CN.md)
-
-<p align="center">
-  <a href="https://hawkiyi.com/en">🌐 Website</a> •
-  <a href="https://hawkiyi.com/features">✨ Features</a> •
-  <a href="https://hawkiyi.com/compare">📊 Compare</a> •
-  <a href="https://hawkiyi.com/faq">❓ FAQ</a> •
-  <a href="https://hawkiyi.com/blog">📝 Blog</a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/github/stars/tensorboy/hawkeye?style=social" alt="GitHub stars"></a>
-  <a href="https://www.npmjs.com/package/@hawkeye/core"><img src="https://img.shields.io/npm/v/@hawkeye/core?color=blue&label=npm" alt="npm version"></a>
-  <a href="https://github.com/tensorboy/hawkeye/actions"><img src="https://img.shields.io/github/actions/workflow/status/tensorboy/hawkeye/ci.yml?branch=main&label=build" alt="Build Status"></a>
-  <a href="https://github.com/tensorboy/hawkeye/blob/main/LICENSE"><img src="https://img.shields.io/github/license/tensorboy/hawkeye?color=green" alt="License"></a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/macOS-supported-brightgreen?logo=apple&logoColor=white" alt="macOS"></a>
-  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Windows-supported-brightgreen?logo=windows&logoColor=white" alt="Windows"></a>
-  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Linux-supported-brightgreen?logo=linux&logoColor=white" alt="Linux"></a>
-  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/VS%20Code-Extension-blue?logo=visualstudiocode" alt="VS Code"></a>
-  <a href="https://github.com/tensorboy/hawkeye"><img src="https://img.shields.io/badge/Chrome-Extension-yellow?logo=googlechrome" alt="Chrome"></a>
-</p>
-
-<p align="center">
-  <strong>🚀 Intelligent Task Perception & Execution Assistant</strong> - Observes your work environment, understands your intent, and proactively offers help.<br>
-  Unlike Copilot/Cursor's reactive approach, Hawkeye uses <b>proactive perception</b> to automatically discover your needs.
-</p>
-
-<p align="center">
-  <em>"Watch keenly like a hawk, execute thoughtfully like an assistant."</em>
-</p>
-
-<!-- Keywords for GitHub Search -->
-<!-- AI assistant, productivity tool, local-first, privacy-focused, screen perception, task automation, Claude AI, Ollama, VS Code extension, Chrome extension, desktop app, workflow automation, intelligent assistant, proactive AI, Copilot alternative, Cursor alternative -->
 
 ---
 
-## 💭 Why This Project
+## 🎯 What is Hawkeye?
 
-After using these powerful AI tools, I kept thinking: How can we make AI tools **benefit everyone**?
+> **Traditional AI waits for your commands. Hawkeye watches and helps proactively.**
 
-**I believe AI can empower everyone to achieve 10x productivity.**
+Hawkeye is an **AI-powered desktop assistant** that observes your work environment—screen, clipboard, files—and proactively offers intelligent suggestions. No prompts needed.
 
-Technology should be accessible to all. When AI becomes powerful enough, cheap enough, and easy enough to use, everyone will have a tireless intelligent assistant—whether you're a programmer, designer, student, or office worker. This is the vision behind Hawkeye: **Let AI be everyone's hawk eye, helping you see opportunities, seize them, and 10x your productivity.**
+| Feature | Copilot / Cursor / Claude Code | **Hawkeye** |
+|---------|-------------------------------|-------------|
+| **Mode** | Reactive (you ask) | **Proactive** (it watches) |
+| **Scope** | Code only | Everything: coding, browsing, writing |
+| **Privacy** | Cloud-based | **Local-first**, your data stays local |
+| **Control** | AI executes | **You decide** what to execute |
 
----
+<br/>
 
-## ✨ Features
+## ✨ Key Features
 
-### 🚫 Zero Prompt Experience
-- **No prompts required**: Hawkeye automatically observes your screen, clipboard, and files, proactively offering suggestions
-- **No more "what should I ask?"**: Traditional AI needs you to formulate questions first; Hawkeye discovers problems for you
-- **Manual input also supported**: If you have specific needs, you can always tell it directly
+<table>
+<tr>
+<td width="50%">
 
-### 🏠 Local-First Architecture
-- **All core functions run entirely locally**: screen perception, file monitoring, task execution
-- **Your data never leaves your device**: screenshots, clipboard, file operations are all processed locally
-- **Only cloud call**: AI analysis via Claude API (can be replaced with local models)
-- **Fully offline support**: 100% offline operation with local LLM (like Ollama)
+### 🔍 Zero-Prompt Intelligence
+- Automatically understands your context
+- No need to explain what you're doing
+- Suggests actions before you ask
+
+</td>
+<td width="50%">
+
+### 🏠 Privacy-First Architecture
+- All perception runs **100% locally**
+- Data never leaves your device
+- Works offline with local LLMs
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🎯 Smart Task Tracking
+- Identifies your main task goal
+- Generates actionable next steps
+- Learns from your workflow
+
+</td>
+<td width="50%">
 
 ### 🔗 Multi-Platform Sync
-- **Desktop App** ↔ **Chrome Extension** real-time sync
-- Tasks discovered in browser can be executed on desktop
-- Cross-application workflow automation
+- Desktop ↔ Browser seamless sync
+- VS Code extension integration
+- Cross-app workflow automation
 
-### 📋 Main Task Tracking
-- Automatically identify your current main task goal
-- Generate actionable next-step suggestions
-- Directly help you complete simple operations
+</td>
+</tr>
+</table>
 
-## 📦 Project Structure
-
-\`\`\`
-hawkeye/
-├── packages/
-│   ├── core/                 # Core engine (runs locally)
-│   │   ├── perception/       # Perception: screen, window, clipboard, file monitoring
-│   │   ├── reasoning/        # Reasoning: AI analysis (supports local/cloud models)
-│   │   ├── execution/        # Execution: Shell, file, automation operations
-│   │   └── storage/          # Storage: local JSON/SQLite
-│   │
-│   ├── vscode-extension/     # VS Code Extension
-│   ├── chrome-extension/     # Chrome Browser Extension
-│   └── desktop/              # Electron Desktop App
-│
-└── docs/                     # Documentation
-\`\`\`
+<br/>
 
 ## 🚀 Quick Start
 
 ### Download
 
-Download the latest version from [Releases](https://github.com/tensorboy/hawkeye/releases):
+<table>
+<tr>
+<th>Platform</th>
+<th>Download</th>
+</tr>
+<tr>
+<td><img src="https://img.shields.io/badge/-macOS-000000?style=flat&logo=apple&logoColor=white" /></td>
+<td>
 
-| Platform | Download |
-|----------|----------|
-| macOS (Apple Silicon) | \`Hawkeye-x.x.x-mac-arm64.dmg\` |
-| macOS (Intel) | \`Hawkeye-x.x.x-mac-x64.dmg\` |
-| Windows | \`Hawkeye.Setup.x.x.x.exe\` |
-| Linux (Debian/Ubuntu) | \`Hawkeye-x.x.x-linux-amd64.deb\` |
-| Linux (Other) | \`Hawkeye-x.x.x-linux-x86_64.AppImage\` |
+[Apple Silicon (.dmg)](https://github.com/anthropics/hawkeye/releases/latest) · [Intel (.dmg)](https://github.com/anthropics/hawkeye/releases/latest)
 
-#### macOS Installation Tips
+</td>
+</tr>
+<tr>
+<td><img src="https://img.shields.io/badge/-Windows-0078D6?style=flat&logo=windows&logoColor=white" /></td>
+<td>
 
-Since the app is not signed by Apple, you may see "damaged, can't be opened" on first launch. Run in terminal:
+[Installer (.exe)](https://github.com/anthropics/hawkeye/releases/latest)
 
-\`\`\`bash
-# Option 1: Remove quarantine attribute from downloaded file
-xattr -d com.apple.quarantine ~/Downloads/Hawkeye-*-mac-*.dmg
+</td>
+</tr>
+<tr>
+<td><img src="https://img.shields.io/badge/-Linux-FCC624?style=flat&logo=linux&logoColor=black" /></td>
+<td>
 
-# Option 2: Remove quarantine attribute after installation
+[Debian/Ubuntu (.deb)](https://github.com/anthropics/hawkeye/releases/latest) · [AppImage](https://github.com/anthropics/hawkeye/releases/latest)
+
+</td>
+</tr>
+</table>
+
+<details>
+<summary><b>⚠️ macOS: "App is damaged" fix</b></summary>
+
+```bash
+# Remove quarantine attribute
 xattr -cr /Applications/Hawkeye.app
-\`\`\`
+```
 
-### Build from Source
+</details>
 
-\`\`\`bash
-# Clone the repository
-git clone https://github.com/tensorboy/hawkeye.git
-cd hawkeye
+### Setup in 60 Seconds
 
-# Install dependencies
+```bash
+# 1. Clone
+git clone https://github.com/anthropics/hawkeye.git && cd hawkeye
+
+# 2. Install
 pnpm install
 
-# Build all packages
-pnpm build
-\`\`\`
-
-### Configure API Key
-
-Hawkeye uses Claude API for intelligent analysis by default. You can:
-
-1. **Use Claude API** (Recommended)
-   \`\`\`
-   Enter your Anthropic API Key in settings
-   \`\`\`
-
-2. **Use Local Model** (Fully Offline, Recommended)
-   \`\`\`bash
-   # Install Ollama
-   brew install ollama   # macOS
-   # Windows/Linux: https://ollama.com/download
-
-   # Download recommended models (2025 best open-source)
-   # Text model - Qwen3 (best for coding/reasoning)
-   ollama pull qwen3:8b          # 8B params, needs 8GB+ RAM
-   ollama pull qwen3:14b         # 14B params, needs 16GB+ RAM
-
-   # Vision model - Qwen2.5-VL (screen understanding)
-   ollama pull qwen2.5vl:7b      # 7B params, outperforms Llama 3.2 Vision 11B
-
-   # Select "Ollama" in Hawkeye settings and configure model name
-   \`\`\`
-
-   > 💡 **Model Recommendation**: Qwen3 outperforms DeepSeek-R1 and Llama 4 in code generation and reasoning tasks - the best open-source model in 2025.
-
-### Run
-
-\`\`\`bash
-# Desktop App
-cd packages/desktop
+# 3. Run
 pnpm dev
+```
 
-# VS Code Extension (Press F5 to debug)
-cd packages/vscode-extension
-code .
+### Configure AI Provider
 
-# Chrome Extension
-cd packages/chrome-extension
-pnpm build
-# Load dist directory in Chrome
-\`\`\`
+<details>
+<summary><b>Option 1: Claude API (Recommended)</b></summary>
 
-## 🎯 Core Features
+Enter your Anthropic API key in Settings → API Configuration.
 
-### 1. Intelligent Perception
-- **Screenshot Analysis**: Understand what you're viewing
-- **Active Window Tracking**: Know which app you're working in
-- **Clipboard Monitoring**: Understand the intent of copied content
-- **File Change Monitoring**: Track important file movements and changes
+</details>
 
-### 2. Task Reasoning
-- **Intent Understanding**: Infer what you want to do from context
-- **Main Task Identification**: Identify your current primary work goal
-- **Suggestion Generation**: Provide 1-5 actionable next-step suggestions
-- **Confidence Assessment**: Each suggestion has a confidence score
+<details>
+<summary><b>Option 2: Local LLM with Ollama (100% Offline)</b></summary>
 
-### 3. Auto Execution
-- **Shell Commands**: Run terminal commands
-- **File Operations**: Create, edit, move files
-- **App Control**: Open apps, URLs, send notifications
-- **Browser Automation**: Page interaction, data extraction
+```bash
+# Install Ollama
+brew install ollama  # macOS
+# Windows/Linux: https://ollama.com/download
+
+# Download models
+ollama pull qwen3:8b        # Text (8GB+ RAM)
+ollama pull qwen2.5vl:7b    # Vision
+
+# Select "Ollama" in Hawkeye settings
+```
+
+</details>
+
+<br/>
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        HAWKEYE ENGINE                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
+│  │  PERCEPTION │───▶│  REASONING  │───▶│  EXECUTION  │         │
+│  │   Engine    │    │   Engine    │    │   Engine    │         │
+│  └─────────────┘    └─────────────┘    └─────────────┘         │
+│        │                  │                  │                  │
+│   • Screen OCR      • Claude/Ollama     • Shell Commands       │
+│   • Clipboard       • Task Analysis     • File Operations      │
+│   • File Watch      • Intent Detect     • App Control          │
+│   • Window Track    • Suggestions       • Browser Auto         │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                         INTERFACES                              │
+├───────────────┬───────────────┬───────────────┬─────────────────┤
+│   🖥️ Desktop   │  🧩 VS Code    │  🌐 Chrome     │    📦 Core      │
+│   (Electron)  │  Extension    │  Extension    │    (npm pkg)    │
+└───────────────┴───────────────┴───────────────┴─────────────────┘
+```
+
+<br/>
+
+## 📦 Project Structure
+
+```
+hawkeye/
+├── packages/
+│   ├── core/                 # 🧠 Core engine (local processing)
+│   │   ├── perception/       #    Screen, clipboard, file monitoring
+│   │   ├── ai/               #    AI providers (Claude, Ollama, etc.)
+│   │   ├── execution/        #    Action execution system
+│   │   └── storage/          #    Local database (SQLite)
+│   │
+│   ├── desktop/              # 🖥️  Electron desktop app
+│   ├── vscode-extension/     # 🧩 VS Code extension
+│   └── chrome-extension/     # 🌐 Chrome browser extension
+│
+├── docs/                     # 📖 Documentation
+└── website/                  # 🌐 Marketing site
+```
+
+<br/>
 
 ## 🔒 Privacy & Security
 
-### Data Localization
-- ✅ Screenshots are only analyzed locally, never uploaded
-- ✅ Clipboard content stays local
-- ✅ File operation logs are stored locally only
-- ✅ History and suggestions stored in \`~/.hawkeye/\`
+| Aspect | How We Protect You |
+|--------|-------------------|
+| **Screenshots** | ✅ Analyzed locally, never uploaded |
+| **Clipboard** | ✅ Processed on-device only |
+| **Files** | ✅ Monitored locally, paths never sent |
+| **AI Calls** | ✅ Only minimal context text sent (or use local LLM) |
+| **Dangerous Ops** | ✅ Always requires your confirmation |
 
-### AI Calls
-- Default uses Claude API (requires network)
-- Supports switching to local models (fully offline)
-- Only necessary context text is sent to AI
+> 📁 All data stored in `~/.hawkeye/` — you own your data.
 
-### Permission Control
-- Shell commands have whitelist/blacklist
-- Dangerous operations require user confirmation
-- Sensitive files are automatically excluded
+<br/>
 
-## 🛠️ Development
+## 📖 Usage Examples
 
-### Tech Stack
-- **Core**: TypeScript, Node.js
-- **Desktop**: Electron, React
-- **VS Code**: VS Code Extension API
-- **Chrome**: Manifest V3
+### As a Library
 
-### Local Development
-
-\`\`\`bash
-# Development mode (watch for file changes)
-pnpm dev
-
-# Run tests
-pnpm test
-
-# Code linting
-pnpm lint
-\`\`\`
-
-## 📖 API Documentation
-
-### Core Engine
-
-\`\`\`typescript
+```typescript
 import { HawkeyeEngine } from '@hawkeye/core';
 
 const engine = new HawkeyeEngine({
-  anthropicApiKey: 'sk-ant-...',
-  // Or use local model (Qwen3 recommended)
-  // localModel: { provider: 'ollama', model: 'qwen3:8b' }
+  provider: 'ollama',
+  model: 'qwen3:8b'
 });
 
-// Observe and get suggestions
+// Get AI-powered suggestions based on current context
 const suggestions = await engine.observe();
 
-// Execute suggestion
-const result = await engine.execute(suggestions[0].id);
-\`\`\`
+// Execute a suggestion with user confirmation
+await engine.execute(suggestions[0].id);
+```
 
 ### File Watcher
 
-\`\`\`typescript
+```typescript
 import { FileWatcher } from '@hawkeye/core';
 
 const watcher = new FileWatcher({
-  paths: ['~/Documents', '~/Downloads'],
-  events: ['create', 'move', 'delete']
+  paths: ['~/Downloads', '~/Documents'],
+  events: ['create', 'move']
 });
 
 watcher.on('change', (event) => {
-  console.log(\`File \${event.type}: \${event.path}\`);
+  console.log(`${event.type}: ${event.path}`);
 });
-\`\`\`
+```
 
-## ❓ FAQ
-
-### How is Hawkeye different from Claude Code / Cursor / Copilot?
-
-| Feature | Hawkeye | Claude Code / Cursor / Copilot |
-|---------|---------|--------------------------------|
-| **Interaction Mode** | 🦅 **Proactive Perception** - Automatically observes your work and finds opportunities to help | Reactive - Waits for your commands or questions |
-| **Trigger** | Runs continuously, analyzing screen, clipboard, file changes | Requires manual invocation or prompt input |
-| **Decision Power** | ✅ **You Decide** - Gives suggestions, you choose whether to execute | AI directly executes or generates code |
-| **Use Cases** | All scenarios: coding, browsing, office work, learning | Primarily for code writing |
-| **Target Users** | Everyone: developers, designers, students, office workers | Mainly developers |
-
-**Core difference in one sentence**:
-
-> Claude Code / Cursor is a **"you ask, it answers"** tool;
-> Hawkeye is an **"it watches you work, helps you discover opportunities"** assistant.
-
-### Why do we need "proactive perception"?
-
-Often, you don't even know you need help. For example:
-- You're reading a great article in your browser - Hawkeye can suggest saving it to your notes
-- You copied an error message - Hawkeye can automatically analyze and suggest solutions
-- You downloaded a file - Hawkeye can suggest organizing it to the right folder
-- You're doing repetitive work - Hawkeye can detect patterns and suggest automation
-
-**Traditional AI tools require you to think of the problem first, then ask; Hawkeye helps you discover problems, then you decide whether to solve them.**
-
-### Will Hawkeye automatically execute dangerous operations?
-
-No. Hawkeye's core philosophy is **"suggestions first, humans decide"**:
-- All operations require your confirmation before execution
-- Dangerous commands (like file deletion, system operations) have additional safety confirmations
-- You can configure whitelists/blacklists to control which operations are allowed
+<br/>
 
 ## 🗺️ Roadmap
 
-- [x] Core Perception Engine
-- [x] VS Code Extension
-- [x] Chrome Extension
-- [x] Electron Desktop App
-- [ ] File Monitoring Integration
-- [ ] Desktop-Extension Real-time Sync
-- [ ] Local LLM Support (Ollama)
-- [ ] Main Task Tracking Dashboard
-- [ ] Custom Workflows
-- [ ] Plugin System
+- [x] Core perception engine
+- [x] Desktop app (Electron)
+- [x] VS Code extension
+- [x] Chrome extension
+- [x] Local LLM support (Ollama)
+- [ ] Desktop ↔ Extension real-time sync
+- [ ] Plugin system
+- [ ] Custom workflow builder
+- [ ] Mobile companion app
 
-## 🔗 Links
-
-- 🌐 **Website**: [hawkiyi.com](https://hawkiyi.com)
-- ✨ **Features**: [hawkiyi.com/features](https://hawkiyi.com/features)
-- 📊 **Comparison**: [hawkiyi.com/compare](https://hawkiyi.com/compare) - Hawkeye vs Copilot vs Cursor vs Cline
-- 🎯 **Use Cases**: [hawkiyi.com/use-cases](https://hawkiyi.com/use-cases)
-- ❓ **FAQ**: [hawkiyi.com/faq](https://hawkiyi.com/faq)
-- 📝 **Blog**: [hawkiyi.com/blog](https://hawkiyi.com/blog)
-- 📦 **NPM**: \`@hawkeye/core\` (coming soon)
+<br/>
 
 ## 🤝 Contributing
 
-Issues and Pull Requests are welcome!
+Contributions are what make the open source community amazing! Any contributions you make are **greatly appreciated**.
 
-If you find Hawkeye useful, please give us a ⭐ Star - it means a lot to us!
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 🏷️ Keywords
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-\`AI assistant\` \`productivity tool\` \`local-first\` \`privacy-focused\` \`screen perception\` \`clipboard assistant\` \`task automation\` \`VS Code extension\` \`Chrome extension\` \`desktop app\` \`Ollama\` \`Claude\` \`10x productivity\` \`open source AI tool\` \`proactive AI\` \`Copilot alternative\` \`Cursor alternative\`
+<br/>
+
+## ⭐ Star History
+
+<a href="https://star-history.com/#anthropics/hawkeye&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=anthropics/hawkeye&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=anthropics/hawkeye&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=anthropics/hawkeye&type=Date" />
+ </picture>
+</a>
+
+<br/>
 
 ## 📄 License
 
-MIT © [tensorboy](https://github.com/tensorboy)
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+<br/>
 
 ---
 
-<p align="center">
-  <sub>Built with ❤️ for everyone who wants to be more productive</sub><br>
-  <sub>Let AI be everyone's hawk eye, helping you see opportunities, seize them, and 10x your productivity</sub>
-</p>
+<div align="center">
+
+**[🌐 Website](https://hawkiyi.com)** · **[📖 Docs](https://hawkiyi.com/docs)** · **[🐦 Twitter](https://twitter.com/hawkeyeai)** · **[💬 Discord](https://discord.gg/hawkeye)**
+
+<sub>Built with ❤️ by the Hawkeye Team</sub>
+
+<br/>
+
+**If Hawkeye helps you, please consider giving it a ⭐**
+
+</div>
