@@ -53,6 +53,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Build Core
+        run: cd packages/core && pnpm build
+
       - name: Type check
         run: pnpm typecheck
         continue-on-error: true
