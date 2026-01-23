@@ -3,7 +3,7 @@
  * 使用新版 Hawkeye 统一引擎
  */
 
-import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, dialog, desktopCapturer } from 'electron';
+import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, dialog, desktopCapturer, systemPreferences, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -40,6 +40,54 @@ let hawkeye: Hawkeye | null = null;
 let screenWatcherInterval: NodeJS.Timeout | null = null;
 let lastScreenHash: string | null = null;
 let isWatching = false;
+
+// ============= 屏幕录制权限检查 =============
+
+/**
+ * 检查并引导用户授予屏幕录制权限（仅 macOS）
+ * @returns true 如果权限已授予，false 如果权限被拒绝
+ */
+async function checkScreenRecordingPermission(): Promise<boolean> {
+  // 仅在 macOS 上检查
+  if (process.platform !== 'darwin') {
+    return true;
+  }
+
+  debugLog('Checking screen recording permission on macOS...');
+
+  // 检查当前权限状态
+  const status = systemPreferences.getMediaAccessStatus('screen');
+  debugLog(`Screen recording permission status: ${status}`);
+
+  if (status === 'granted') {
+    debugLog('Screen recording permission already granted');
+    return true;
+  }
+
+  // 权限未授予，显示引导对话框
+  debugLog('Screen recording permission not granted, showing guidance dialog');
+
+  const result = await dialog.showMessageBox({
+    type: 'warning',
+    title: 'Hawkeye 需要屏幕录制权限',
+    message: '为了正常工作，Hawkeye 需要屏幕录制权限来捕获屏幕内容。',
+    detail: '请在系统偏好设置中:\n\n1. 找到「Hawkeye」或「Electron」\n2. 勾选复选框授予权限\n3. 如果找不到，点击 + 按钮添加应用\n\n授权后可能需要重启应用。',
+    buttons: ['打开系统设置', '稍后再说'],
+    defaultId: 0,
+    cancelId: 1,
+  });
+
+  if (result.response === 0) {
+    // 用户选择打开系统设置
+    debugLog('User chose to open system settings');
+    // 打开 macOS 隐私设置 - 屏幕录制
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
+  } else {
+    debugLog('User chose to skip permission setup');
+  }
+
+  return false;
+}
 
 // ============= 配置持久化 =============
 const CONFIG_DIR = path.join(os.homedir(), '.hawkeye');
@@ -883,9 +931,113 @@ ipcMain.handle('get-screenshot', async () => {
   }
 });
 
+// 获取最后的感知上下文（截图 + OCR）
+ipcMain.handle('get-last-context', async () => {
+  try {
+    if (!hawkeye?.isInitialized) {
+      return { success: false, error: 'Hawkeye not initialized' };
+    }
+
+    // Type assertion workaround - getLastContext exists in Hawkeye class but tsup declaration generation has issues
+    const context = (hawkeye as unknown as { getLastContext: () => { screenshot?: string; ocrText?: string; timestamp: number } | null }).getLastContext();
+    if (!context) {
+      return { success: false, error: 'No context available' };
+    }
+
+    return {
+      success: true,
+      screenshot: context.screenshot,
+      ocrText: context.ocrText,
+      timestamp: context.timestamp,
+    };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
 // 获取当前版本
 ipcMain.handle('get-app-version', () => {
   return app.getVersion();
+});
+
+// ============= 调试时间线 IPC =============
+
+// 获取所有调试事件
+ipcMain.handle('debug-get-events', (_event, filter?: {
+  types?: string[];
+  startTime?: number;
+  endTime?: number;
+  search?: string;
+}) => {
+  if (!hawkeye) return [];
+  const collector = hawkeye.getEventCollector();
+  if (filter) {
+    return collector.getFiltered(filter as any);
+  }
+  return collector.getAll();
+});
+
+// 获取最近的调试事件
+ipcMain.handle('debug-get-recent', (_event, count: number = 50) => {
+  if (!hawkeye) return [];
+  return hawkeye.getEventCollector().getRecent(count);
+});
+
+// 获取自某个时间戳以来的事件
+ipcMain.handle('debug-get-since', (_event, timestamp: number) => {
+  if (!hawkeye) return [];
+  return hawkeye.getEventCollector().getSince(timestamp);
+});
+
+// 清空调试事件
+ipcMain.handle('debug-clear-events', () => {
+  if (!hawkeye) return false;
+  hawkeye.getEventCollector().clear();
+  return true;
+});
+
+// 暂停事件收集
+ipcMain.handle('debug-pause', () => {
+  if (!hawkeye) return false;
+  hawkeye.getEventCollector().pause();
+  return true;
+});
+
+// 恢复事件收集
+ipcMain.handle('debug-resume', () => {
+  if (!hawkeye) return false;
+  hawkeye.getEventCollector().resume();
+  return true;
+});
+
+// 获取收集状态
+ipcMain.handle('debug-get-status', () => {
+  if (!hawkeye) return { paused: false, count: 0, totalCount: 0 };
+  const collector = hawkeye.getEventCollector();
+  return {
+    paused: collector.isPaused(),
+    count: collector.getCount(),
+    totalCount: collector.getTotalCount(),
+    config: collector.getConfig(),
+  };
+});
+
+// 导出调试事件为 JSON
+ipcMain.handle('debug-export', () => {
+  if (!hawkeye) return null;
+  return hawkeye.getEventCollector().exportJSON();
+});
+
+// 更新收集器配置
+ipcMain.handle('debug-update-config', (_event, config: {
+  maxEvents?: number;
+  enableScreenshots?: boolean;
+  screenshotThumbnailSize?: number;
+  truncateTextAt?: number;
+}) => {
+  if (!hawkeye) return false;
+  hawkeye.getEventCollector().updateConfig(config);
+  return true;
 });
 
 // ============= Ollama 模型管理 =============
@@ -1356,6 +1508,10 @@ app.whenReady().then(async () => {
   try {
     initI18n();
     debugLog('i18n initialized');
+
+    // 检查屏幕录制权限（仅 macOS）
+    await checkScreenRecordingPermission();
+    debugLog('Screen recording permission check completed');
 
     createWindow();
     debugLog('Window created');

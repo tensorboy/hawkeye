@@ -313,6 +313,29 @@ export {
   type TrajectoryLearningConfig,
 } from './learning';
 
+// 调试模块
+export {
+  EventCollector,
+  type DebugEvent,
+  type DebugEventType,
+  type DebugEventData,
+  type ScreenshotEventData,
+  type OCREventData,
+  type ClipboardEventData,
+  type WindowEventData,
+  type FileEventData,
+  type LLMInputEventData,
+  type LLMOutputEventData,
+  type IntentEventData,
+  type PlanEventData,
+  type ExecutionStartEventData,
+  type ExecutionStepEventData,
+  type ExecutionCompleteEventData,
+  type ErrorEventData,
+  type EventCollectorConfig,
+  type EventFilter,
+} from './debug';
+
 // 新版统一引擎
 export {
   Hawkeye,

@@ -329,8 +329,52 @@ contextBridge.exposeInMainWorld('hawkeye', {
   // 获取当前截屏
   getScreenshot: () => ipcRenderer.invoke('get-screenshot'),
 
+  // 获取最后的感知上下文（截图 + OCR）
+  getLastContext: () => ipcRenderer.invoke('get-last-context'),
+
   // 监听截屏预览
   onScreenshotPreview: (callback: (data: { dataUrl: string; timestamp: number }) => void) => {
     ipcRenderer.on('screenshot-preview', (_event, data) => callback(data));
+  },
+
+  // ============ 调试时间线 API ============
+
+  debug: {
+    // 获取所有调试事件（可选过滤）
+    getEvents: (filter?: {
+      types?: string[];
+      startTime?: number;
+      endTime?: number;
+      search?: string;
+    }) => ipcRenderer.invoke('debug-get-events', filter),
+
+    // 获取最近的调试事件
+    getRecent: (count?: number) => ipcRenderer.invoke('debug-get-recent', count),
+
+    // 获取自某个时间戳以来的事件
+    getSince: (timestamp: number) => ipcRenderer.invoke('debug-get-since', timestamp),
+
+    // 清空调试事件
+    clearEvents: () => ipcRenderer.invoke('debug-clear-events'),
+
+    // 暂停事件收集
+    pause: () => ipcRenderer.invoke('debug-pause'),
+
+    // 恢复事件收集
+    resume: () => ipcRenderer.invoke('debug-resume'),
+
+    // 获取收集状态
+    getStatus: () => ipcRenderer.invoke('debug-get-status'),
+
+    // 导出调试事件为 JSON
+    export: () => ipcRenderer.invoke('debug-export'),
+
+    // 更新收集器配置
+    updateConfig: (config: {
+      maxEvents?: number;
+      enableScreenshots?: boolean;
+      screenshotThumbnailSize?: number;
+      truncateTextAt?: number;
+    }) => ipcRenderer.invoke('debug-update-config', config),
   },
 });

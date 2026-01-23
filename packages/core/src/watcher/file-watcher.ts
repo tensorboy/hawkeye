@@ -47,7 +47,12 @@ export class FileWatcher extends EventEmitter {
    */
   start(): void {
     for (const watchPath of this.config.paths) {
-      this.watchPath(watchPath);
+      try {
+        this.watchPath(watchPath);
+      } catch (err) {
+        console.warn(`[FileWatcher] 无法监控路径 ${watchPath}:`, err instanceof Error ? err.message : err);
+        this.emit('error', err);
+      }
     }
     this.emit('started');
   }

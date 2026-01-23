@@ -154,17 +154,26 @@ export class PerceptionEngine extends EventEmitter {
 
     // 启动文件监控
     if (this.config.enableFileWatch && this.config.watchPaths.length > 0) {
-      this.fileWatcher = new FileWatcher({
-        paths: this.config.watchPaths,
-        recursive: true,
-        ignored: this.config.ignoredPatterns,
-      });
+      try {
+        this.fileWatcher = new FileWatcher({
+          paths: this.config.watchPaths,
+          recursive: true,
+          ignored: this.config.ignoredPatterns,
+        });
 
-      this.fileWatcher.on('change', (event: FileEvent) => {
-        this.onFileChange(event);
-      });
+        this.fileWatcher.on('change', (event: FileEvent) => {
+          this.onFileChange(event);
+        });
 
-      this.fileWatcher.start();
+        this.fileWatcher.on('error', (err) => {
+          console.warn('[Perception] 文件监控错误:', err.message);
+        });
+
+        this.fileWatcher.start();
+      } catch (err) {
+        console.warn('[Perception] 文件监控启动失败:', err instanceof Error ? err.message : err);
+        this.fileWatcher = null;
+      }
     }
 
     // 初始化 OCR
@@ -248,7 +257,16 @@ export class PerceptionEngine extends EventEmitter {
               console.log(`[Perception] 🔤 开始 OCR 识别...`);
               const ocrStart = Date.now();
               context.ocr = await this.ocrManager.recognize(screenshot.imageData);
-              console.log(`[Perception] ✅ OCR 完成，耗时: ${Date.now() - ocrStart}ms，识别 ${context.ocr.text.length} 字符`);
+              const ocrDuration = Date.now() - ocrStart;
+              console.log(`[Perception] ✅ OCR 完成，耗时: ${ocrDuration}ms，识别 ${context.ocr.text.length} 字符`);
+
+              // Emit OCR completed event for debug timeline
+              this.emit('ocr:completed', {
+                text: context.ocr.text,
+                confidence: context.ocr.confidence,
+                backend: context.ocr.backend || 'unknown',
+                duration: ocrDuration,
+              });
             } catch (err) {
               console.warn('[Perception] ❌ OCR 识别失败:', err);
             }
@@ -392,8 +410,29 @@ export class PerceptionEngine extends EventEmitter {
 
   private setupEventListeners(): void {
     // 屏幕变化事件
-    this.screenCapture.on('screen:changed', (capture: ExtendedScreenCapture) => {
+    this.screenCapture.on('screen:changed', async (capture: ExtendedScreenCapture) => {
       this.emit('screen:changed', capture);
+
+      // 如果启用 OCR，对截图进行 OCR 识别
+      if (this.config.enableOCR && capture.imageData) {
+        try {
+          console.log(`[Perception] 🔤 对截图进行 OCR 识别...`);
+          const ocrStart = Date.now();
+          const ocrResult = await this.ocrManager.recognize(capture.imageData);
+          const ocrDuration = Date.now() - ocrStart;
+          console.log(`[Perception] ✅ 截图 OCR 完成，耗时: ${ocrDuration}ms，识别 ${ocrResult.text.length} 字符`);
+
+          // Emit OCR completed event for debug timeline
+          this.emit('ocr:completed', {
+            text: ocrResult.text,
+            confidence: ocrResult.confidence,
+            backend: ocrResult.backend || 'unknown',
+            duration: ocrDuration,
+          });
+        } catch (err) {
+          console.warn('[Perception] ❌ 截图 OCR 失败:', err);
+        }
+      }
     });
 
     this.screenCapture.on('error', (error: Error) => {

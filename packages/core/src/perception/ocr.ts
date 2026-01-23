@@ -266,6 +266,7 @@ with open('${outputPath}', 'w', encoding='utf-8') as f:
 export class SystemOCRBackend implements IOCRBackend {
   readonly name = 'system';
   private platform: NodeJS.Platform;
+  private initialized: boolean = false;
 
   constructor() {
     this.platform = process.platform;
@@ -276,7 +277,22 @@ export class SystemOCRBackend implements IOCRBackend {
   }
 
   async initialize(): Promise<void> {
-    // 系统 OCR 无需初始化
+    if (!this.isAvailable) {
+      throw new Error(`系统 OCR 不支持 ${this.platform} 平台`);
+    }
+
+    // 在 macOS 上验证 swift 是否可用
+    if (this.platform === 'darwin') {
+      try {
+        const { execSync } = await import('child_process');
+        execSync('which swift', { stdio: 'ignore' });
+        console.log('[OCR] ✓ macOS Vision OCR 可用 (swift found)');
+      } catch {
+        throw new Error('macOS 系统 OCR 需要 Swift 命令行工具');
+      }
+    }
+
+    this.initialized = true;
   }
 
   async recognize(imageData: string | Buffer): Promise<OCRResult> {
@@ -310,66 +326,87 @@ export class SystemOCRBackend implements IOCRBackend {
   }
 
   private async recognizeMacOS(imageBuffer: Buffer): Promise<{ text: string; confidence: number }> {
-    const { execSync } = await import('child_process');
-    const { writeFileSync, unlinkSync } = await import('fs');
+    const { exec, execSync } = await import('child_process');
+    const { writeFileSync, unlinkSync, existsSync, readFileSync } = await import('fs');
     const { join } = await import('path');
     const { tmpdir } = await import('os');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
 
-    // 保存临时文件
-    const tempPath = join(tmpdir(), `hawkeye_ocr_${Date.now()}.png`);
-    writeFileSync(tempPath, imageBuffer);
+    const timestamp = Date.now();
+    const tempImagePath = join(tmpdir(), `hawkeye_ocr_${timestamp}.png`);
+    const tempOutputPath = join(tmpdir(), `hawkeye_ocr_${timestamp}.txt`);
+
+    // 保存图片临时文件
+    writeFileSync(tempImagePath, imageBuffer);
 
     try {
-      // 使用 macOS Vision Framework 的命令行工具
-      const script = `
-        import Vision
-        import Foundation
+      // 方案 1: 使用 osascript 调用 Vision Framework (最可靠)
+      // 通过 AppleScript 间接调用，避免 Swift 编译延迟
+      const appleScript = `
+use framework "Vision"
+use framework "Foundation"
+use framework "AppKit"
+use scripting additions
 
-        let url = URL(fileURLWithPath: "${tempPath}")
-        guard let image = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let cgImage = CGImageSourceCreateImageAtIndex(image, 0, nil) else {
-            exit(1)
-        }
+set imagePath to "${tempImagePath}"
+set outputPath to "${tempOutputPath}"
 
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.recognitionLanguages = ["zh-Hans", "zh-Hant", "en-US"]
+set imageURL to current application's NSURL's fileURLWithPath:imagePath
+set imageSource to current application's CGImageSourceCreateWithURL(imageURL, missing value)
+set cgImage to current application's CGImageSourceCreateImageAtIndex(imageSource, 0, missing value)
 
-        let handler = VNImageRequestHandler(cgImage: cgImage)
-        try? handler.perform([request])
+set textRequest to current application's VNRecognizeTextRequest's alloc()'s init()
+textRequest's setRecognitionLevel:(current application's VNRequestTextRecognitionLevelAccurate)
+textRequest's setRecognitionLanguages:{"zh-Hans", "zh-Hant", "en-US", "ja"}
+textRequest's setUsesLanguageCorrection:true
 
-        var output = ""
-        if let observations = request.results {
-            for observation in observations {
-                if let candidate = observation.topCandidates(1).first {
-                    output += candidate.string + "\\n"
-                }
-            }
-        }
-        print(output)
-      `;
+set requestHandler to current application's VNImageRequestHandler's alloc()'s initWithCGImage:cgImage options:(current application's NSDictionary's alloc()'s init())
+requestHandler's performRequests:{textRequest} |error|:(missing value)
 
-      // 使用 swift 命令执行
-      const result = execSync(`swift -e '${script.replace(/'/g, "\\'")}'`, {
-        encoding: 'utf-8',
+set recognizedText to ""
+set observations to textRequest's results()
+repeat with observation in observations
+  set topCandidate to (observation's topCandidates:1)'s firstObject()
+  if topCandidate is not missing value then
+    set recognizedText to recognizedText & (topCandidate's |string|() as text) & linefeed
+  end if
+end repeat
+
+-- 写入文件
+set fileRef to open for access POSIX file outputPath with write permission
+write recognizedText to fileRef as «class utf8»
+close access fileRef
+
+return recognizedText
+`;
+
+      await execAsync(`osascript -l AppleScriptObjC -e '${appleScript.replace(/'/g, "'\\''")}'`, {
         timeout: 30000,
+        maxBuffer: 10 * 1024 * 1024,
       });
 
-      return { text: result.trim(), confidence: 0.9 };
-    } catch (error) {
-      // 如果 swift 不可用，尝试使用 shortcuts 命令
-      try {
-        // macOS 12+ 可以使用 shortcuts 运行预设的 OCR 快捷方式
-        const result = execSync(
-          `shortcuts run "Extract Text from Image" -i "${tempPath}"`,
-          { encoding: 'utf-8', timeout: 30000 }
-        );
-        return { text: result.trim(), confidence: 0.85 };
-      } catch {
-        return { text: '', confidence: 0 };
+      // 读取结果
+      if (existsSync(tempOutputPath)) {
+        const text = readFileSync(tempOutputPath, 'utf-8').trim();
+        console.log(`[OCR] ✓ macOS Vision OCR 成功，识别 ${text.length} 字符`);
+        return { text, confidence: 0.9 };
       }
+
+      return { text: '', confidence: 0 };
+    } catch (error: any) {
+      console.warn('[OCR] AppleScript Vision OCR failed:', error.message?.slice(0, 200));
+
+      // 方案 2: 使用 screencapture + Vision (更简单但需要显示图片)
+      // 跳过，因为需要额外交互
+
+      // 方案 3: 返回空结果，让调用方回退到 Vision API
+      console.log('[OCR] macOS 系统 OCR 失败，可以配置 Vision API 作为备选');
+      return { text: '', confidence: 0 };
     } finally {
-      try { unlinkSync(tempPath); } catch {}
+      // 清理临时文件
+      try { if (existsSync(tempImagePath)) unlinkSync(tempImagePath); } catch {}
+      try { if (existsSync(tempOutputPath)) unlinkSync(tempOutputPath); } catch {}
     }
   }
 
@@ -516,20 +553,30 @@ export class OCRManager extends EventEmitter {
 
   /**
    * 自动选择最佳后端
-   * 优先级: PaddleOCR > 系统 OCR > Vision API
+   * 优先级: Vision API > 系统 OCR > PaddleOCR
+   * Vision API 使用已配置的云端 AI，最稳定可靠
    */
   private async autoSelectBackend(): Promise<void> {
-    const priorities: OCRBackend[] = ['paddle', 'system', 'vision-api'];
+    // 优先使用系统 OCR（macOS Vision / Windows OCR）- 免费、快速、离线
+    // 其次使用 Vision API（消耗 API 额度）
+    // 最后使用 PaddleOCR（需要额外安装）
+    const priorities: OCRBackend[] = ['system', 'vision-api', 'paddle'];
+
+    console.log('[OCR] 开始自动选择 OCR 后端...');
 
     for (const backend of priorities) {
       try {
+        console.log(`[OCR] 尝试后端: ${backend}`);
         await this.selectBackend(backend);
+        console.log(`[OCR] ✓ 成功选择后端: ${backend}`);
         return;
-      } catch {
+      } catch (err: any) {
+        console.log(`[OCR] ✗ 后端 ${backend} 不可用: ${err.message}`);
         continue;
       }
     }
 
+    console.error('[OCR] ✗ 没有可用的 OCR 后端');
     throw new Error('没有可用的 OCR 后端');
   }
 

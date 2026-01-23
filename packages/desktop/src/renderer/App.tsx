@@ -9,6 +9,7 @@ import { languages } from './i18n';
 import type { A2UICard, A2UIAction } from '@hawkeye/core';
 import { CardList, QuickActions, defaultQuickActions } from './components/A2UI';
 import type { QuickAction } from './components/A2UI';
+import { DebugTimeline } from './components/DebugTimeline';
 import logoIcon from './assets/icon.png';
 
 // 类型定义
@@ -119,6 +120,60 @@ interface AppConfig {
 declare global {
   interface Window {
     hawkeye: {
+      // 调试 API
+      debug: {
+        getEvents: (filter?: {
+          types?: string[];
+          startTime?: number;
+          endTime?: number;
+          search?: string;
+        }) => Promise<Array<{
+          id: string;
+          timestamp: number;
+          type: string;
+          data: Record<string, unknown>;
+          duration?: number;
+          parentId?: string;
+        }>>;
+        getRecent: (count?: number) => Promise<Array<{
+          id: string;
+          timestamp: number;
+          type: string;
+          data: Record<string, unknown>;
+          duration?: number;
+          parentId?: string;
+        }>>;
+        getSince: (timestamp: number) => Promise<Array<{
+          id: string;
+          timestamp: number;
+          type: string;
+          data: Record<string, unknown>;
+          duration?: number;
+          parentId?: string;
+        }>>;
+        clearEvents: () => Promise<boolean>;
+        pause: () => Promise<boolean>;
+        resume: () => Promise<boolean>;
+        getStatus: () => Promise<{
+          paused: boolean;
+          count: number;
+          totalCount: number;
+          config?: {
+            maxEvents: number;
+            enableScreenshots: boolean;
+            screenshotThumbnailSize: number;
+            truncateTextAt: number;
+          };
+        }>;
+        export: () => Promise<string | null>;
+        updateConfig: (config: {
+          maxEvents?: number;
+          enableScreenshots?: boolean;
+          screenshotThumbnailSize?: number;
+          truncateTextAt?: number;
+        }) => Promise<boolean>;
+      };
+
       // 核心 API
       observe: () => Promise<void>;
       generatePlan: (intentId: string) => Promise<ExecutionPlan>;
@@ -221,6 +276,13 @@ declare global {
 
       // 截屏预览
       getScreenshot: () => Promise<{ success: boolean; dataUrl?: string; error?: string }>;
+      getLastContext: () => Promise<{
+        success: boolean;
+        screenshot?: string;
+        ocrText?: string;
+        timestamp?: number;
+        error?: string;
+      }>;
       onScreenshotPreview: (callback: (data: { dataUrl: string; timestamp: number }) => void) => void;
     };
   }
@@ -433,10 +495,18 @@ export default function App() {
   // 截屏预览状态
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [showScreenshotPreview, setShowScreenshotPreview] = useState(false);
+  const [ocrTextPreview, setOcrTextPreview] = useState<string | null>(null);
+  const [screenshotZoomed, setScreenshotZoomed] = useState(false);
+
+  // 模型选择器弹窗状态
+  const [showModelSelector, setShowModelSelector] = useState(false);
 
   // 模型测试状态
   const [modelTesting, setModelTesting] = useState(false);
   const [modelTestResult, setModelTestResult] = useState<{ success: boolean; error?: string } | null>(null);
+
+  // 调试时间线状态
+  const [showDebugTimeline, setShowDebugTimeline] = useState(false);
 
   // Ollama 下载安装状态
   const [ollamaDownloadProgress, setOllamaDownloadProgress] = useState<{
@@ -1028,13 +1098,30 @@ export default function App() {
   // 切换截屏预览
   const toggleScreenshotPreview = async () => {
     if (!showScreenshotPreview) {
-      // 获取当前截屏
-      const result = await window.hawkeye.getScreenshot();
-      if (result.success && result.dataUrl) {
-        setScreenshotPreview(result.dataUrl);
+      // 获取最后的感知上下文（截图 + OCR）
+      const result = await window.hawkeye.getLastContext();
+      if (result.success) {
+        if (result.screenshot) {
+          // 如果是 base64 数据，转为 dataURL
+          const dataUrl = result.screenshot.startsWith('data:')
+            ? result.screenshot
+            : `data:image/png;base64,${result.screenshot}`;
+          setScreenshotPreview(dataUrl);
+        }
+        if (result.ocrText) {
+          setOcrTextPreview(result.ocrText);
+        }
+      } else {
+        // 回退到简单截图
+        const screenshotResult = await window.hawkeye.getScreenshot();
+        if (screenshotResult.success && screenshotResult.dataUrl) {
+          setScreenshotPreview(screenshotResult.dataUrl);
+        }
+        setOcrTextPreview(null);
       }
     }
     setShowScreenshotPreview(!showScreenshotPreview);
+    setScreenshotZoomed(false);
   };
 
   // 语言切换
@@ -1637,6 +1724,35 @@ export default function App() {
 
   // 设置页面
   if (showSettings) {
+    // 获取当前模型信息
+    const getCurrentModelInfo = () => {
+      if (config?.localOnly || config?.aiProvider === 'ollama') {
+        return {
+          name: config?.ollamaModel || 'qwen3-vl:2b',
+          type: 'local',
+          icon: '💻',
+          label: t('settings.local', '本地'),
+        };
+      } else if (config?.aiProvider === 'gemini') {
+        return {
+          name: config?.geminiModel || 'gemini-2.0-flash-exp',
+          type: 'cloud',
+          icon: '☁️',
+          label: t('settings.cloud', '云端'),
+        };
+      } else if (config?.aiProvider === 'openai') {
+        return {
+          name: config?.openaiModel || 'gpt-4',
+          type: 'cloud',
+          icon: '☁️',
+          label: t('settings.cloud', '云端'),
+        };
+      }
+      return { name: '未配置', type: 'unknown', icon: '❓', label: '未知' };
+    };
+
+    const currentModel = getCurrentModelInfo();
+
     return (
       <div className="container settings">
         <header className="header">
@@ -1644,6 +1760,127 @@ export default function App() {
         </header>
 
         <div className="content settings-content">
+          {/* 当前模型信息 - 突出显示 */}
+          <div className="current-model-banner">
+            <div className="current-model-info">
+              <span className="current-model-icon">{currentModel.icon}</span>
+              <div className="current-model-details">
+                <span className="current-model-label">{t('settings.currentModel', '当前模型')}</span>
+                <span className="current-model-name">{currentModel.name}</span>
+              </div>
+            </div>
+            <div className="current-model-actions">
+              <span className={`current-model-badge ${currentModel.type}`}>
+                {currentModel.label}
+              </span>
+              <button
+                className="model-switch-btn"
+                onClick={() => setShowModelSelector(true)}
+                title={t('settings.switchModel', '切换模型')}
+              >
+                🔄
+                <span className="switch-label">
+                  {t('settings.switchModel', '切换')}
+                </span>
+              </button>
+            </div>
+
+            {/* 模型选择器弹窗 */}
+            {showModelSelector && (
+              <div className="model-selector-overlay" onClick={() => setShowModelSelector(false)}>
+                <div className="model-selector-popup" onClick={(e) => e.stopPropagation()}>
+                  <div className="model-selector-header">
+                    <h3>{t('settings.selectModelType', '选择模型类型')}</h3>
+                    <button className="close-btn" onClick={() => setShowModelSelector(false)}>×</button>
+                  </div>
+                  <div className="model-selector-options">
+                    {/* 本地模型选项 */}
+                    <div
+                      className={`model-option ${currentModel.type === 'local' ? 'active' : ''} ${!config?.hasOllama ? 'disabled' : ''}`}
+                      onClick={() => {
+                        if (config?.hasOllama) {
+                          setTempConfig({
+                            ...tempConfig,
+                            localOnly: true,
+                            aiProvider: 'ollama',
+                            ollamaModel: config?.localOnlyRecommendedModel || 'qwen3-vl:2b',
+                          });
+                          setShowModelSelector(false);
+                        }
+                      }}
+                    >
+                      <div className="model-option-icon">💻</div>
+                      <div className="model-option-info">
+                        <div className="model-option-title">{t('settings.localModel', '本地模型')}</div>
+                        <div className="model-option-desc">
+                          {config?.hasOllama
+                            ? `Ollama - ${config?.ollamaModel || 'qwen3-vl:2b'}`
+                            : t('settings.ollamaNotInstalled', '未安装 Ollama')}
+                        </div>
+                      </div>
+                      {currentModel.type === 'local' && <span className="model-option-check">✓</span>}
+                    </div>
+
+                    {/* 云端模型选项 - Gemini */}
+                    <div
+                      className={`model-option ${currentModel.type === 'cloud' && tempConfig.aiProvider === 'gemini' ? 'active' : ''} ${!(config?.hasGemini || config?.geminiApiKey) ? 'disabled' : ''}`}
+                      onClick={() => {
+                        if (config?.hasGemini || config?.geminiApiKey) {
+                          setTempConfig({
+                            ...tempConfig,
+                            localOnly: false,
+                            aiProvider: 'gemini',
+                          });
+                          setShowModelSelector(false);
+                        }
+                      }}
+                    >
+                      <div className="model-option-icon">☁️</div>
+                      <div className="model-option-info">
+                        <div className="model-option-title">Gemini {t('settings.cloudModel', '云端')}</div>
+                        <div className="model-option-desc">
+                          {(config?.hasGemini || config?.geminiApiKey)
+                            ? config?.geminiModel || 'gemini-2.0-flash-exp'
+                            : t('settings.apiKeyNotConfigured', '未配置 API Key')}
+                        </div>
+                      </div>
+                      {currentModel.type === 'cloud' && tempConfig.aiProvider === 'gemini' && <span className="model-option-check">✓</span>}
+                    </div>
+
+                    {/* 云端模型选项 - OpenAI */}
+                    <div
+                      className={`model-option ${currentModel.type === 'cloud' && tempConfig.aiProvider === 'openai' ? 'active' : ''} ${!config?.openaiApiKey ? 'disabled' : ''}`}
+                      onClick={() => {
+                        if (config?.openaiApiKey) {
+                          setTempConfig({
+                            ...tempConfig,
+                            localOnly: false,
+                            aiProvider: 'openai',
+                          });
+                          setShowModelSelector(false);
+                        }
+                      }}
+                    >
+                      <div className="model-option-icon">☁️</div>
+                      <div className="model-option-info">
+                        <div className="model-option-title">OpenAI {t('settings.cloudModel', '云端')}</div>
+                        <div className="model-option-desc">
+                          {config?.openaiApiKey
+                            ? config?.openaiModel || 'gpt-4'
+                            : t('settings.apiKeyNotConfigured', '未配置 API Key')}
+                        </div>
+                      </div>
+                      {currentModel.type === 'cloud' && tempConfig.aiProvider === 'openai' && <span className="model-option-check">✓</span>}
+                    </div>
+                  </div>
+                  <div className="model-selector-hint">
+                    {t('settings.modelSelectorHint', '选择后需要点击「保存设置」按钮生效')}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 完全本地模式 */}
           <div className="form-group local-only-section">
             <div className="local-only-header">
@@ -1901,6 +2138,14 @@ export default function App() {
           <h1>Hawkeye</h1>
         </div>
         <div className="header-actions">
+          {/* 调试时间线按钮 */}
+          <button
+            className={`btn-icon ${showDebugTimeline ? 'active' : ''}`}
+            onClick={() => setShowDebugTimeline(!showDebugTimeline)}
+            title={t('app.debugTimeline', '调试时间线')}
+          >
+            🔧
+          </button>
           {/* 截屏预览按钮 */}
           <button
             className={`btn-icon ${showScreenshotPreview ? 'active' : ''}`}
@@ -1948,12 +2193,47 @@ export default function App() {
 
       {/* 截屏预览面板 */}
       {showScreenshotPreview && screenshotPreview && (
-        <div className="screenshot-preview-panel">
+        <div className={`screenshot-preview-panel ${screenshotZoomed ? 'zoomed' : ''}`}>
           <div className="screenshot-preview-header">
             <span>{t('app.currentScreen', '当前屏幕')}</span>
-            <button className="btn-close" onClick={() => setShowScreenshotPreview(false)}>×</button>
+            <div className="screenshot-preview-actions">
+              <button
+                className="btn-icon-small"
+                onClick={() => setScreenshotZoomed(!screenshotZoomed)}
+                title={screenshotZoomed ? '缩小' : '放大'}
+              >
+                {screenshotZoomed ? '🔍-' : '🔍+'}
+              </button>
+              <button
+                className="btn-icon-small"
+                onClick={toggleScreenshotPreview}
+                title="刷新"
+              >
+                🔄
+              </button>
+              <button className="btn-close" onClick={() => setShowScreenshotPreview(false)}>×</button>
+            </div>
           </div>
-          <img src={screenshotPreview} alt="Screen Preview" className="screenshot-preview-image" />
+          <div className="screenshot-preview-content">
+            <div className="screenshot-image-container" onClick={() => setScreenshotZoomed(!screenshotZoomed)}>
+              <img
+                src={screenshotPreview}
+                alt="Screen Preview"
+                className={`screenshot-preview-image ${screenshotZoomed ? 'zoomed' : ''}`}
+              />
+            </div>
+            {ocrTextPreview && (
+              <div className="ocr-text-preview">
+                <div className="ocr-text-header">
+                  <span>📝 OCR 识别结果</span>
+                  <span className="ocr-text-length">{ocrTextPreview.length} 字符</span>
+                </div>
+                <div className="ocr-text-content">
+                  {ocrTextPreview}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1969,6 +2249,13 @@ export default function App() {
 
       {/* 快捷操作栏 */}
       <QuickActions actions={quickActions} onAction={handleQuickAction} />
+
+      {/* 调试时间线面板 */}
+      {showDebugTimeline && (
+        <div className="debug-timeline-overlay">
+          <DebugTimeline onClose={() => setShowDebugTimeline(false)} />
+        </div>
+      )}
 
       {/* 聊天对话框 */}
       {showChatDialog && (

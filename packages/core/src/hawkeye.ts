@@ -24,6 +24,7 @@ import {
   type SuggestedAction,
   type AutonomousAnalysisResult,
 } from './autonomous';
+import { EventCollector } from './debug';
 import type {
   UserIntent,
   ExecutionPlan,
@@ -129,6 +130,9 @@ export class Hawkeye extends EventEmitter {
   private pluginManager: PluginManager | null = null;
   private autonomousManager: AutonomousManager | null = null;
 
+  // 调试事件收集器
+  private eventCollector: EventCollector;
+
   private _initialized: boolean = false;
   private _syncRunning: boolean = false;
   private _behaviorRunning: boolean = false;
@@ -180,6 +184,14 @@ export class Hawkeye extends EventEmitter {
     if (config.enableAutonomous !== false) {
       this.autonomousManager = createAutonomousManager(config.autonomous);
     }
+
+    // 初始化调试事件收集器
+    this.eventCollector = new EventCollector({
+      maxEvents: 500,
+      enableScreenshots: true,
+      screenshotThumbnailSize: 200,
+      truncateTextAt: 5000,
+    });
   }
 
   get isInitialized(): boolean {
@@ -219,6 +231,29 @@ export class Hawkeye extends EventEmitter {
 
       await this.aiManager.initialize();
       this.emit('module:ready', 'ai');
+
+      // 3.5 配置 Vision API OCR（使用已配置的 AI 提供商）
+      if (this.aiManager && this.config.perception?.enableOCR !== false) {
+        const ocrAnalyzeFunction = async (imageBase64: string): Promise<string> => {
+          try {
+            const messages: AIMessage[] = [{
+              role: 'user',
+              content: '请仔细识别并提取图片中的所有文字内容。只返回识别到的原始文字，按照从上到下、从左到右的顺序排列，每行文字单独一行。不要添加任何解释、标题或格式说明。如果图片中没有文字，返回空字符串。',
+            }];
+            const result = await this.aiManager!.chatWithVision(messages, [imageBase64]);
+            return result.text || '';
+          } catch (err) {
+            console.warn('[Hawkeye] Vision API OCR failed:', err);
+            return '';
+          }
+        };
+        this.perception.setVisionAPIFunction(ocrAnalyzeFunction);
+        console.log('[Hawkeye] ✓ Vision API OCR 已配置 (使用 AI Manager)');
+      }
+
+      // 3.6 启动感知引擎 (用于 Debug Timeline 事件收集)
+      await this.perception.start();
+      console.log('[Hawkeye] ✓ 感知引擎已启动');
 
       // 4. 配置 Intent Engine 和 Plan Generator 使用 AI
       this.intentEngine = new IntentEngine();
@@ -300,6 +335,10 @@ export class Hawkeye extends EventEmitter {
         this.emit('module:ready', 'autonomous');
       }
 
+      // 14. 设置调试事件收集
+      this.setupDebugEvents();
+      this.emit('module:ready', 'debug');
+
       this._initialized = true;
       this.emit('ready');
     } catch (error) {
@@ -364,6 +403,25 @@ export class Hawkeye extends EventEmitter {
 
     this.emit('intents:detected', intents);
     return intents;
+  }
+
+  /**
+   * 获取最后的感知上下文
+   * 包含截图和 OCR 结果
+   */
+  getLastContext(): {
+    screenshot?: string;
+    ocrText?: string;
+    timestamp: number;
+  } | null {
+    const context = this.perception.getLastContext();
+    if (!context) return null;
+
+    return {
+      screenshot: context.screenshot?.imageData,
+      ocrText: context.ocr?.text,
+      timestamp: context.createdAt,
+    };
   }
 
   /**
@@ -505,7 +563,38 @@ export class Hawkeye extends EventEmitter {
       throw new Error('AI Manager 未初始化');
     }
 
+    // Helper to convert AIMessageContent to string
+    const contentToString = (content: string | import('./ai/types').AIMessageContent[] | undefined): string | undefined => {
+      if (!content) return undefined;
+      if (typeof content === 'string') return content;
+      return content.map(c => c.type === 'text' ? c.text || '' : '[image]').join('');
+    };
+
+    // 记录 LLM 输入
+    const systemMessage = messages.find(m => m.role === 'system');
+    const userMessage = messages.find(m => m.role === 'user');
+    const llmInputEvent = this.eventCollector.addLLMInput({
+      systemPrompt: contentToString(systemMessage?.content),
+      userMessage: contentToString(userMessage?.content) || contentToString(messages[messages.length - 1]?.content) || '',
+      model: this.aiManager.activeProvider || undefined,
+      provider: this.aiManager.activeProvider || undefined,
+    });
+
+    const startTime = Date.now();
     const response = await this.aiManager.chat(messages);
+    const duration = Date.now() - startTime;
+
+    // 记录 LLM 输出
+    this.eventCollector.addLLMOutput({
+      response: response.text,
+      model: response.model,
+      provider: this.aiManager.activeProvider || undefined,
+      inputTokens: response.usage?.promptTokens,
+      outputTokens: response.usage?.completionTokens,
+      totalTokens: response.usage?.totalTokens,
+      duration,
+    }, llmInputEvent.id);
+
     return response.text;
   }
 
@@ -663,6 +752,15 @@ export class Hawkeye extends EventEmitter {
     return this.autonomousManager;
   }
 
+  // ============ 调试事件收集 ============
+
+  /**
+   * 获取调试事件收集器
+   */
+  getEventCollector(): EventCollector {
+    return this.eventCollector;
+  }
+
   /**
    * 分析上下文并获取自动建议 (无需 Prompt)
    */
@@ -767,6 +865,9 @@ export class Hawkeye extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.emit('shutting_down');
+
+    // 停止感知引擎
+    await this.perception.stop();
 
     // 停止行为追踪
     if (this.behaviorTracker) {
@@ -1075,6 +1176,147 @@ export class Hawkeye extends EventEmitter {
     // 分析完成事件
     this.autonomousManager.on('analysis:complete', (result: AutonomousAnalysisResult) => {
       this.emit('autonomous:analysis', result);
+    });
+  }
+
+  private setupDebugEvents(): void {
+    // 感知模块事件
+    this.perception.on('screen:changed', (data) => {
+      this.eventCollector.addScreenshot({
+        width: data.dimensions?.width || 0,
+        height: data.dimensions?.height || 0,
+        size: data.imageData?.length,
+        // Use the full image as thumbnail - can be resized in frontend
+        thumbnail: data.imageData ? `data:image/${data.format || 'png'};base64,${data.imageData}` : undefined,
+      });
+    });
+
+    this.perception.on('ocr:completed', (data) => {
+      this.eventCollector.addOCR({
+        text: data.text || '',
+        charCount: data.text?.length || 0,
+        confidence: data.confidence,
+        backend: data.backend || 'unknown',
+        duration: data.duration || 0,
+      });
+    });
+
+    this.perception.on('clipboard:changed', (data) => {
+      // data can be a string or an object
+      const content = typeof data === 'string' ? data : (data.content || '');
+      const type = typeof data === 'string' ? 'text' : (data.type || 'text');
+      this.eventCollector.addClipboard({
+        content,
+        type,
+      });
+    });
+
+    this.perception.on('window:changed', (data) => {
+      this.eventCollector.addWindow({
+        appName: data.appName || '',
+        title: data.title || '',
+        bundleId: data.bundleId,
+        path: data.path,
+      });
+    });
+
+    this.perception.on('file:changed', (data) => {
+      this.eventCollector.addFile({
+        path: data.path || '',
+        operation: data.type || data.operation || 'modify',
+        oldPath: data.oldPath,
+      });
+    });
+
+    // 意图识别事件
+    this.intentEngine.on('intents:recognized', (intents) => {
+      this.eventCollector.addIntent({
+        intents: intents.map((i: UserIntent) => ({
+          id: i.id,
+          type: i.type,
+          description: i.description,
+          confidence: i.confidence,
+        })),
+      });
+    });
+
+    // 计划生成事件
+    this.planGenerator.on('generating', (data) => {
+      this.eventCollector.addExecutionStart({
+        planId: data.planId || `plan_${Date.now()}`,
+        executionId: `exec_${Date.now()}`,
+        planTitle: data.title || 'Generating plan...',
+        totalSteps: 0,
+      });
+    });
+
+    this.planGenerator.on('generated', (plan: ExecutionPlan) => {
+      this.eventCollector.addPlan({
+        planId: plan.id,
+        title: plan.title,
+        description: plan.description,
+        steps: plan.steps.map((s, index) => ({
+          order: s.order ?? index + 1,
+          description: s.description,
+          actionType: s.actionType,
+          riskLevel: s.riskLevel === 'safe' ? 'low' : s.riskLevel,
+        })),
+        intentId: plan.intent?.id,
+      });
+    });
+
+    // 执行器事件
+    this.planExecutor.on('step:start', (data) => {
+      this.eventCollector.addExecutionStep({
+        planId: data.planId,
+        executionId: data.executionId || data.planId,
+        stepOrder: data.step?.order || 0,
+        stepDescription: data.step?.description || '',
+        status: 'started',
+      });
+    });
+
+    this.planExecutor.on('step:complete', (data) => {
+      this.eventCollector.addExecutionStep({
+        planId: data.planId,
+        executionId: data.executionId || data.planId,
+        stepOrder: data.step?.order || 0,
+        stepDescription: data.step?.description || '',
+        status: 'completed',
+        result: data.result,
+        duration: data.duration,
+      });
+    });
+
+    this.planExecutor.on('step:error', (data) => {
+      this.eventCollector.addExecutionStep({
+        planId: data.planId,
+        executionId: data.executionId || data.planId,
+        stepOrder: data.step?.order || 0,
+        stepDescription: data.step?.description || '',
+        status: 'failed',
+        error: data.error,
+      });
+    });
+
+    this.planExecutor.on('execution:complete', (execution) => {
+      this.eventCollector.addExecutionComplete({
+        planId: execution.planId,
+        executionId: execution.id,
+        status: execution.status as 'completed' | 'failed' | 'cancelled',
+        totalDuration: execution.duration || 0,
+        stepsCompleted: execution.completedSteps?.length || 0,
+        stepsFailed: execution.failedSteps?.length || 0,
+      });
+    });
+
+    // 错误事件
+    this.on('error', (error) => {
+      this.eventCollector.addError({
+        message: error instanceof Error ? error.message : String(error),
+        source: 'Hawkeye',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     });
   }
 }
