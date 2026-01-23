@@ -11,6 +11,7 @@ import { ActionButton } from './ActionButton';
 interface PreviewCardProps {
   card: A2UIPreviewCard;
   onAction: (actionId: string) => void;
+  onDismiss?: () => void;
 }
 
 export const PreviewCard: React.FC<PreviewCardProps> = ({ card, onAction }) => {

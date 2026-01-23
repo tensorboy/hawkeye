@@ -4,7 +4,14 @@
  */
 
 import React, { useRef, useEffect } from 'react';
-import type { A2UICard } from '@hawkeye/core';
+import type {
+  A2UICard,
+  A2UISuggestionCard,
+  A2UIPreviewCard,
+  A2UIResultCard,
+  A2UIProgressCard,
+  A2UIConfirmationCard,
+} from '@hawkeye/core';
 import { SuggestionCard } from './SuggestionCard';
 import { PreviewCard } from './PreviewCard';
 import { ResultCard } from './ResultCard';
@@ -61,7 +68,7 @@ export const CardList: React.FC<CardListProps> = ({
         return (
           <SuggestionCard
             key={card.id}
-            card={card}
+            card={card as A2UISuggestionCard}
             onAction={handleAction}
             onDismiss={handleDismiss}
           />
@@ -71,7 +78,7 @@ export const CardList: React.FC<CardListProps> = ({
         return (
           <PreviewCard
             key={card.id}
-            card={card}
+            card={card as A2UIPreviewCard}
             onAction={handleAction}
             onDismiss={handleDismiss}
           />
@@ -81,7 +88,7 @@ export const CardList: React.FC<CardListProps> = ({
         return (
           <ResultCard
             key={card.id}
-            card={card}
+            card={card as A2UIResultCard}
             onAction={handleAction}
             onDismiss={handleDismiss}
           />
@@ -91,7 +98,7 @@ export const CardList: React.FC<CardListProps> = ({
         return (
           <ProgressCard
             key={card.id}
-            card={card}
+            card={card as A2UIProgressCard}
             onAction={handleAction}
           />
         );
@@ -100,7 +107,7 @@ export const CardList: React.FC<CardListProps> = ({
         return (
           <ConfirmationCard
             key={card.id}
-            card={card}
+            card={card as A2UIConfirmationCard}
             onAction={handleAction}
             onDismiss={handleDismiss}
           />

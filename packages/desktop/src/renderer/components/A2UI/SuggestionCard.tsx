@@ -11,6 +11,7 @@ import { ActionButton } from './ActionButton';
 interface SuggestionCardProps {
   card: A2UISuggestionCard;
   onAction: (actionId: string) => void;
+  onDismiss?: () => void;
   showConfidence?: boolean;
 }
 

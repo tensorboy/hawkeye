@@ -3,7 +3,7 @@
  * 使用新版 Hawkeye 统一引擎
  */
 
-import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, dialog } from 'electron';
+import { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, dialog, desktopCapturer } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -160,12 +160,8 @@ function setupAutoUpdater() {
   }
 }
 
-// 扩展 app 类型以添加 isQuitting 标志
-declare module 'electron' {
-  interface App {
-    isQuitting?: boolean;
-  }
-}
+// 应用退出标志（避免使用 isAppQuitting 导致的类型问题）
+let isAppQuitting = false;
 
 // 配置存储
 interface AppConfig {
@@ -257,7 +253,7 @@ function createWindow() {
 
   // 窗口关闭时隐藏到托盘（而不是退出应用）
   mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
+    if (!isAppQuitting) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -552,7 +548,7 @@ async function initializeHawkeye(): Promise<void> {
   // 完全本地模式：只使用 Ollama，不添加任何云端 provider
   if (appConfig.localOnly) {
     debugLog('Local-only mode enabled, using Ollama only');
-    config.ai.providers.push({
+    config.ai!.providers!.push({
       type: 'ollama',
       baseUrl: appConfig.ollamaHost || 'http://localhost:11434',
       model: appConfig.ollamaModel || localOnlyConfig.model,
@@ -562,7 +558,7 @@ async function initializeHawkeye(): Promise<void> {
 
     // 添加 Ollama Provider (只有当明确选择 ollama 时才添加)
     if (appConfig.aiProvider === 'ollama' && appConfig.ollamaHost) {
-      config.ai.providers.push({
+      config.ai!.providers!.push({
         type: 'ollama',
         baseUrl: appConfig.ollamaHost,
         model: appConfig.ollamaModel || 'qwen2.5vl:7b',
@@ -571,7 +567,7 @@ async function initializeHawkeye(): Promise<void> {
 
     // 添加 Gemini Provider (只有当明确选择 gemini 时才添加)
     if (appConfig.aiProvider === 'gemini' && appConfig.geminiApiKey) {
-      config.ai.providers.push({
+      config.ai!.providers!.push({
         type: 'gemini',
         apiKey: appConfig.geminiApiKey,
         model: appConfig.geminiModel || 'gemini-2.0-flash-exp',
@@ -580,7 +576,7 @@ async function initializeHawkeye(): Promise<void> {
 
     // 添加 OpenAI Compatible Provider (e.g., antigravity)
     if (appConfig.aiProvider === 'openai' && appConfig.openaiBaseUrl && appConfig.openaiApiKey) {
-      config.ai.providers.push({
+      config.ai!.providers!.push({
         type: 'openai',
         baseUrl: appConfig.openaiBaseUrl,
         apiKey: appConfig.openaiApiKey,
@@ -589,8 +585,8 @@ async function initializeHawkeye(): Promise<void> {
     }
 
     // 如果没有配置任何 provider，默认添加 openai (antigravity)
-    if (config.ai.providers.length === 0) {
-      config.ai.providers.push({
+    if (config.ai!.providers!.length === 0) {
+      config.ai!.providers!.push({
         type: 'openai',
         baseUrl: 'http://74.48.133.20:8045',
         apiKey: 'sk-antigravity-pickfrom2026',
@@ -602,35 +598,35 @@ async function initializeHawkeye(): Promise<void> {
   hawkeye = createHawkeye(config);
 
   // 监听事件
-  hawkeye.on('module:ready', (module) => {
+  hawkeye.on('module:ready', (module: unknown) => {
     mainWindow?.webContents.send('module-ready', module);
   });
 
-  hawkeye.on('ai:provider:ready', (type) => {
+  hawkeye.on('ai:provider:ready', (type: unknown) => {
     mainWindow?.webContents.send('ai-provider-ready', type);
   });
 
-  hawkeye.on('ai:provider:error', (info) => {
+  hawkeye.on('ai:provider:error', (info: unknown) => {
     mainWindow?.webContents.send('ai-provider-error', info);
   });
 
-  hawkeye.on('intents:detected', (intents) => {
+  hawkeye.on('intents:detected', (intents: unknown) => {
     mainWindow?.webContents.send('intents', intents);
   });
 
-  hawkeye.on('plan:generated', (plan) => {
+  hawkeye.on('plan:generated', (plan: unknown) => {
     mainWindow?.webContents.send('plan', plan);
   });
 
-  hawkeye.on('execution:step:start', (data) => {
+  hawkeye.on('execution:step:start', (data: unknown) => {
     mainWindow?.webContents.send('execution-progress', data);
   });
 
-  hawkeye.on('execution:completed', (execution) => {
+  hawkeye.on('execution:completed', (execution: unknown) => {
     mainWindow?.webContents.send('execution-completed', execution);
   });
 
-  hawkeye.on('error', (error) => {
+  hawkeye.on('error', (error: unknown) => {
     mainWindow?.webContents.send('error', (error as Error).message);
   });
 
@@ -1389,7 +1385,7 @@ app.whenReady().then(async () => {
 
 // 退出前设置标志
 app.on('before-quit', () => {
-  app.isQuitting = true;
+  isAppQuitting = true;
 });
 
 // 退出时清理

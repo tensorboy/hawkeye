@@ -4,14 +4,20 @@
  */
 
 import React from 'react';
-import type { A2UIConfirmationCard } from '@hawkeye/core';
+import type { A2UIConfirmationCard, A2UIAction, A2UIInputConfig } from '@hawkeye/core';
 import { CardIcon } from './CardIcon';
 import { ActionButton } from './ActionButton';
 
 interface ConfirmationCardProps {
   card: A2UIConfirmationCard;
   onAction: (actionId: string, data?: Record<string, unknown>) => void;
+  onDismiss?: () => void;
 }
+
+// Helper to check if requiresInput is an object config
+const isInputConfig = (input: unknown): input is A2UIInputConfig => {
+  return input !== null && typeof input === 'object' && !Array.isArray(input);
+};
 
 export const ConfirmationCard: React.FC<ConfirmationCardProps> = ({
   card,
@@ -19,6 +25,8 @@ export const ConfirmationCard: React.FC<ConfirmationCardProps> = ({
 }) => {
   const [inputValue, setInputValue] = React.useState('');
   const [isChecked, setIsChecked] = React.useState(false);
+
+  const inputConfig = isInputConfig(card.requiresInput) ? card.requiresInput : null;
 
   const getWarningClass = () => {
     switch (card.warningLevel) {
@@ -32,23 +40,23 @@ export const ConfirmationCard: React.FC<ConfirmationCardProps> = ({
   };
 
   const isConfirmEnabled = () => {
-    if (!card.requiresInput) return true;
+    if (!card.requiresInput || !inputConfig) return true;
 
-    if (card.requiresInput.type === 'checkbox') {
+    if (inputConfig.type === 'checkbox') {
       return isChecked;
     }
 
-    if (card.requiresInput.expectedValue) {
-      return inputValue === card.requiresInput.expectedValue;
+    if (inputConfig.expectedValue) {
+      return inputValue === inputConfig.expectedValue;
     }
 
     return inputValue.length > 0;
   };
 
   const handleConfirm = () => {
-    if (card.requiresInput) {
+    if (card.requiresInput && inputConfig) {
       onAction('confirm', {
-        inputValue: card.requiresInput.type === 'checkbox' ? isChecked : inputValue,
+        inputValue: inputConfig.type === 'checkbox' ? isChecked : inputValue,
       });
     } else {
       onAction('confirm');
@@ -70,37 +78,37 @@ export const ConfirmationCard: React.FC<ConfirmationCardProps> = ({
         <p className="a2ui-card-description">{card.description}</p>
       )}
 
-      {card.details.length > 0 && (
+      {card.details && card.details.length > 0 && (
         <ul className="a2ui-confirmation-details">
-          {card.details.map((detail, i) => (
+          {card.details.map((detail: string, i: number) => (
             <li key={i}>{detail}</li>
           ))}
         </ul>
       )}
 
-      {card.requiresInput && (
+      {inputConfig && (
         <div className="a2ui-confirmation-input">
-          {card.requiresInput.type === 'checkbox' ? (
+          {inputConfig.type === 'checkbox' ? (
             <label className="checkbox-label">
               <input
                 type="checkbox"
                 checked={isChecked}
                 onChange={(e) => setIsChecked(e.target.checked)}
               />
-              <span>{card.requiresInput.label}</span>
+              <span>{inputConfig.label}</span>
             </label>
           ) : (
             <div className="text-input-container">
-              <label>{card.requiresInput.label}</label>
+              <label>{inputConfig.label}</label>
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={card.requiresInput.placeholder}
+                placeholder={inputConfig.placeholder}
               />
-              {card.requiresInput.expectedValue && (
+              {inputConfig.expectedValue && (
                 <p className="input-hint">
-                  Type "{card.requiresInput.expectedValue}" to confirm
+                  Type "{inputConfig.expectedValue}" to confirm
                 </p>
               )}
             </div>
@@ -109,7 +117,7 @@ export const ConfirmationCard: React.FC<ConfirmationCardProps> = ({
       )}
 
       <div className="a2ui-card-actions">
-        {card.actions.map((action) => {
+        {(card.actions || []).map((action: A2UIAction) => {
           const isConfirmAction = action.id === 'confirm';
           return (
             <ActionButton

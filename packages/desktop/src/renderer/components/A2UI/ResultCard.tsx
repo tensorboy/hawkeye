@@ -11,6 +11,7 @@ import { ActionButton } from './ActionButton';
 interface ResultCardProps {
   card: A2UIResultCard;
   onAction: (actionId: string) => void;
+  onDismiss?: () => void;
 }
 
 export const ResultCard: React.FC<ResultCardProps> = ({ card, onAction }) => {
