@@ -26,7 +26,7 @@
 
 <p align="center">
 
-https://github.com/tensorboy/hawkeye/assets/demo.mp4
+[![Watch Demo](https://img.shields.io/badge/▶_Watch_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://github.com/tensorboy/hawkeye/raw/main/assets/demo.mp4)
 
 </p>
 
