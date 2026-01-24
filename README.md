@@ -25,9 +25,7 @@
 <br/>
 
 <p align="center">
-
-[![Watch Demo](https://img.shields.io/badge/▶_Watch_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://github.com/tensorboy/hawkeye/raw/main/assets/demo.mp4)
-
+  <img src="./assets/demo.gif" alt="Hawkeye Demo" width="800"/>
 </p>
 
 ---
