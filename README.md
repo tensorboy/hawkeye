@@ -25,7 +25,9 @@
 <br/>
 
 <p align="center">
-  <img src="./docs/demo.gif" alt="Hawkeye Demo" width="800"/>
+
+https://github.com/tensorboy/hawkeye/assets/demo.mp4
+
 </p>
 
 ---
