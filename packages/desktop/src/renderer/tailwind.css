@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* DaisyUI 与现有样式的兼容层 */
+@layer components {
+  /* 保持与现有 .btn 样式的兼容 */
+  .btn-hawkeye {
+    @apply btn btn-primary;
+  }
+
+  .btn-hawkeye-secondary {
+    @apply btn btn-secondary;
+  }
+
+  .btn-hawkeye-ghost {
+    @apply btn btn-ghost;
+  }
+
+  /* 卡片样式 */
+  .card-hawkeye {
+    @apply card bg-base-300 shadow-card;
+  }
+
+  /* 输入框样式 */
+  .input-hawkeye {
+    @apply input input-bordered bg-base-200 border-border focus:border-primary;
+  }
+
+  /* 模态框样式 */
+  .modal-hawkeye {
+    @apply modal-box bg-base-200 border border-border shadow-modal;
+  }
+
+  /* 徽章样式 */
+  .badge-hawkeye {
+    @apply badge badge-primary;
+  }
+}
+
+/* 自定义工具类 */
+@layer utilities {
+  .glass-effect {
+    @apply bg-opacity-80 backdrop-blur-sm;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  .border-glow {
+    @apply border border-primary/50 shadow-[0_0_15px_rgba(233,69,96,0.3)];
+  }
+}

@@ -83,7 +83,7 @@ export class OpenAICompatibleProvider extends EventEmitter implements IAIProvide
         headers: {
           'Authorization': `Bearer ${this.config.apiKey}`,
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(30000), // 30秒超时，给 API 足够时间获取模型列表
       });
 
       if (!response.ok) {

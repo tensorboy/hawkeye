@@ -1228,6 +1228,12 @@ export class Hawkeye extends EventEmitter {
       });
     });
 
+    // 错误处理 - 防止 ERR_UNHANDLED_ERROR
+    this.perception.on('error', (errorInfo) => {
+      console.warn(`[Hawkeye] 感知模块错误 (${errorInfo?.module || 'unknown'}):`, errorInfo?.error?.message || errorInfo);
+      // 不重新抛出，只记录日志，让应用继续运行
+    });
+
     // 意图识别事件
     this.intentEngine.on('intents:recognized', (intents) => {
       this.eventCollector.addIntent({

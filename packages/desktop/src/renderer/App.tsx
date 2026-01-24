@@ -5,12 +5,49 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
 import { languages } from './i18n';
 import type { A2UICard, A2UIAction } from '@hawkeye/core';
 import { CardList, QuickActions, defaultQuickActions } from './components/A2UI';
 import type { QuickAction } from './components/A2UI';
 import { DebugTimeline } from './components/DebugTimeline';
 import logoIcon from './assets/icon.png';
+
+// Animation variants
+const overlayVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const modalVariants = {
+  initial: { opacity: 0, scale: 0.95, y: 10 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.95, y: 10 },
+};
+
+const slideUpVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 },
+};
+
+const panelVariants = {
+  initial: { opacity: 0, x: 50 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 50 },
+};
+
+const springTransition = {
+  type: 'spring' as const,
+  stiffness: 300,
+  damping: 30,
+};
+
+const smoothTransition = {
+  duration: 0.2,
+  ease: [0.4, 0, 0.2, 1] as const,
+};
 
 // 类型定义
 interface UserIntent {
@@ -103,6 +140,7 @@ interface AppConfig {
   ollamaModel?: string;
   geminiApiKey?: string;
   geminiModel?: string;
+  geminiBaseUrl?: string;
   openaiBaseUrl?: string;
   openaiApiKey?: string;
   openaiModel?: string;
@@ -1785,292 +1823,313 @@ export default function App() {
               </button>
             </div>
 
-            {/* 模型选择器弹窗 */}
-            {showModelSelector && (
-              <div className="model-selector-overlay" onClick={() => setShowModelSelector(false)}>
-                <div className="model-selector-popup" onClick={(e) => e.stopPropagation()}>
-                  <div className="model-selector-header">
-                    <h3>{t('settings.selectModelType', '选择模型类型')}</h3>
-                    <button className="close-btn" onClick={() => setShowModelSelector(false)}>×</button>
-                  </div>
-                  <div className="model-selector-options">
-                    {/* 本地模型选项 */}
-                    <div
-                      className={`model-option ${currentModel.type === 'local' ? 'active' : ''} ${!config?.hasOllama ? 'disabled' : ''}`}
-                      onClick={() => {
-                        if (config?.hasOllama) {
-                          setTempConfig({
-                            ...tempConfig,
-                            localOnly: true,
-                            aiProvider: 'ollama',
-                            ollamaModel: config?.localOnlyRecommendedModel || 'qwen3-vl:2b',
-                          });
-                          setShowModelSelector(false);
-                        }
-                      }}
-                    >
-                      <div className="model-option-icon">💻</div>
-                      <div className="model-option-info">
-                        <div className="model-option-title">{t('settings.localModel', '本地模型')}</div>
-                        <div className="model-option-desc">
-                          {config?.hasOllama
-                            ? `Ollama - ${config?.ollamaModel || 'qwen3-vl:2b'}`
-                            : t('settings.ollamaNotInstalled', '未安装 Ollama')}
-                        </div>
-                      </div>
-                      {currentModel.type === 'local' && <span className="model-option-check">✓</span>}
-                    </div>
-
-                    {/* 云端模型选项 - Gemini */}
-                    <div
-                      className={`model-option ${currentModel.type === 'cloud' && tempConfig.aiProvider === 'gemini' ? 'active' : ''} ${!(config?.hasGemini || config?.geminiApiKey) ? 'disabled' : ''}`}
-                      onClick={() => {
-                        if (config?.hasGemini || config?.geminiApiKey) {
-                          setTempConfig({
-                            ...tempConfig,
-                            localOnly: false,
-                            aiProvider: 'gemini',
-                          });
-                          setShowModelSelector(false);
-                        }
-                      }}
-                    >
-                      <div className="model-option-icon">☁️</div>
-                      <div className="model-option-info">
-                        <div className="model-option-title">Gemini {t('settings.cloudModel', '云端')}</div>
-                        <div className="model-option-desc">
-                          {(config?.hasGemini || config?.geminiApiKey)
-                            ? config?.geminiModel || 'gemini-2.0-flash-exp'
-                            : t('settings.apiKeyNotConfigured', '未配置 API Key')}
-                        </div>
-                      </div>
-                      {currentModel.type === 'cloud' && tempConfig.aiProvider === 'gemini' && <span className="model-option-check">✓</span>}
-                    </div>
-
-                    {/* 云端模型选项 - OpenAI */}
-                    <div
-                      className={`model-option ${currentModel.type === 'cloud' && tempConfig.aiProvider === 'openai' ? 'active' : ''} ${!config?.openaiApiKey ? 'disabled' : ''}`}
-                      onClick={() => {
-                        if (config?.openaiApiKey) {
-                          setTempConfig({
-                            ...tempConfig,
-                            localOnly: false,
-                            aiProvider: 'openai',
-                          });
-                          setShowModelSelector(false);
-                        }
-                      }}
-                    >
-                      <div className="model-option-icon">☁️</div>
-                      <div className="model-option-info">
-                        <div className="model-option-title">OpenAI {t('settings.cloudModel', '云端')}</div>
-                        <div className="model-option-desc">
-                          {config?.openaiApiKey
-                            ? config?.openaiModel || 'gpt-4'
-                            : t('settings.apiKeyNotConfigured', '未配置 API Key')}
-                        </div>
-                      </div>
-                      {currentModel.type === 'cloud' && tempConfig.aiProvider === 'openai' && <span className="model-option-check">✓</span>}
-                    </div>
-                  </div>
-                  <div className="model-selector-hint">
-                    {t('settings.modelSelectorHint', '选择后需要点击「保存设置」按钮生效')}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 完全本地模式 */}
-          <div className="form-group local-only-section">
-            <div className="local-only-header">
-              <label className="checkbox-label large">
-                <input
-                  type="checkbox"
-                  checked={tempConfig.localOnly === true}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setTempConfig({
-                      ...tempConfig,
-                      localOnly: checked,
-                      // 启用本地模式时，自动切换到 Ollama 并设置推荐模型
-                      ...(checked ? {
-                        aiProvider: 'ollama',
-                        ollamaModel: config?.localOnlyRecommendedModel || 'qwen3-vl:2b',
-                      } : {}),
-                    });
-                  }}
-                />
-                <span className="local-only-title">🔒 {t('settings.localOnly', '完全本地模式')}</span>
-              </label>
-            </div>
-            <small className="form-hint local-only-desc">
-              {t('settings.localOnlyDesc', '启用后不会访问任何网络，所有 AI 推理在本地完成。需要先安装 Ollama 和对应模型。')}
-            </small>
-            {tempConfig.localOnly && (
-              <div className="local-only-info">
-                <div className="info-box">
-                  <strong>{t('settings.recommendedModel', '推荐模型')}:</strong>
-                  <code>{config?.localOnlyRecommendedModel || 'qwen3-vl:2b'}</code>
-                  <small>~1.9GB, {t('settings.bestBalance', '速度与质量最佳平衡')}</small>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* AI Provider - 完全本地模式下隐藏 */}
-          {!tempConfig.localOnly && (
-            <div className="form-group">
-              <label>{t('settings.aiProvider')}</label>
-              <select
-                value={tempConfig.aiProvider || 'openai'}
-                onChange={(e) =>
-                  setTempConfig({ ...tempConfig, aiProvider: e.target.value as any })
-                }
-              >
-                <option value="openai">OpenAI Compatible ({t('settings.cloud', '云端')})</option>
-                <option value="ollama">Ollama ({t('settings.local', '本地')})</option>
-                <option value="gemini">Gemini ({t('settings.cloud', '云端')})</option>
-              </select>
-            </div>
-          )}
-
-          {/* Ollama 配置 - 完全本地模式或选择 Ollama 时显示 */}
-          {(tempConfig.localOnly || tempConfig.aiProvider === 'ollama') && (
-            <>
-              <div className="form-group">
-                <label>{t('settings.ollamaHost')}</label>
-                <input
-                  type="text"
-                  value={tempConfig.ollamaHost || 'http://localhost:11434'}
-                  onChange={(e) =>
-                    setTempConfig({ ...tempConfig, ollamaHost: e.target.value })
-                  }
-                  placeholder="http://localhost:11434"
-                />
-              </div>
-              <div className="form-group">
-                <label>{t('settings.ollamaModel')}</label>
-                <div className="model-input-group">
-                  <input
-                    type="text"
-                    value={tempConfig.ollamaModel || (tempConfig.localOnly ? 'qwen3-vl:2b' : 'qwen2.5vl:3b')}
-                    onChange={(e) =>
-                      setTempConfig({ ...tempConfig, ollamaModel: e.target.value })
-                    }
-                    placeholder={tempConfig.localOnly ? 'qwen3-vl:2b' : 'qwen2.5vl:3b'}
-                  />
-                  <button
-                    type="button"
-                    className={`btn btn-download ${modelPullProgress?.isDownloading ? 'downloading' : ''}`}
-                    onClick={() => pullModel(tempConfig.ollamaModel || (tempConfig.localOnly ? 'qwen3-vl:2b' : 'qwen2.5vl:3b'))}
-                    disabled={modelPullProgress?.isDownloading}
-                  >
-                    {modelPullProgress?.isDownloading ? '⏳' : '⬇️'} {t('settings.download', '下载')}
-                  </button>
-                </div>
-                {tempConfig.localOnly && config?.localOnlyAlternatives && (
-                  <small className="model-alternatives">
-                    {t('settings.alternatives', '备选')}: {config.localOnlyAlternatives.join(', ')}
-                  </small>
-                )}
-              </div>
-
-              {/* 模型下载进度 */}
-              {modelPullProgress?.isDownloading && (
-                <div className="form-group model-download-progress">
-                  <div className="progress-header">
-                    <span>📦 {t('settings.downloading', '正在下载')}: {modelPullProgress.model}</span>
-                    <span>{modelPullProgress.progress}%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${modelPullProgress.progress}%` }}
-                    />
-                  </div>
-                  <div className="progress-output">
-                    {modelPullProgress.output}
-                  </div>
-                </div>
-              )}
-
-              {/* 已安装的模型列表 */}
-              {installedModels.length > 0 && (
-                <div className="form-group installed-models">
-                  <label>{t('settings.installedModels', '已安装模型')}</label>
-                  <div className="model-list">
-                    {installedModels.map((model) => (
-                      <div
-                        key={model.name}
-                        className={`model-item ${tempConfig.ollamaModel === model.name ? 'selected' : ''}`}
-                        onClick={() => setTempConfig({ ...tempConfig, ollamaModel: model.name })}
-                      >
-                        <span className="model-name">{model.name}</span>
-                        <span className="model-size">{model.size}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 刷新模型列表按钮 */}
-              <div className="form-group">
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-small"
-                  onClick={refreshOllamaStatus}
+            {/* 统一模型切换器弹窗 */}
+            <AnimatePresence>
+              {showModelSelector && (
+                <motion.div
+                  className="model-selector-overlay"
+                  onClick={() => setShowModelSelector(false)}
+                  variants={overlayVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={smoothTransition}
                 >
-                  🔄 {t('settings.refreshModels', '刷新模型列表')}
-                </button>
-                {ollamaStatus && (
-                  <span className={`ollama-status ${ollamaStatus.running ? 'running' : 'stopped'}`}>
-                    {ollamaStatus.running
-                      ? `✅ Ollama ${t('settings.running', '运行中')}`
-                      : `⚠️ Ollama ${t('settings.notRunning', '未运行')}`
-                    }
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* Gemini 配置 - 完全本地模式下隐藏 */}
-          {!tempConfig.localOnly && tempConfig.aiProvider === 'gemini' && (
-            <>
-              <div className="form-group">
-                <label>{t('settings.geminiApiKey')}</label>
-                <input
-                  type="password"
-                  value={tempConfig.geminiApiKey || ''}
-                  onChange={(e) =>
-                    setTempConfig({ ...tempConfig, geminiApiKey: e.target.value })
-                  }
-                  placeholder="AIza..."
-                />
-                <small>
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <motion.div
+                    className="model-selector-popup unified"
+                    onClick={(e) => e.stopPropagation()}
+                    variants={modalVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={springTransition}
                   >
-                    {t('settings.getApiKey')}
-                  </a>
-                </small>
-              </div>
-              <div className="form-group">
-                <label>{t('settings.geminiModel')}</label>
-                <input
-                  type="text"
-                  value={tempConfig.geminiModel || 'gemini-2.0-flash-exp'}
-                  onChange={(e) =>
-                    setTempConfig({ ...tempConfig, geminiModel: e.target.value })
-                  }
-                  placeholder="gemini-2.0-flash-exp"
-                />
-              </div>
-            </>
-          )}
+                    <div className="model-selector-header">
+                      <h3>{t('settings.modelSwitcher', '模型切换器')}</h3>
+                      <motion.button
+                        className="close-btn"
+                        onClick={() => setShowModelSelector(false)}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        ×
+                      </motion.button>
+                    </div>
+
+                  {/* 本地 / 云端 选项卡 */}
+                  <div className="provider-tabs">
+                    <button
+                      className={`provider-tab ${tempConfig.localOnly ? 'active' : ''}`}
+                      onClick={() => setTempConfig({ ...tempConfig, aiProvider: 'ollama', localOnly: true })}
+                    >
+                      💻 {t('settings.local', '本地')}
+                    </button>
+                    <button
+                      className={`provider-tab ${!tempConfig.localOnly ? 'active' : ''}`}
+                      onClick={() => setTempConfig({ ...tempConfig, localOnly: false, aiProvider: tempConfig.aiProvider === 'ollama' ? 'openai' : tempConfig.aiProvider })}
+                    >
+                      ☁️ {t('settings.cloud', '云端')}
+                    </button>
+                  </div>
+
+                  {/* Provider 配置区 */}
+                  <div className="provider-config">
+                    {/* 本地 Ollama 配置 */}
+                    {tempConfig.localOnly && (
+                      <div className="config-section ollama-config">
+                        <div className="config-status">
+                          {ollamaStatus?.running ? (
+                            <span className="status-badge success">✅ Ollama {t('settings.running', '运行中')}</span>
+                          ) : (
+                            <span className="status-badge warning">⚠️ Ollama {t('settings.notRunning', '未运行')}</span>
+                          )}
+                          <button
+                            type="button"
+                            className="btn btn-icon"
+                            onClick={refreshOllamaStatus}
+                            title={t('settings.refresh', '刷新')}
+                          >
+                            🔄
+                          </button>
+                        </div>
+
+                        <div className="config-field">
+                          <label>{t('settings.ollamaHost', '服务器地址')}</label>
+                          <input
+                            type="text"
+                            value={tempConfig.ollamaHost || 'http://localhost:11434'}
+                            onChange={(e) => setTempConfig({ ...tempConfig, ollamaHost: e.target.value })}
+                            placeholder="http://localhost:11434"
+                          />
+                        </div>
+
+                        <div className="config-field">
+                          <label>{t('settings.ollamaModel', '模型名称')}</label>
+                          <div className="model-input-row">
+                            <input
+                              type="text"
+                              value={tempConfig.ollamaModel || 'qwen3-vl:2b'}
+                              onChange={(e) => setTempConfig({ ...tempConfig, ollamaModel: e.target.value })}
+                              placeholder="qwen3-vl:2b"
+                            />
+                            <button
+                              type="button"
+                              className={`btn btn-download ${modelPullProgress?.isDownloading ? 'downloading' : ''}`}
+                              onClick={() => pullModel(tempConfig.ollamaModel || 'qwen3-vl:2b')}
+                              disabled={modelPullProgress?.isDownloading}
+                            >
+                              {modelPullProgress?.isDownloading ? '⏳' : '⬇️'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 模型下载进度 */}
+                        {modelPullProgress?.isDownloading && (
+                          <div className="download-progress">
+                            <div className="progress-header">
+                              <span>📦 {modelPullProgress.model}</span>
+                              <span>{modelPullProgress.progress}%</span>
+                            </div>
+                            <div className="progress-bar">
+                              <div className="progress-fill" style={{ width: `${modelPullProgress.progress}%` }} />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 已安装模型列表 */}
+                        {installedModels.length > 0 && (
+                          <div className="installed-models-compact">
+                            <label>{t('settings.installedModels', '已安装模型')}</label>
+                            <div className="model-chips">
+                              {installedModels.map((model) => (
+                                <button
+                                  key={model.name}
+                                  type="button"
+                                  className={`model-chip ${tempConfig.ollamaModel === model.name ? 'selected' : ''}`}
+                                  onClick={() => setTempConfig({ ...tempConfig, ollamaModel: model.name })}
+                                >
+                                  {model.name}
+                                  <span className="chip-size">{model.size}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="config-hint">
+                          💡 {t('settings.ollamaHint', '推荐模型: qwen3-vl:2b (视觉), llama3.2 (文本)')}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 云端配置 */}
+                    {!tempConfig.localOnly && (
+                      <div className="config-section cloud-config">
+                        {/* Provider 选择器 */}
+                        <div className="config-field">
+                          <label>{t('settings.cloudProvider', '云服务商')}</label>
+                          <div className="provider-selector">
+                            <button
+                              type="button"
+                              className={`provider-btn ${tempConfig.aiProvider === 'gemini' ? 'active' : ''}`}
+                              onClick={() => setTempConfig({ ...tempConfig, aiProvider: 'gemini' })}
+                            >
+                              ✨ Gemini
+                            </button>
+                            <button
+                              type="button"
+                              className={`provider-btn ${tempConfig.aiProvider === 'openai' ? 'active' : ''}`}
+                              onClick={() => setTempConfig({ ...tempConfig, aiProvider: 'openai' })}
+                            >
+                              🤖 OpenAI 兼容
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Gemini 配置 */}
+                        {tempConfig.aiProvider === 'gemini' && (
+                          <>
+                            <div className="config-field">
+                              <label>API Key</label>
+                              <input
+                                type="password"
+                                value={tempConfig.geminiApiKey || ''}
+                                onChange={(e) => setTempConfig({ ...tempConfig, geminiApiKey: e.target.value })}
+                                placeholder="AIza..."
+                              />
+                              <small>
+                                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+                                  🔗 {t('settings.getApiKey', '获取 API Key')}
+                                </a>
+                              </small>
+                            </div>
+
+                            <div className="config-field">
+                              <label>API 地址 <small>(可选)</small></label>
+                              <input
+                                type="text"
+                                value={tempConfig.geminiBaseUrl || ''}
+                                onChange={(e) => setTempConfig({ ...tempConfig, geminiBaseUrl: e.target.value })}
+                                placeholder="https://generativelanguage.googleapis.com"
+                              />
+                            </div>
+
+                            <div className="config-field">
+                              <label>{t('settings.model', '模型')}</label>
+                              <select
+                                value={tempConfig.geminiModel || 'gemini-2.5-flash-preview-05-20'}
+                                onChange={(e) => setTempConfig({ ...tempConfig, geminiModel: e.target.value })}
+                              >
+                                <optgroup label="Gemini 2.5 (最新)">
+                                  <option value="gemini-2.5-flash-preview-05-20">gemini-2.5-flash-preview (推荐)</option>
+                                  <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview</option>
+                                </optgroup>
+                                <optgroup label="Gemini 2.0">
+                                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                                  <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+                                  <option value="gemini-2.0-flash-thinking-exp">gemini-2.0-flash-thinking</option>
+                                </optgroup>
+                                <optgroup label="Gemini 1.5">
+                                  <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                                  <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                                </optgroup>
+                              </select>
+                            </div>
+
+                            <div className="config-hint">
+                              💡 使用 Google 官方 Gemini API（原生格式）
+                            </div>
+                          </>
+                        )}
+
+                        {/* OpenAI 兼容配置 */}
+                        {tempConfig.aiProvider === 'openai' && (
+                          <>
+                            <div className="config-field">
+                              <label>API Key</label>
+                              <input
+                                type="password"
+                                value={tempConfig.openaiApiKey || ''}
+                                onChange={(e) => setTempConfig({ ...tempConfig, openaiApiKey: e.target.value })}
+                                placeholder="sk-..."
+                              />
+                            </div>
+
+                            <div className="config-field">
+                              <label>API 地址</label>
+                              <input
+                                type="text"
+                                value={tempConfig.openaiBaseUrl || ''}
+                                onChange={(e) => setTempConfig({ ...tempConfig, openaiBaseUrl: e.target.value })}
+                                placeholder="https://api.openai.com/v1"
+                              />
+                              <small>支持 OpenAI、Antigravity、各种代理等兼容 API</small>
+                            </div>
+
+                            <div className="config-field">
+                              <label>{t('settings.model', '模型')}</label>
+                              <select
+                                value={tempConfig.openaiModel || 'gemini-3-flash-preview'}
+                                onChange={(e) => setTempConfig({ ...tempConfig, openaiModel: e.target.value })}
+                              >
+                                <optgroup label="Gemini 3 (最新 2025)">
+                                  <option value="gemini-3-flash-preview">gemini-3-flash (推荐, $0.5/M)</option>
+                                  <option value="gemini-3-pro-preview">gemini-3-pro ($2-4/M)</option>
+                                  <option value="gemini-3-pro-high">gemini-3-pro-high</option>
+                                </optgroup>
+                                <optgroup label="Gemini 2.5">
+                                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                                  <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+                                  <option value="gemini-2.5-flash-thinking">gemini-2.5-flash-thinking</option>
+                                </optgroup>
+                                <optgroup label="Claude">
+                                  <option value="claude-opus-4-5">claude-opus-4.5</option>
+                                  <option value="claude-sonnet-4-5">claude-sonnet-4.5</option>
+                                  <option value="claude-haiku-4-5">claude-haiku-4.5</option>
+                                </optgroup>
+                                <optgroup label="GPT">
+                                  <option value="gpt-4o">gpt-4o</option>
+                                  <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                  <option value="gpt-4-turbo">gpt-4-turbo</option>
+                                </optgroup>
+                              </select>
+                            </div>
+
+                            <div className="config-hint">
+                              💡 OpenAI 兼容格式，支持各种第三方 API
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                    <div className="model-selector-footer">
+                      <motion.button
+                        className="btn btn-secondary"
+                        onClick={() => setShowModelSelector(false)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {t('common.cancel', '取消')}
+                      </motion.button>
+                      <motion.button
+                        className="btn btn-primary"
+                        onClick={() => {
+                          handleSaveConfig();
+                          setShowModelSelector(false);
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        ✅ {t('settings.saveAndApply', '保存并应用')}
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* 语言 */}
           <div className="form-group">
@@ -2192,8 +2251,16 @@ export default function App() {
       </header>
 
       {/* 截屏预览面板 */}
-      {showScreenshotPreview && screenshotPreview && (
-        <div className={`screenshot-preview-panel ${screenshotZoomed ? 'zoomed' : ''}`}>
+      <AnimatePresence>
+        {showScreenshotPreview && screenshotPreview && (
+          <motion.div
+            className={`screenshot-preview-panel ${screenshotZoomed ? 'zoomed' : ''}`}
+            variants={slideUpVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={springTransition}
+          >
           <div className="screenshot-preview-header">
             <span>{t('app.currentScreen', '当前屏幕')}</span>
             <div className="screenshot-preview-actions">
@@ -2234,8 +2301,9 @@ export default function App() {
               </div>
             )}
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 卡片列表 */}
       <div className="content a2ui-content">
@@ -2251,65 +2319,109 @@ export default function App() {
       <QuickActions actions={quickActions} onAction={handleQuickAction} />
 
       {/* 调试时间线面板 */}
-      {showDebugTimeline && (
-        <div className="debug-timeline-overlay">
-          <DebugTimeline onClose={() => setShowDebugTimeline(false)} />
-        </div>
-      )}
+      <AnimatePresence>
+        {showDebugTimeline && (
+          <motion.div
+            className="debug-timeline-overlay"
+            variants={panelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={springTransition}
+          >
+            <DebugTimeline onClose={() => setShowDebugTimeline(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 聊天对话框 */}
-      {showChatDialog && (
-        <div className="chat-dialog-overlay" onClick={() => setShowChatDialog(false)}>
-          <div className="chat-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="chat-dialog-header">
-              <h3>{t('app.chatWithAI', '与 AI 对话')}</h3>
-              <button className="btn-close" onClick={() => setShowChatDialog(false)}>×</button>
-            </div>
-            <div className="chat-messages">
-              {chatMessages.length === 0 ? (
-                <div className="chat-empty">
-                  <p>{t('app.chatWelcome', '你好！我是 Hawkeye AI，有什么可以帮助你的？')}</p>
-                </div>
-              ) : (
-                chatMessages.map((msg) => (
-                  <div key={msg.id} className={`chat-message ${msg.role}`}>
-                    <div className="chat-message-content">{msg.content}</div>
-                  </div>
-                ))
-              )}
-              {chatLoading && (
-                <div className="chat-message assistant loading">
-                  <div className="chat-message-content">
-                    <span className="typing-indicator">...</span>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="chat-input-area">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendChatMessage();
-                  }
-                }}
-                placeholder={t('app.typeMessage', '输入消息...')}
-                disabled={chatLoading}
-              />
-              <button
-                className="btn btn-primary"
-                onClick={sendChatMessage}
-                disabled={!chatInput.trim() || chatLoading}
-              >
-                {t('app.send', '发送')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showChatDialog && (
+          <motion.div
+            className="chat-dialog-overlay"
+            onClick={() => setShowChatDialog(false)}
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={smoothTransition}
+          >
+            <motion.div
+              className="chat-dialog"
+              onClick={(e) => e.stopPropagation()}
+              variants={modalVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={springTransition}
+            >
+              <div className="chat-dialog-header">
+                <h3>{t('app.chatWithAI', '与 AI 对话')}</h3>
+                <button className="btn-close" onClick={() => setShowChatDialog(false)}>×</button>
+              </div>
+              <div className="chat-messages">
+                {chatMessages.length === 0 ? (
+                  <motion.div
+                    className="chat-empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <p>{t('app.chatWelcome', '你好！我是 Hawkeye AI，有什么可以帮助你的？')}</p>
+                  </motion.div>
+                ) : (
+                  chatMessages.map((msg, index) => (
+                    <motion.div
+                      key={msg.id}
+                      className={`chat-message ${msg.role}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <div className="chat-message-content">{msg.content}</div>
+                    </motion.div>
+                  ))
+                )}
+                {chatLoading && (
+                  <motion.div
+                    className="chat-message assistant loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <div className="chat-message-content">
+                      <span className="typing-indicator">...</span>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+              <div className="chat-input-area">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendChatMessage();
+                    }
+                  }}
+                  placeholder={t('app.typeMessage', '输入消息...')}
+                  disabled={chatLoading}
+                />
+                <motion.button
+                  className="btn btn-primary"
+                  onClick={sendChatMessage}
+                  disabled={!chatInput.trim() || chatLoading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {t('app.send', '发送')}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

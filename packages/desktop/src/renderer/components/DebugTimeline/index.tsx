@@ -1,9 +1,12 @@
 /**
  * DebugTimeline - Main debug timeline component
  * Displays chronological debug events for development and troubleshooting
+ * Uses @tanstack/react-virtual for performance with large event lists
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TimelineEvent } from './TimelineEvent';
 import { EventDetail } from './EventDetail';
 import { DebugEvent, DebugEventType, DebugStatus, EVENT_TYPE_CONFIG } from './types';
@@ -18,6 +21,72 @@ const ALL_EVENT_TYPES: DebugEventType[] = [
   'llm_input', 'llm_output', 'intent', 'plan',
   'execution_start', 'execution_step', 'execution_complete', 'error'
 ];
+
+// Virtualized event list for performance
+interface VirtualizedEventListProps {
+  events: DebugEvent[];
+  selectedEvent: DebugEvent | null;
+  onSelect: (event: DebugEvent) => void;
+  autoScroll: boolean;
+  parentRef: React.RefObject<HTMLDivElement | null>;
+}
+
+const VirtualizedEventList: React.FC<VirtualizedEventListProps> = ({
+  events,
+  selectedEvent,
+  onSelect,
+  autoScroll,
+  parentRef,
+}) => {
+  const rowVirtualizer = useVirtualizer({
+    count: events.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 72, // Estimated row height
+    overscan: 5, // Render 5 extra items above/below viewport
+  });
+
+  // Auto-scroll to bottom when new events arrive
+  useEffect(() => {
+    if (autoScroll && events.length > 0) {
+      rowVirtualizer.scrollToIndex(events.length - 1, { align: 'end', behavior: 'smooth' });
+    }
+  }, [events.length, autoScroll, rowVirtualizer]);
+
+  return (
+    <div
+      style={{
+        height: `${rowVirtualizer.getTotalSize()}px`,
+        width: '100%',
+        position: 'relative',
+      }}
+    >
+      {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+        const event = events[virtualItem.index];
+        return (
+          <motion.div
+            key={event.id}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.15, delay: virtualItem.index * 0.01 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualItem.start}px)`,
+            }}
+          >
+            <TimelineEvent
+              event={event}
+              onSelect={onSelect}
+              isSelected={selectedEvent?.id === event.id}
+            />
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+};
 
 export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
   const [events, setEvents] = useState<DebugEvent[]>([]);
@@ -111,12 +180,7 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
     };
   }, [fetchEvents, fetchStatus, pollNewEvents]);
 
-  // Auto-scroll to bottom when new events arrive
-  useEffect(() => {
-    if (autoScroll && eventListRef.current) {
-      eventListRef.current.scrollTop = eventListRef.current.scrollHeight;
-    }
-  }, [events, autoScroll]);
+  // Auto-scroll is now handled by VirtualizedEventList
 
   // Refresh when filters change
   useEffect(() => {
@@ -256,33 +320,46 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
 
       {/* Main content */}
       <div className="timeline-content">
-        {/* Event list */}
+        {/* Event list with virtual scrolling */}
         <div className="event-list" ref={eventListRef}>
           {events.length === 0 ? (
-            <div className="empty-state">
+            <motion.div
+              className="empty-state"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <span className="empty-icon">📭</span>
               <span className="empty-text">暂无调试事件</span>
               <span className="empty-hint">操作应用后事件将在此显示</span>
-            </div>
+            </motion.div>
           ) : (
-            events.map(event => (
-              <TimelineEvent
-                key={event.id}
-                event={event}
-                onSelect={setSelectedEvent}
-                isSelected={selectedEvent?.id === event.id}
-              />
-            ))
+            <VirtualizedEventList
+              events={events}
+              selectedEvent={selectedEvent}
+              onSelect={setSelectedEvent}
+              autoScroll={autoScroll}
+              parentRef={eventListRef}
+            />
           )}
         </div>
 
         {/* Event detail panel */}
-        {selectedEvent && (
-          <EventDetail
-            event={selectedEvent}
-            onClose={() => setSelectedEvent(null)}
-          />
-        )}
+        <AnimatePresence>
+          {selectedEvent && (
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            >
+              <EventDetail
+                event={selectedEvent}
+                onClose={() => setSelectedEvent(null)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Status bar */}

@@ -12,6 +12,11 @@ import type {
 import { ShellExecutor } from './shell';
 import { FileExecutor } from './file';
 import { AutomationExecutor } from './automation';
+import {
+  AgentBrowserExecutor,
+  createAgentBrowserExecutor,
+  type AgentBrowserConfig,
+} from './agent-browser';
 import type { ExecutionResult } from '../types';
 
 export interface PlanExecutorConfig {
@@ -23,6 +28,8 @@ export interface PlanExecutorConfig {
   autoRollbackOnFailure: boolean;
   /** 是否在高风险步骤前暂停 */
   pauseOnHighRisk: boolean;
+  /** Agent Browser 配置 */
+  agentBrowser?: AgentBrowserConfig;
 }
 
 export type PlanExecutionStatus =
@@ -57,6 +64,7 @@ export class PlanExecutor extends EventEmitter {
   private shell: ShellExecutor;
   private file: FileExecutor;
   private automation: AutomationExecutor;
+  private agentBrowser: AgentBrowserExecutor | null = null;
 
   private executions: Map<string, PlanExecution> = new Map();
   private pausedExecutions: Set<string> = new Set();
@@ -82,6 +90,25 @@ export class PlanExecutor extends EventEmitter {
     });
     this.file = new FileExecutor();
     this.automation = new AutomationExecutor();
+
+    // 初始化 agent-browser (懒加载)
+    if (config.agentBrowser) {
+      this.agentBrowser = createAgentBrowserExecutor(config.agentBrowser);
+    }
+  }
+
+  /**
+   * 获取或创建 AgentBrowserExecutor
+   */
+  private getAgentBrowser(): AgentBrowserExecutor {
+    if (!this.agentBrowser) {
+      this.agentBrowser = createAgentBrowserExecutor({
+        session: `hawkeye-plan-${Date.now()}`,
+        headless: true,
+        timeout: 30000,
+      });
+    }
+    return this.agentBrowser;
   }
 
   /**
@@ -331,6 +358,23 @@ export class PlanExecutor extends EventEmitter {
     }
   }
 
+  /**
+   * 关闭 Agent Browser (清理资源)
+   */
+  async closeAgentBrowser(): Promise<void> {
+    if (this.agentBrowser) {
+      await this.agentBrowser.close();
+      this.agentBrowser = null;
+    }
+  }
+
+  /**
+   * 关闭所有资源
+   */
+  async close(): Promise<void> {
+    await this.closeAgentBrowser();
+  }
+
   // ============ 私有方法 ============
 
   private async executeStep(step: PlanStep): Promise<ExecutionResult> {
@@ -438,6 +482,228 @@ export class PlanExecutor extends EventEmitter {
             output: `${actionType} 需要特殊处理`,
             duration: Date.now() - startTime,
           };
+
+        // ============ Agent Browser 动作 ============
+        case 'browser_open': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.open(params.url as string);
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_click': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.click(params.ref as string);
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_fill': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.fill(params.ref as string, params.value as string);
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_type': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.type(params.ref as string, params.text as string);
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_select': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.select(params.ref as string, params.value as string);
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_check': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.check(params.ref as string);
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_uncheck': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.uncheck(params.ref as string);
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_hover': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.hover(params.ref as string);
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_find': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.find({
+            role: params.role as string | undefined,
+            text: params.text as string | undefined,
+            label: params.label as string | undefined,
+          });
+          return {
+            success: result.success,
+            output: result.data ? JSON.stringify(result.data) : result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_find_click': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.findAndClick({
+            role: params.role as string | undefined,
+            text: params.text as string | undefined,
+            label: params.label as string | undefined,
+          });
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_find_fill': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.findAndFill(
+            {
+              role: params.role as string | undefined,
+              text: params.text as string | undefined,
+              label: params.label as string | undefined,
+            },
+            params.value as string
+          );
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_wait': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.wait({
+            text: params.text as string | undefined,
+            textGone: params.textGone as string | undefined,
+            url: params.url as string | undefined,
+            time: params.time as number | undefined,
+            timeout: params.timeout as number | undefined,
+          });
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_snapshot': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.snapshot({
+            interactive: params.interactive as boolean | undefined,
+          });
+          return {
+            success: result.success,
+            output: result.data ? JSON.stringify(result.data) : result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_screenshot': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.screenshot(params.filename as string | undefined);
+          return {
+            success: result.success,
+            output: result.data?.path || result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_eval': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.evaluate(params.code as string);
+          return {
+            success: result.success,
+            output: result.data ? JSON.stringify(result.data) : result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_back': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.back();
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_forward': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.forward();
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
+
+        case 'browser_reload': {
+          const browser = this.getAgentBrowser();
+          const result = await browser.reload();
+          return {
+            success: result.success,
+            output: result.output,
+            error: result.error,
+            duration: result.duration,
+          };
+        }
 
         default:
           return {

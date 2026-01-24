@@ -60,28 +60,81 @@ export class SyncServer extends EventEmitter {
 
   /**
    * 启动同步服务器
+   * 支持端口冲突时自动尝试备选端口
    */
   async start(): Promise<void> {
-    // 动态导入 ws 模块
-    const { WebSocketServer } = await import('ws');
+    const maxRetries = 5;
+    let lastError: Error | null = null;
 
-    this.server = new WebSocketServer({ port: this.config.port }) as WebSocketServerLike;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const port = this.config.port + attempt;
+      try {
+        await this.tryStartOnPort(port);
+        if (attempt > 0) {
+          console.log(`[SyncServer] 端口 ${this.config.port} 被占用，使用备选端口 ${port}`);
+        }
+        this.config.port = port; // 更新实际使用的端口
+        return;
+      } catch (error: any) {
+        lastError = error;
+        if (error.code === 'EADDRINUSE') {
+          console.log(`[SyncServer] 端口 ${port} 被占用，尝试下一个...`);
+          continue;
+        }
+        // 非端口占用错误，直接抛出
+        throw error;
+      }
+    }
 
-    this.server.on('connection', ((...args: unknown[]) => {
-      const ws = args[0] as WebSocketLike;
-      const req = args[1];
-      this.handleConnection(ws, req);
-    }) as (...args: unknown[]) => void);
+    // 所有端口都被占用，发出警告但不阻止应用启动
+    console.warn(`[SyncServer] ⚠️ 无法启动同步服务器：所有端口 ${this.config.port}-${this.config.port + maxRetries - 1} 都被占用`);
+    console.warn(`[SyncServer] 应用将在无同步功能的模式下运行`);
+    this.emit('start-failed', { reason: 'all-ports-busy', lastError });
+  }
 
-    this.server.on('error', ((...args: unknown[]) => {
-      const error = args[0] as Error;
-      this.emit('error', error);
-    }) as (...args: unknown[]) => void);
+  /**
+   * 尝试在指定端口启动服务器
+   */
+  private async tryStartOnPort(port: number): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      // 动态导入 ws 模块
+      const { WebSocketServer } = await import('ws');
 
-    // 启动心跳
-    this.startHeartbeat();
+      const server = new WebSocketServer({ port }) as WebSocketServerLike;
 
-    this.emit('started', { port: this.config.port });
+      // 监听错误（包括 EADDRINUSE）
+      const errorHandler = ((...args: unknown[]) => {
+        const error = args[0] as Error;
+        server.close();
+        reject(error);
+      }) as (...args: unknown[]) => void;
+      server.on('error', errorHandler);
+
+      // 监听 listening 事件确认启动成功
+      (server as any).on('listening', () => {
+        // 移除临时错误处理器，设置正式的
+        (server as any).removeListener('error', errorHandler);
+
+        this.server = server;
+
+        server.on('connection', ((...args: unknown[]) => {
+          const ws = args[0] as WebSocketLike;
+          const req = args[1];
+          this.handleConnection(ws, req);
+        }) as (...args: unknown[]) => void);
+
+        server.on('error', ((...args: unknown[]) => {
+          const error = args[0] as Error;
+          this.emit('error', error);
+        }) as (...args: unknown[]) => void);
+
+        // 启动心跳
+        this.startHeartbeat();
+
+        this.emit('started', { port });
+        resolve();
+      });
+    });
   }
 
   /**

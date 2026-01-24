@@ -219,7 +219,7 @@ export class ScreenCapture extends EventEmitter {
       console.error(`[Screenshot] ====== 截图失败 ======`);
       console.error(`[Screenshot] 错误: ${error instanceof Error ? error.message : String(error)}`);
       const err = new Error(`截图失败: ${error instanceof Error ? error.message : String(error)}`);
-      this.emit('error', err);
+      // Don't emit error here - let captureAndEmit handle it to avoid double emission
       throw err;
     }
   }

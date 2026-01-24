@@ -114,3 +114,33 @@ export {
   type VisionExecutionResult,
   type VisionDirectConfig,
 } from './vision-direct-executor';
+
+// Agent Browser 执行器 (基于 vercel-labs/agent-browser)
+export {
+  AgentBrowserExecutor,
+  createAgentBrowserExecutor,
+  type AgentBrowserConfig,
+  type AgentBrowserResult,
+  type SnapshotResult as AgentBrowserSnapshot,
+  type AccessibilityElement,
+  type FindOptions,
+  type WaitOptions,
+  type FormField,
+  type SessionInfo,
+  type AgentBrowserPlan,
+  type AgentBrowserPlanStatus,
+  type AgentBrowserStep,
+  type AgentBrowserAction,
+  type AgentBrowserCommand,
+} from './agent-browser';
+
+// Claude Computer Use 执行器 (参考 ShowUI-Aloha)
+export {
+  ClaudeComputerUseExecutor,
+  createClaudeComputerUseExecutor,
+  getClaudeComputerUseExecutor,
+  initializeClaudeComputerUseExecutor,
+  type ComputerUseAction,
+  type ComputerUseInput,
+  type ClaudeComputerUseConfig,
+} from './claude-computer-use';

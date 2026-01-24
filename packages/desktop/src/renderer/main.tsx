@@ -6,6 +6,9 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './i18n';
+// Tailwind CSS (includes DaisyUI)
+import './tailwind.css';
+// Legacy styles (will be gradually replaced by Tailwind)
 import './styles.css';
 import './styles/a2ui.css';
 

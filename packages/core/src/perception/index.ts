@@ -29,3 +29,16 @@ export type {
   OCRRegion,
   IOCRBackend,
 } from './ocr';
+
+// Browser Perception (基于 agent-browser accessibility tree)
+export {
+  BrowserPerception,
+  createBrowserPerception,
+  getBrowserPerception,
+  setBrowserPerception,
+} from './browser';
+export type {
+  BrowserPerceptionConfig,
+  BrowserContext,
+  SimplifiedElement,
+} from './browser';

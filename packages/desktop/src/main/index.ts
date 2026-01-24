@@ -40,6 +40,17 @@ let hawkeye: Hawkeye | null = null;
 let screenWatcherInterval: NodeJS.Timeout | null = null;
 let lastScreenHash: string | null = null;
 let isWatching = false;
+let isSmartObserveRunning = false; // 防止 smartObserveCheck 重叠执行
+
+/**
+ * 安全地向渲染进程发送 IPC 消息
+ * 会检查窗口是否存在且未被销毁，避免 "Object has been destroyed" 错误
+ */
+function safeSend(channel: string, ...args: unknown[]): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, ...args);
+  }
+}
 
 // ============= 屏幕录制权限检查 =============
 
@@ -139,7 +150,9 @@ function setupAutoUpdater() {
   // 检测到新版本 - 静默处理，只记录日志
   autoUpdater.on('update-available', (info) => {
     debugLog(`Update available: ${info.version}, downloading in background...`);
-    mainWindow?.webContents.send('update-available', { version: info.version });
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-available', { version: info.version });
+    }
   });
 
   // 没有新版本
@@ -150,13 +163,17 @@ function setupAutoUpdater() {
   // 下载进度 - 静默记录
   autoUpdater.on('download-progress', (progress) => {
     debugLog(`Download progress: ${progress.percent.toFixed(1)}%`);
-    mainWindow?.webContents.send('update-progress', progress.percent);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-progress', progress.percent);
+    }
   });
 
   // 下载完成 - 只在托盘显示小提示，不弹窗打扰用户
   autoUpdater.on('update-downloaded', (info) => {
     debugLog(`Update downloaded: ${info.version}`);
-    mainWindow?.webContents.send('update-downloaded', { version: info.version });
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-downloaded', { version: info.version });
+    }
 
     // 通知用户更新已就绪（非模态提示）
     if (tray) {
@@ -218,6 +235,7 @@ interface AppConfig {
   ollamaModel?: string;
   geminiApiKey?: string;
   geminiModel?: string;
+  geminiBaseUrl?: string;
   openaiBaseUrl?: string;
   openaiApiKey?: string;
   openaiModel?: string;
@@ -236,11 +254,12 @@ const defaultConfig: AppConfig = {
   ollamaHost: 'http://localhost:11434',
   ollamaModel: 'qwen2.5vl:7b',
   geminiApiKey: '',
-  geminiModel: 'gemini-2.0-flash-exp',
+  geminiModel: 'gemini-2.5-flash-preview-05-20',
+  geminiBaseUrl: '',
   // Antigravity API configuration
   openaiBaseUrl: 'http://74.48.133.20:8045',
   openaiApiKey: 'sk-antigravity-pickfrom2026',
-  openaiModel: 'gemini-2.5-flash',
+  openaiModel: 'gemini-3-flash-preview',
   syncPort: 23789,
   autoStartSync: true,
   autoUpdate: true,  // 默认开启自动更新
@@ -363,7 +382,7 @@ function createTray() {
     {
       label: t('tray.settings'),
       click: () => {
-        mainWindow?.webContents.send('show-settings');
+        safeSend('show-settings');
         showWindow();
       },
     },
@@ -397,22 +416,22 @@ function showWindow() {
 
 async function observeScreen(autoPopup: boolean = true) {
   if (!hawkeye?.isInitialized) {
-    mainWindow?.webContents.send('error', t('error.notInitialized'));
+    safeSend('error', t('error.notInitialized'));
     if (autoPopup) showWindow();
     return;
   }
 
-  mainWindow?.webContents.send('loading', true);
+  safeSend('loading', true);
 
   try {
     const intents = await hawkeye.perceiveAndRecognize();
-    mainWindow?.webContents.send('intents', intents);
+    safeSend('intents', intents);
     // 只有手动触发时才弹出窗口，智能观察检测到变化时不弹窗
     if (autoPopup) showWindow();
   } catch (error) {
-    mainWindow?.webContents.send('error', (error as Error).message);
+    safeSend('error', (error as Error).message);
   } finally {
-    mainWindow?.webContents.send('loading', false);
+    safeSend('loading', false);
   }
 }
 
@@ -477,9 +496,17 @@ function hammingDistance(hash1: string, hash2: string): number {
  * 执行智能屏幕观察检测
  */
 async function smartObserveCheck() {
+  // 防止重叠执行（如果上一次检测还在运行中，跳过本次）
+  if (isSmartObserveRunning) {
+    debugLog('Smart observe: Previous check still running, skipping');
+    return;
+  }
+
   if (!hawkeye?.isInitialized || !isWatching) {
     return;
   }
+
+  isSmartObserveRunning = true;
 
   try {
     // 获取当前屏幕截图
@@ -516,7 +543,9 @@ async function smartObserveCheck() {
 
     // 发送截屏预览到渲染进程
     const dataUrl = thumbnail.toDataURL();
-    mainWindow?.webContents.send('screenshot-preview', { dataUrl, timestamp: Date.now() });
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('screenshot-preview', { dataUrl, timestamp: Date.now() });
+    }
 
     // 如果变化超过阈值，触发分析
     if (changeRatio >= appConfig.smartObserveThreshold) {
@@ -524,7 +553,9 @@ async function smartObserveCheck() {
       lastScreenHash = currentHash;
 
       // 通知渲染进程正在检测变化
-      mainWindow?.webContents.send('smart-observe-change-detected');
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('smart-observe-change-detected');
+      }
 
       // 执行完整的屏幕分析（智能观察不自动弹窗，只更新数据）
       await observeScreen(false);
@@ -534,6 +565,8 @@ async function smartObserveCheck() {
     }
   } catch (error) {
     debugLog(`Smart observe error: ${error}`);
+  } finally {
+    isSmartObserveRunning = false;
   }
 }
 
@@ -560,7 +593,10 @@ function startSmartObserve() {
   }, appConfig.smartObserveInterval);
 
   debugLog(`Smart observe: Started with interval=${appConfig.smartObserveInterval}ms, threshold=${appConfig.smartObserveThreshold}`);
-  mainWindow?.webContents.send('smart-observe-status', { watching: true });
+  // Only send IPC if window exists and is not destroyed
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('smart-observe-status', { watching: true });
+  }
 }
 
 /**
@@ -573,10 +609,14 @@ function stopSmartObserve() {
   }
 
   isWatching = false;
+  isSmartObserveRunning = false; // 重置运行状态
   lastScreenHash = null;
 
   debugLog('Smart observe: Stopped');
-  mainWindow?.webContents.send('smart-observe-status', { watching: false });
+  // Only send IPC if window exists and is not destroyed
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('smart-observe-status', { watching: false });
+  }
 }
 
 async function initializeHawkeye(): Promise<void> {
@@ -618,7 +658,8 @@ async function initializeHawkeye(): Promise<void> {
       config.ai!.providers!.push({
         type: 'gemini',
         apiKey: appConfig.geminiApiKey,
-        model: appConfig.geminiModel || 'gemini-2.0-flash-exp',
+        model: appConfig.geminiModel || 'gemini-2.5-flash-preview-05-20',
+        ...(appConfig.geminiBaseUrl ? { baseUrl: appConfig.geminiBaseUrl } : {}),
       } as any);
     }
 
@@ -628,7 +669,7 @@ async function initializeHawkeye(): Promise<void> {
         type: 'openai',
         baseUrl: appConfig.openaiBaseUrl,
         apiKey: appConfig.openaiApiKey,
-        model: appConfig.openaiModel || 'gemini-2.5-flash',
+        model: appConfig.openaiModel || 'gemini-3-flash-preview',
       } as any);
     }
 
@@ -638,49 +679,67 @@ async function initializeHawkeye(): Promise<void> {
         type: 'openai',
         baseUrl: 'http://74.48.133.20:8045',
         apiKey: 'sk-antigravity-pickfrom2026',
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
       } as any);
     }
   }
 
   hawkeye = createHawkeye(config);
 
-  // 监听事件
+  // 监听事件 - 所有事件处理器都需要检查窗口是否已销毁
   hawkeye.on('module:ready', (module: unknown) => {
-    mainWindow?.webContents.send('module-ready', module);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('module-ready', module);
+    }
   });
 
   hawkeye.on('ai:provider:ready', (type: unknown) => {
-    mainWindow?.webContents.send('ai-provider-ready', type);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('ai-provider-ready', type);
+    }
   });
 
   hawkeye.on('ai:provider:error', (info: unknown) => {
-    mainWindow?.webContents.send('ai-provider-error', info);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('ai-provider-error', info);
+    }
   });
 
   hawkeye.on('intents:detected', (intents: unknown) => {
-    mainWindow?.webContents.send('intents', intents);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('intents', intents);
+    }
   });
 
   hawkeye.on('plan:generated', (plan: unknown) => {
-    mainWindow?.webContents.send('plan', plan);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('plan', plan);
+    }
   });
 
   hawkeye.on('execution:step:start', (data: unknown) => {
-    mainWindow?.webContents.send('execution-progress', data);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('execution-progress', data);
+    }
   });
 
   hawkeye.on('execution:completed', (execution: unknown) => {
-    mainWindow?.webContents.send('execution-completed', execution);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('execution-completed', execution);
+    }
   });
 
   hawkeye.on('error', (error: unknown) => {
-    mainWindow?.webContents.send('error', (error as Error).message);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('error', (error as Error).message);
+    }
   });
 
   try {
     await hawkeye.initialize();
-    mainWindow?.webContents.send('hawkeye-ready', hawkeye.getStatus());
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('hawkeye-ready', hawkeye.getStatus());
+    }
 
     // 自动启动智能观察（如果启用）
     if (appConfig.smartObserve) {
@@ -688,7 +747,9 @@ async function initializeHawkeye(): Promise<void> {
     }
   } catch (error) {
     console.error('Hawkeye 初始化失败:', error);
-    mainWindow?.webContents.send('error', (error as Error).message);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('error', (error as Error).message);
+    }
   }
 }
 
@@ -789,10 +850,18 @@ ipcMain.handle('save-config', async (_event, newConfig: Partial<AppConfig>) => {
   // 持久化到文件
   saveConfigToFile(appConfig);
 
-  // 如果 hawkeye 已初始化，需要重新初始化
+  // 如果 hawkeye 已初始化，需要在后台重新初始化（不阻塞 UI）
   if (hawkeye) {
-    await hawkeye.shutdown();
-    await initializeHawkeye();
+    // 使用 setImmediate 让重新初始化在后台进行，不阻塞 IPC 响应
+    setImmediate(async () => {
+      try {
+        await hawkeye!.shutdown();
+        await initializeHawkeye();
+        console.log('[Config] Hawkeye 重新初始化完成');
+      } catch (err) {
+        console.error('[Config] Hawkeye 重新初始化失败:', err);
+      }
+    });
   }
 
   return appConfig;
@@ -1073,7 +1142,7 @@ ipcMain.handle('ollama-pull-model', async (_event, modelName: string) => {
   return new Promise((resolve) => {
     try {
       console.log(`[Ollama] 开始下载模型: ${modelName}`);
-      mainWindow?.webContents.send('ollama-pull-start', modelName);
+      safeSend('ollama-pull-start', modelName);
 
       // 使用 shell 模式确保命令可以在 macOS/Linux 上正确找到
       const isWin = process.platform === 'win32';
@@ -1092,12 +1161,12 @@ ipcMain.handle('ollama-pull-model', async (_event, modelName: string) => {
       } catch (spawnError) {
         console.error(`[Ollama] spawn 失败:`, spawnError);
         const errorMsg = `无法启动 Ollama: ${(spawnError as Error).message}。请确保 Ollama 已安装。`;
-        mainWindow?.webContents.send('ollama-pull-progress', {
+        safeSend('ollama-pull-progress', {
           model: modelName,
           output: errorMsg,
           isError: true,
         });
-        mainWindow?.webContents.send('ollama-pull-complete', {
+        safeSend('ollama-pull-complete', {
           model: modelName,
           success: false,
           error: errorMsg,
@@ -1122,7 +1191,7 @@ ipcMain.handle('ollama-pull-model', async (_event, modelName: string) => {
 
           if (progressMatch || output !== lastProgress) {
             lastProgress = output;
-            mainWindow?.webContents.send('ollama-pull-progress', {
+            safeSend('ollama-pull-progress', {
               model: modelName,
               output: output.trim(),
               progress: progressMatch ? parseInt(progressMatch[1]) : null,
@@ -1138,7 +1207,7 @@ ipcMain.handle('ollama-pull-model', async (_event, modelName: string) => {
         try {
           const output = data.toString();
           console.log(`[Ollama] stderr: ${output.trim()}`);
-          mainWindow?.webContents.send('ollama-pull-progress', {
+          safeSend('ollama-pull-progress', {
             model: modelName,
             output: output.trim(),
             isError: true,
@@ -1155,14 +1224,14 @@ ipcMain.handle('ollama-pull-model', async (_event, modelName: string) => {
 
           // 如果失败，发送错误进度
           if (code !== 0) {
-            mainWindow?.webContents.send('ollama-pull-progress', {
+            safeSend('ollama-pull-progress', {
               model: modelName,
               output: errorMsg,
               isError: true,
             });
           }
 
-          mainWindow?.webContents.send('ollama-pull-complete', {
+          safeSend('ollama-pull-complete', {
             model: modelName,
             success: code === 0,
             error: errorMsg,
@@ -1178,12 +1247,12 @@ ipcMain.handle('ollama-pull-model', async (_event, modelName: string) => {
         try {
           console.error(`[Ollama] 下载失败:`, error);
           // 发送进度更新显示错误
-          mainWindow?.webContents.send('ollama-pull-progress', {
+          safeSend('ollama-pull-progress', {
             model: modelName,
             output: `错误: ${error.message}`,
             isError: true,
           });
-          mainWindow?.webContents.send('ollama-pull-complete', {
+          safeSend('ollama-pull-complete', {
             model: modelName,
             success: false,
             error: error.message,
@@ -1197,7 +1266,7 @@ ipcMain.handle('ollama-pull-model', async (_event, modelName: string) => {
     } catch (outerError) {
       console.error(`[Ollama] 外层错误:`, outerError);
       const errorMsg = `下载出错: ${(outerError as Error).message}`;
-      mainWindow?.webContents.send('ollama-pull-complete', {
+      safeSend('ollama-pull-complete', {
         model: modelName,
         success: false,
         error: errorMsg,
@@ -1324,7 +1393,7 @@ ipcMain.handle('download-ollama', async () => {
   debugLog(`[Ollama Download] Starting download: ${downloadInfo.url}`);
   debugLog(`[Ollama Download] Save to: ${downloadPath}`);
 
-  mainWindow?.webContents.send('ollama-download-start', {
+  safeSend('ollama-download-start', {
     url: downloadInfo.url,
     filename: downloadInfo.filename,
   });
@@ -1333,7 +1402,7 @@ ipcMain.handle('download-ollama', async () => {
     const downloadWithRedirect = (url: string, redirectCount = 0) => {
       if (redirectCount > 5) {
         const error = '重定向次数过多';
-        mainWindow?.webContents.send('ollama-download-error', error);
+        safeSend('ollama-download-error', error);
         resolve({ success: false, error });
         return;
       }
@@ -1353,7 +1422,7 @@ ipcMain.handle('download-ollama', async () => {
 
         if (response.statusCode !== 200) {
           const error = `下载失败: HTTP ${response.statusCode}`;
-          mainWindow?.webContents.send('ollama-download-error', error);
+          safeSend('ollama-download-error', error);
           resolve({ success: false, error });
           return;
         }
@@ -1373,7 +1442,7 @@ ipcMain.handle('download-ollama', async () => {
           // 每 5% 更新一次进度，避免过于频繁
           if (progress >= lastProgress + 5 || progress === 100) {
             lastProgress = progress;
-            mainWindow?.webContents.send('ollama-download-progress', {
+            safeSend('ollama-download-progress', {
               progress,
               downloaded: downloadedSize,
               total: totalSize,
@@ -1389,7 +1458,7 @@ ipcMain.handle('download-ollama', async () => {
           file.close();
           debugLog(`[Ollama Download] Download complete: ${downloadPath}`);
 
-          mainWindow?.webContents.send('ollama-download-complete', {
+          safeSend('ollama-download-complete', {
             path: downloadPath,
             type: downloadInfo.type,
           });
@@ -1466,21 +1535,21 @@ ipcMain.handle('download-ollama', async () => {
         file.on('error', (err) => {
           fs.unlink(downloadPath, () => {}); // 删除部分下载的文件
           const error = `写入文件失败: ${err.message}`;
-          mainWindow?.webContents.send('ollama-download-error', error);
+          safeSend('ollama-download-error', error);
           resolve({ success: false, error });
         });
       });
 
       request.on('error', (err) => {
         const error = `网络错误: ${err.message}`;
-        mainWindow?.webContents.send('ollama-download-error', error);
+        safeSend('ollama-download-error', error);
         resolve({ success: false, error });
       });
 
       request.on('timeout', () => {
         request.destroy();
         const error = '下载超时';
-        mainWindow?.webContents.send('ollama-download-error', error);
+        safeSend('ollama-download-error', error);
         resolve({ success: false, error });
       });
     };

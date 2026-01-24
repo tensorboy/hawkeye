@@ -8,7 +8,11 @@ export { ReasoningEngine } from './engine';
 
 // 新增：意图识别和计划生成
 export { IntentEngine, type IntentEngineConfig } from './intent-engine';
-export { PlanGenerator, type PlanGeneratorConfig } from './plan-generator';
+export {
+  PlanGenerator,
+  type PlanGeneratorConfig,
+  type TrajectoryGuidanceOptions,
+} from './plan-generator';
 
 // 计划分析器 - 利弊分析、风险评估、习惯对齐
 export {

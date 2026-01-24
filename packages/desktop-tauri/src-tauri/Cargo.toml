@@ -1,0 +1,65 @@
+[package]
+name = "hawkeye-desktop"
+version = "0.1.0"
+description = "Hawkeye Desktop - AI-Powered Screen Assistant"
+authors = ["Hawkeye Team"]
+license = "MIT"
+repository = "https://github.com/anthropics/hawkeye"
+edition = "2021"
+rust-version = "1.70"
+
+[lib]
+name = "hawkeye_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri
+tauri = { version = "2", features = ["macos-private-api"] }
+tauri-plugin-shell = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-clipboard-manager = "2"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+# Screen capture
+screenshots = "0.8"
+
+# Image processing
+image = "0.25"
+
+# OCR (using native macOS Vision framework)
+# Will use Tauri command to call Swift/Objective-C for Vision API
+
+# Utilities
+uuid = { version = "1", features = ["v4"] }
+chrono = "0.4"
+base64 = "0.22"
+open = "5"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.26"
+objc = "0.2"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

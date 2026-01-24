@@ -1,6 +1,8 @@
 /**
  * Plan Generator - 计划生成器
  * 根据用户意图生成执行计划
+ *
+ * 支持 ShowUI-Aloha 风格的轨迹引导计划生成
  */
 
 import { EventEmitter } from 'events';
@@ -15,6 +17,11 @@ import type {
 } from '../ai/types';
 import type { AIManager } from '../ai/manager';
 import type { ExtendedPerceptionContext } from '../perception/engine';
+import type {
+  SemanticTraceManager,
+  InContextTrajectory,
+  SemanticTrace,
+} from '../learning/semantic-trace-manager';
 
 export interface PlanGeneratorConfig {
   /** 是否自动生成替代方案 */
@@ -25,12 +32,31 @@ export interface PlanGeneratorConfig {
   analyzeRisks: boolean;
   /** 默认需要确认 */
   defaultRequiresConfirmation: boolean;
+  /** 是否启用轨迹引导（ShowUI-Aloha 风格） */
+  enableTrajectoryGuidance: boolean;
+  /** 轨迹引导时的最大步骤数 */
+  maxGuidanceSteps: number;
+}
+
+/**
+ * 轨迹引导选项
+ */
+export interface TrajectoryGuidanceOptions {
+  /** 轨迹名称 */
+  traceName?: string;
+  /** 轨迹 ID */
+  traceId?: string;
+  /** 自动匹配（根据应用上下文） */
+  autoMatch?: boolean;
+  /** 最大引用步骤数 */
+  maxSteps?: number;
 }
 
 export class PlanGenerator extends EventEmitter {
   private config: PlanGeneratorConfig;
   private aiManager: AIManager | null = null;
   private recentPlans: ExecutionPlan[] = [];
+  private traceManager: SemanticTraceManager | null = null;
 
   constructor(config: Partial<PlanGeneratorConfig> = {}) {
     super();
@@ -39,6 +65,8 @@ export class PlanGenerator extends EventEmitter {
       maxAlternatives: 2,
       analyzeRisks: true,
       defaultRequiresConfirmation: true,
+      enableTrajectoryGuidance: true,
+      maxGuidanceSteps: 5,
       ...config,
     };
   }
@@ -51,21 +79,35 @@ export class PlanGenerator extends EventEmitter {
   }
 
   /**
+   * 设置语义轨迹管理器（ShowUI-Aloha 风格引导）
+   */
+  setTraceManager(manager: SemanticTraceManager): void {
+    this.traceManager = manager;
+  }
+
+  /**
    * 根据意图生成执行计划
    */
   async generate(
     intent: UserIntent,
-    context?: ExtendedPerceptionContext
+    context?: ExtendedPerceptionContext,
+    trajectoryOptions?: TrajectoryGuidanceOptions
   ): Promise<ExecutionPlan> {
     this.emit('generating', intent);
 
     // 先尝试基于模板生成
     let plan = this.generateFromTemplate(intent, context);
 
+    // 获取轨迹引导（如果启用）
+    let trajectoryGuidance: InContextTrajectory | null = null;
+    if (this.config.enableTrajectoryGuidance && this.traceManager) {
+      trajectoryGuidance = this.findTrajectoryGuidance(intent, context, trajectoryOptions);
+    }
+
     // 如果有 AI Manager，用 AI 增强计划
     if (this.aiManager?.isReady && intent.confidence >= 0.6) {
       try {
-        plan = await this.enhanceWithAI(plan, intent, context);
+        plan = await this.enhanceWithAI(plan, intent, context, trajectoryGuidance);
       } catch (error) {
         console.warn('AI 计划增强失败:', error);
       }
@@ -73,6 +115,11 @@ export class PlanGenerator extends EventEmitter {
 
     // 分析影响
     plan.impact = this.analyzeImpact(plan);
+
+    // 记录使用的轨迹（用于统计）
+    if (trajectoryGuidance && trajectoryOptions?.traceId) {
+      this.traceManager?.recordUsage(trajectoryOptions.traceId, true);
+    }
 
     // 添加到最近计划
     this.recentPlans.unshift(plan);
@@ -82,6 +129,105 @@ export class PlanGenerator extends EventEmitter {
 
     this.emit('generated', plan);
     return plan;
+  }
+
+  /**
+   * 带轨迹引导的计划生成（ShowUI-Aloha 风格）
+   *
+   * 这是 ShowUI-Aloha 的核心：使用之前录制的轨迹作为 in-context 示例
+   */
+  async generateWithTrajectory(
+    intent: UserIntent,
+    traceName: string,
+    context?: ExtendedPerceptionContext
+  ): Promise<ExecutionPlan> {
+    return this.generate(intent, context, { traceName });
+  }
+
+  /**
+   * 查找匹配的轨迹引导
+   */
+  private findTrajectoryGuidance(
+    intent: UserIntent,
+    context?: ExtendedPerceptionContext,
+    options?: TrajectoryGuidanceOptions
+  ): InContextTrajectory | null {
+    if (!this.traceManager) return null;
+
+    const maxSteps = options?.maxSteps || this.config.maxGuidanceSteps;
+
+    // 1. 优先使用指定的轨迹
+    if (options?.traceName) {
+      const trajectory = this.traceManager.getTrajectoryInContext(options.traceName, {
+        formattingString: false,
+        maxSteps,
+      });
+      if (trajectory && typeof trajectory !== 'string') {
+        return trajectory;
+      }
+    }
+
+    if (options?.traceId) {
+      const trace = this.traceManager.getTrace(options.traceId);
+      if (trace) {
+        return this.traceToInContext(trace, maxSteps);
+      }
+    }
+
+    // 2. 自动匹配：根据应用上下文查找
+    if (options?.autoMatch !== false && context?.activeWindow) {
+      const appContext = context.activeWindow.appName;
+      const appTraces = this.traceManager.getTracesByApp(appContext);
+
+      if (appTraces.length > 0) {
+        // 按成功率和使用次数排序，选择最佳轨迹
+        const bestTrace = appTraces.sort(
+          (a, b) => b.successRate * Math.log(b.usageCount + 1) - a.successRate * Math.log(a.usageCount + 1)
+        )[0];
+
+        // 检查意图相关性
+        if (this.isTrajectoryRelevant(bestTrace, intent)) {
+          return this.traceToInContext(bestTrace, maxSteps);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * 将轨迹转换为 In-Context 格式
+   */
+  private traceToInContext(trace: SemanticTrace, maxSteps: number): InContextTrajectory {
+    const steps = trace.trajectory.slice(0, maxSteps).map((step) => ({
+      step_idx: step.stepIndex,
+      Observation: step.observation,
+      Think: step.think,
+      Action: step.action,
+      Expectation: step.expectation,
+    }));
+
+    return {
+      task: trace.task,
+      appContext: trace.appContext,
+      steps,
+    };
+  }
+
+  /**
+   * 检查轨迹与意图的相关性
+   */
+  private isTrajectoryRelevant(trace: SemanticTrace, intent: UserIntent): boolean {
+    const taskLower = trace.task.toLowerCase();
+    const intentLower = intent.description.toLowerCase();
+    const intentType = intent.type.toLowerCase();
+
+    // 简单关键词匹配
+    const keywords = intentLower.split(/\s+/).filter((w) => w.length > 2);
+    const matchCount = keywords.filter((kw) => taskLower.includes(kw)).length;
+
+    // 至少匹配一个关键词，或者意图类型在任务描述中
+    return matchCount > 0 || taskLower.includes(intentType);
   }
 
   /**
@@ -414,16 +560,26 @@ export class PlanGenerator extends EventEmitter {
   private async enhanceWithAI(
     plan: ExecutionPlan,
     intent: UserIntent,
-    context?: ExtendedPerceptionContext
+    context?: ExtendedPerceptionContext,
+    trajectoryGuidance?: InContextTrajectory | null
   ): Promise<ExecutionPlan> {
     if (!this.aiManager) return plan;
 
     const contextDesc = this.buildContextDescription(context);
+    const trajectorySection = this.buildTrajectorySection(trajectoryGuidance);
 
     const messages: AIMessage[] = [
       {
         role: 'system',
         content: `你是 Hawkeye 计划优化器。根据用户意图和上下文，优化执行计划。
+${trajectoryGuidance ? `
+你将收到一个"引导轨迹"(Guidance Trajectory)，这是类似任务的成功执行记录。
+请参考轨迹中的思考方式和动作序列来优化计划，但要根据当前具体情况调整。
+轨迹格式说明：
+- Observation: 当时的屏幕/UI 状态观察
+- Think: 用户意图分析
+- Action: 执行的具体操作
+- Expectation: 操作后的预期结果` : ''}
 
 输出格式（JSON）:
 {
@@ -451,7 +607,7 @@ export class PlanGenerator extends EventEmitter {
   ]
 }
 
-动作类型: shell, file_read, file_write, file_move, file_delete, file_copy, folder_create, url_open, app_open, notification, wait
+动作类型: shell, file_read, file_write, file_move, file_delete, file_copy, folder_create, url_open, app_open, notification, wait, gui_click, gui_type, gui_scroll, gui_drag, gui_hotkey
 
 只返回 JSON，不要其他内容。`,
       },
@@ -462,11 +618,11 @@ export class PlanGenerator extends EventEmitter {
 
 当前上下文:
 ${contextDesc}
-
+${trajectorySection}
 当前计划:
 ${JSON.stringify(plan, null, 2)}
 
-请优化这个计划:`,
+请优化这个计划${trajectoryGuidance ? '（参考引导轨迹）' : ''}:`,
       },
     ];
 
@@ -478,6 +634,35 @@ ${JSON.stringify(plan, null, 2)}
       console.warn('AI 计划优化出错:', error);
       return plan;
     }
+  }
+
+  /**
+   * 构建轨迹引导部分的提示
+   */
+  private buildTrajectorySection(trajectory?: InContextTrajectory | null): string {
+    if (!trajectory) return '';
+
+    const lines: string[] = [
+      '',
+      '=== 引导轨迹 (Guidance Trajectory) ===',
+      `任务: ${trajectory.task}`,
+      `应用: ${trajectory.appContext}`,
+      '',
+    ];
+
+    for (const step of trajectory.steps) {
+      lines.push(`Step ${step.step_idx}:`);
+      lines.push(`  Observation: ${step.Observation}`);
+      lines.push(`  Think: ${step.Think}`);
+      lines.push(`  Action: ${step.Action}`);
+      lines.push(`  Expectation: ${step.Expectation}`);
+      lines.push('');
+    }
+
+    lines.push('=== 引导轨迹结束 ===');
+    lines.push('');
+
+    return lines.join('\n');
   }
 
   private parseAIPlanResponse(
@@ -622,6 +807,9 @@ ${JSON.stringify(plan, null, 2)}
       'shell', 'file_read', 'file_write', 'file_move', 'file_delete',
       'file_copy', 'folder_create', 'url_open', 'app_open', 'app_close',
       'clipboard_set', 'notification', 'wait', 'condition', 'loop',
+      // GUI 动作类型（ShowUI-Aloha 风格）
+      'gui_click', 'gui_type', 'gui_scroll', 'gui_drag', 'gui_hotkey',
+      'gui_double_click', 'gui_right_click', 'gui_wait', 'gui_screenshot',
     ];
 
     return validTypes.includes(type as ActionType) ? type as ActionType : 'notification';

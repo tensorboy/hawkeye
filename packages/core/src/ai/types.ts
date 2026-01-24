@@ -193,7 +193,37 @@ export type ActionType =
   | 'wait'            // 等待
   | 'condition'       // 条件判断
   | 'loop'            // 循环
-  | 'user_input';     // 用户输入
+  | 'user_input'      // 用户输入
+  // Agent Browser 动作 (基于 accessibility tree)
+  | 'browser_open'    // 打开 URL (agent-browser)
+  | 'browser_click'   // 点击元素 (ref)
+  | 'browser_fill'    // 填写输入框 (ref + value)
+  | 'browser_type'    // 输入文本 (逐字符)
+  | 'browser_select'  // 选择下拉框
+  | 'browser_check'   // 勾选复选框
+  | 'browser_uncheck' // 取消勾选
+  | 'browser_hover'   // 悬停元素
+  | 'browser_find'    // 语义查找元素
+  | 'browser_find_click'    // 查找并点击
+  | 'browser_find_fill'     // 查找并填写
+  | 'browser_wait'    // 等待条件
+  | 'browser_snapshot'      // 获取 accessibility 快照
+  | 'browser_screenshot'    // 截图
+  | 'browser_eval'    // 执行 JS
+  | 'browser_back'    // 返回
+  | 'browser_forward' // 前进
+  | 'browser_reload'  // 刷新
+  // GUI 动作类型 (ShowUI-Aloha 风格, 桌面自动化)
+  | 'gui_click'        // GUI 点击（指定坐标）
+  | 'gui_double_click' // GUI 双击
+  | 'gui_right_click'  // GUI 右键点击
+  | 'gui_type'         // GUI 文本输入
+  | 'gui_scroll'       // GUI 滚动
+  | 'gui_drag'         // GUI 拖拽
+  | 'gui_hotkey'       // GUI 快捷键
+  | 'gui_wait'         // GUI 等待
+  | 'gui_screenshot'   // GUI 截屏
+  | 'gui_move';        // GUI 鼠标移动
 
 export interface AlternativePlan {
   /** 方案描述 */
