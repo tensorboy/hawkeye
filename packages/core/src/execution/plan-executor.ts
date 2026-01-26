@@ -18,6 +18,9 @@ import {
   type AgentBrowserConfig,
 } from './agent-browser';
 import type { ExecutionResult } from '../types';
+import { FeedbackLoop } from '../reasoning/visual-feedback';
+import type { PerceptionEngine } from '../perception/engine';
+import { PermissionManager, AuditLogger } from '../security';
 
 export interface PlanExecutorConfig {
   /** 是否自动继续下一步 */
@@ -28,6 +31,8 @@ export interface PlanExecutorConfig {
   autoRollbackOnFailure: boolean;
   /** 是否在高风险步骤前暂停 */
   pauseOnHighRisk: boolean;
+  /** 是否启用视觉反馈循环 */
+  enableVisualFeedback: boolean;
   /** Agent Browser 配置 */
   agentBrowser?: AgentBrowserConfig;
 }
@@ -65,19 +70,29 @@ export class PlanExecutor extends EventEmitter {
   private file: FileExecutor;
   private automation: AutomationExecutor;
   private agentBrowser: AgentBrowserExecutor | null = null;
+  private feedbackLoop: FeedbackLoop | null = null;
+  private permissionManager: PermissionManager;
+  private auditLogger: AuditLogger;
 
   private executions: Map<string, PlanExecution> = new Map();
   private pausedExecutions: Set<string> = new Set();
 
-  constructor(config: Partial<PlanExecutorConfig> = {}) {
+  constructor(
+    config: Partial<PlanExecutorConfig> = {},
+    perceptionEngine?: PerceptionEngine
+  ) {
     super();
     this.config = {
       autoAdvance: true,
       stepDelay: 500,
       autoRollbackOnFailure: true,
       pauseOnHighRisk: true,
+      enableVisualFeedback: true,
       ...config,
     };
+
+    this.permissionManager = new PermissionManager();
+    this.auditLogger = new AuditLogger();
 
     this.shell = new ShellExecutor({
       timeout: 60000,
@@ -90,6 +105,11 @@ export class PlanExecutor extends EventEmitter {
     });
     this.file = new FileExecutor();
     this.automation = new AutomationExecutor();
+
+    // 初始化反馈循环
+    if (this.config.enableVisualFeedback && perceptionEngine) {
+      this.feedbackLoop = new FeedbackLoop(perceptionEngine);
+    }
 
     // 初始化 agent-browser (懒加载)
     if (config.agentBrowser) {
@@ -150,8 +170,18 @@ export class PlanExecutor extends EventEmitter {
 
         this.emit('step:started', { execution, step, index: i });
 
-        // 执行步骤
-        const stepResult = await this.executeStep(step);
+        // 执行步骤 (带反馈循环或普通执行)
+        let stepResult: ExecutionResult;
+
+        if (
+          this.feedbackLoop &&
+          step.expectedState &&
+          (step.actionType.startsWith('browser_') || step.actionType.startsWith('app_') || step.actionType.startsWith('gui_'))
+        ) {
+          stepResult = await this.feedbackLoop.executeWithFeedback(step, this);
+        } else {
+          stepResult = await this.executeStep(step);
+        }
 
         execution.stepResults.push({
           step,
@@ -244,7 +274,17 @@ export class PlanExecutor extends EventEmitter {
 
         this.emit('step:started', { execution, step, index: i });
 
-        const stepResult = await this.executeStep(step);
+        let stepResult: ExecutionResult;
+
+        if (
+          this.feedbackLoop &&
+          step.expectedState &&
+          (step.actionType.startsWith('browser_') || step.actionType.startsWith('app_') || step.actionType.startsWith('gui_'))
+        ) {
+          stepResult = await this.feedbackLoop.executeWithFeedback(step, this);
+        } else {
+          stepResult = await this.executeStep(step);
+        }
 
         execution.stepResults.push({
           step,
@@ -394,10 +434,31 @@ export class PlanExecutor extends EventEmitter {
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
 
+    // 1. 权限检查
+    const permResult = await this.permissionManager.checkPermission(actionType, { params });
+    if (!permResult.allowed) {
+      this.auditLogger.log({
+        toolId: actionType,
+        action: 'execute',
+        params,
+        result: 'denied',
+        error: permResult.reason
+      });
+      return {
+        success: false,
+        error: `Permission denied: ${permResult.reason}`,
+        duration: 0
+      };
+    }
+
+    // 如果需要确认，这里应该抛出特定事件暂停执行，等待用户确认
+    // 简化处理：如果是高风险且需要确认，PlanExecutor 的主循环会处理暂停
+
     try {
+      let result: ExecutionResult;
       switch (actionType) {
         case 'shell':
-          return this.shell.execute(
+          result = await this.shell.execute(
             params.command as string,
             {
               cwd: params.cwd as string | undefined,
@@ -712,7 +773,27 @@ export class PlanExecutor extends EventEmitter {
             duration: Date.now() - startTime,
           };
       }
+
+      // 记录审计日志 (成功)
+      this.auditLogger.log({
+        toolId: actionType,
+        action: 'execute',
+        params,
+        result: result.success ? 'success' : 'failure',
+        error: result.error
+      });
+
+      return result;
     } catch (error) {
+      // 记录审计日志 (异常)
+      this.auditLogger.log({
+        toolId: actionType,
+        action: 'execute',
+        params,
+        result: 'failure',
+        error: error instanceof Error ? error.message : String(error)
+      });
+
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),

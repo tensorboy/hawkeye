@@ -4,6 +4,8 @@
 
 // ============ 感知相关类型 ============
 
+import type { ParsedUI } from './perception/ui-parser/element-types';
+
 /**
  * 屏幕截图结果
  */
@@ -49,6 +51,8 @@ export interface PerceptionContext {
   activeWindow?: WindowInfo;
   /** 剪贴板内容 */
   clipboard?: string;
+  /** UI 解析结果 */
+  ui?: ParsedUI;
   /** 额外的上下文信息 */
   metadata?: Record<string, unknown>;
 }

@@ -15,6 +15,9 @@
 
 import { EventEmitter } from 'events';
 import * as crypto from 'crypto';
+import type { ExecutionPlan } from '../ai/types';
+import type { ExecutionResult } from '../types';
+import { getSelfReflection } from '../autonomous/self-reflection';
 
 // ============ 类型定义 ============
 
@@ -428,6 +431,21 @@ export class TrajectoryLearning extends EventEmitter {
   }
 
   // ============ 学习 API ============
+
+  /**
+   * 记录执行轨迹并触发学习
+   */
+  async recordExecution(plan: ExecutionPlan, result: ExecutionResult): Promise<void> {
+    // 1. 记录基础轨迹 (Placeholder logic as TrajectoryLearning was focusing on recorded actions)
+    // In a real implementation, we would convert ExecutionPlan to Trajectory format here
+    // or link them.
+
+    // 2. 触发 SEPO 优化
+    const reflection = getSelfReflection();
+    if (reflection) {
+        await reflection.optimizeProcess(plan, result);
+    }
+  }
 
   /**
    * 更新轨迹使用统计

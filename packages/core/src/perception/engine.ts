@@ -8,6 +8,7 @@ import { ScreenCapture, ExtendedScreenCapture, VisionAnalyzer } from './screen';
 import { WindowTracker } from './window';
 import { ClipboardWatcher } from './clipboard';
 import { OCRManager, OCRResult } from './ocr';
+import { getUIParserPipeline, UIParserPipeline } from './ui-parser';
 import { FileWatcher, FileEvent } from '../watcher/file-watcher';
 import type { PerceptionContext, WindowInfo } from '../types';
 
@@ -24,6 +25,8 @@ export interface PerceptionEngineConfig {
   enableFileWatch: boolean;
   /** 是否启用 OCR */
   enableOCR: boolean;
+  /** 是否启用 UI 解析 */
+  enableUIParser: boolean;
   /** 是否启用 AI 视觉分析 */
   enableVision: boolean;
   /** 屏幕截图间隔 (ms) */
@@ -68,6 +71,7 @@ export class PerceptionEngine extends EventEmitter {
   private windowTracker: WindowTracker;
   private clipboardWatcher: ClipboardWatcher;
   private ocrManager: OCRManager;
+  private uiParser: UIParserPipeline;
   private fileWatcher: FileWatcher | null = null;
 
   // 状态
@@ -88,6 +92,7 @@ export class PerceptionEngine extends EventEmitter {
       enableClipboard: true,
       enableFileWatch: true,
       enableOCR: true,  // 默认开启 OCR
+      enableUIParser: true, // 默认开启 UI 解析
       enableVision: false,  // 默认关闭，需要 AI Manager 配置
       screenInterval: 5000,
       clipboardInterval: 1000,
@@ -114,6 +119,7 @@ export class PerceptionEngine extends EventEmitter {
     this.windowTracker = new WindowTracker();
     this.clipboardWatcher = new ClipboardWatcher();
     this.ocrManager = new OCRManager();
+    this.uiParser = getUIParserPipeline();
 
     // 设置事件监听
     this.setupEventListeners();
@@ -252,23 +258,45 @@ export class PerceptionEngine extends EventEmitter {
           console.log(`[Perception] 📸 截图完成: ${screenshot.id}`);
 
           // OCR 识别
-          if (this.config.enableOCR && screenshot.imageData) {
+          if ((this.config.enableOCR || this.config.enableUIParser) && screenshot.imageData) {
             try {
-              console.log(`[Perception] 🔤 开始 OCR 识别...`);
-              const ocrStart = Date.now();
-              context.ocr = await this.ocrManager.recognize(screenshot.imageData);
-              const ocrDuration = Date.now() - ocrStart;
-              console.log(`[Perception] ✅ OCR 完成，耗时: ${ocrDuration}ms，识别 ${context.ocr.text.length} 字符`);
+              let ocrText = '';
 
-              // Emit OCR completed event for debug timeline
-              this.emit('ocr:completed', {
-                text: context.ocr.text,
-                confidence: context.ocr.confidence,
-                backend: context.ocr.backend || 'unknown',
-                duration: ocrDuration,
-              });
+              if (this.config.enableOCR) {
+                console.log(`[Perception] 🔤 开始 OCR 识别...`);
+                const ocrStart = Date.now();
+                context.ocr = await this.ocrManager.recognize(screenshot.imageData);
+                const ocrDuration = Date.now() - ocrStart;
+                ocrText = context.ocr.text;
+                console.log(`[Perception] ✅ OCR 完成，耗时: ${ocrDuration}ms，识别 ${context.ocr.text.length} 字符`);
+
+                // Emit OCR completed event for debug timeline
+                this.emit('ocr:completed', {
+                  text: context.ocr.text,
+                  confidence: context.ocr.confidence,
+                  backend: context.ocr.backend || 'unknown',
+                  duration: ocrDuration,
+                  regions: context.ocr.regions,
+                });
+              }
+
+              // UI 解析
+              if (this.config.enableUIParser) {
+                console.log(`[Perception] 👁️ 开始 UI 解析...`);
+                const uiStart = Date.now();
+                const imageBuffer = Buffer.from(screenshot.imageData, 'base64');
+                context.ui = await this.uiParser.parse(imageBuffer, ocrText);
+                const uiDuration = Date.now() - uiStart;
+                console.log(`[Perception] ✅ UI 解析完成，耗时: ${uiDuration}ms，识别 ${context.ui.elements.length} 元素`);
+
+                this.emit('ui:parsed', {
+                   elements: context.ui.elements.length,
+                   duration: uiDuration,
+                   stats: context.ui.stats
+                });
+              }
             } catch (err) {
-              console.warn('[Perception] ❌ OCR 识别失败:', err);
+              console.warn('[Perception] ❌ 视觉处理失败:', err);
             }
           }
         }).catch(err => {
@@ -314,6 +342,7 @@ export class PerceptionEngine extends EventEmitter {
     console.log(`[Perception] 总耗时: ${totalDuration}ms`);
     console.log(`[Perception] 截图: ${context.screenshot ? '✓' : '✗'}`);
     console.log(`[Perception] OCR: ${context.ocr ? `✓ (${context.ocr.text.length}字)` : '✗'}`);
+    console.log(`[Perception] UI: ${context.ui ? `✓ (${context.ui.elements.length}元素)` : '✗'}`);
     console.log(`[Perception] 窗口: ${context.activeWindow ? `✓ (${context.activeWindow.appName})` : '✗'}`);
     console.log(`[Perception] 剪贴板: ${context.clipboard ? `✓ (${context.clipboard.length}字)` : '✗'}`);
     console.log(`[Perception] ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n`);
@@ -397,6 +426,7 @@ export class PerceptionEngine extends EventEmitter {
     if (this.config.enableClipboard) enabledModules.push('clipboard');
     if (this.config.enableFileWatch) enabledModules.push('fileWatch');
     if (this.config.enableOCR) enabledModules.push('ocr');
+    if (this.config.enableUIParser) enabledModules.push('uiParser');
     if (this.config.enableVision) enabledModules.push('vision');
 
     return {
@@ -428,6 +458,7 @@ export class PerceptionEngine extends EventEmitter {
             confidence: ocrResult.confidence,
             backend: ocrResult.backend || 'unknown',
             duration: ocrDuration,
+            regions: ocrResult.regions,
           });
         } catch (err) {
           console.warn('[Perception] ❌ 截图 OCR 失败:', err);

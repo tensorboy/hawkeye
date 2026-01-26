@@ -800,6 +800,21 @@ export class SelfReflection {
     const withBestPractice = records.filter((r) => r.bestPractice).length;
     return withBestPractice / records.length;
   }
+  /**
+   * 触发 SEPO 优化
+   */
+  async optimizeProcess(plan: ExecutionPlan, result: ExecutionResult): Promise<void> {
+    if (!this.sepo) return;
+
+    try {
+      const optimization = await this.sepo.optimize(plan, result);
+      if (optimization) {
+        this.emit('process:optimized', optimization);
+      }
+    } catch (error) {
+      console.warn('[SelfReflection] SEPO optimization failed:', error);
+    }
+  }
 }
 
 /**
@@ -827,8 +842,8 @@ export function getSelfReflection(): SelfReflection {
   return globalSelfReflection;
 }
 
-export function createSelfReflection(config?: Partial<SelfReflectionConfig>): SelfReflection {
-  return new SelfReflection(config);
+export function createSelfReflection(config?: Partial<SelfReflectionConfig>, vectorStore?: VectorStore): SelfReflection {
+  return new SelfReflection(config, vectorStore);
 }
 
 export function setSelfReflection(reflection: SelfReflection): void {

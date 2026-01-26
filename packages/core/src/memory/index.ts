@@ -102,3 +102,36 @@ export {
   type EmbeddingFunction,
   type RAGConfig,
 } from './rag-retrieval';
+
+// Vector Memory System (基于 clawdbot/memory 设计模式)
+// SQLite + sqlite-vec 混合搜索记忆系统
+export {
+  // Memory Manager
+  VectorMemoryManager,
+  getVectorMemory,
+  setVectorMemory,
+  createVectorMemory,
+  // SQLite Store
+  SQLiteVecStore,
+  // Embedding Providers
+  OpenAIEmbeddingProvider,
+  GeminiEmbeddingProvider,
+  LocalEmbeddingProvider,
+  createEmbeddingProvider,
+  EmbeddingCache,
+  // Constants
+  DEFAULT_VECTOR_MEMORY_CONFIG,
+  VECTOR_SEARCH_WEIGHTS,
+  // Types
+  type MemoryChunk,
+  type FileMetadata,
+  type EmbeddingCacheEntry,
+  type EmbeddingProviderType,
+  type EmbeddingProvider,
+  type EmbeddingConfig,
+  type SearchResult as VectorSearchResult,
+  type SearchOptions as VectorSearchOptions,
+  type VectorMemoryConfig,
+  type MemoryStats as VectorMemoryStats,
+  type AddMemoryOptions,
+} from './vector-memory';

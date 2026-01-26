@@ -583,3 +583,51 @@
 .detail-text pre::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* OCR Visualization styles */
+.detail-ocr-visualization {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ocr-image-container {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+.ocr-source-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.ocr-regions-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ocr-regions-overlay rect {
+  pointer-events: all;
+  cursor: help;
+}
+
+.ocr-regions-overlay rect:hover {
+  fill: rgba(59, 130, 246, 0.35);
+  stroke: rgba(59, 130, 246, 1);
+  stroke-width: 3;
+}
+
+.ocr-regions-count {
+  font-size: 11px;
+  color: #888;
+}

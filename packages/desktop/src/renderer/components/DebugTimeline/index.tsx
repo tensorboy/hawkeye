@@ -166,11 +166,19 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
     }
   }, [status.paused, selectedTypes, searchText, fetchStatus]);
 
-  // Initial load and setup polling
+  // Track if initial fetch has been done to prevent duplicate fetches
+  const initialFetchDoneRef = useRef(false);
+
+  // Initial load - runs once on mount
   useEffect(() => {
     fetchEvents();
     fetchStatus();
+    initialFetchDoneRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
+  // Setup polling - separate from initial fetch
+  useEffect(() => {
     pollIntervalRef.current = setInterval(pollNewEvents, 1000);
 
     return () => {
@@ -178,13 +186,15 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
         clearInterval(pollIntervalRef.current);
       }
     };
-  }, [fetchEvents, fetchStatus, pollNewEvents]);
+  }, [pollNewEvents]);
 
-  // Auto-scroll is now handled by VirtualizedEventList
-
-  // Refresh when filters change
+  // Refresh when filters change (but not on initial mount)
   useEffect(() => {
-    fetchEvents();
+    if (initialFetchDoneRef.current) {
+      // Reset timestamp when filters change to get fresh data
+      lastTimestampRef.current = 0;
+      fetchEvents();
+    }
   }, [selectedTypes, searchText, fetchEvents]);
 
   // Handle clear events

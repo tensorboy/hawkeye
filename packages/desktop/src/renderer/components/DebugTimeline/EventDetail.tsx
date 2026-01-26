@@ -55,6 +55,15 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, onClose }) => {
         );
 
       case 'ocr':
+        const ocrRegions = (data.regions as Array<{
+          text: string;
+          confidence: number;
+          bbox: [number, number, number, number];
+        }>) || [];
+        const hasScreenshot = !!data.thumbnail;
+        const screenshotWidth = (data.screenshotWidth as number) || 0;
+        const screenshotHeight = (data.screenshotHeight as number) || 0;
+
         return (
           <div className="detail-content">
             <div className="detail-row">
@@ -75,6 +84,54 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, onClose }) => {
               <span className="detail-label">耗时:</span>
               <span className="detail-value">{formatDuration(data.duration as number)}</span>
             </div>
+
+            {/* Screenshot thumbnail with OCR visualization */}
+            {hasScreenshot && (
+              <div className="detail-ocr-visualization">
+                <span className="detail-label">原图 {screenshotWidth && screenshotHeight ? `(${screenshotWidth}×${screenshotHeight})` : ''}:</span>
+                <div className="ocr-image-container">
+                  <img
+                    src={data.thumbnail as string}
+                    alt="OCR source screenshot"
+                    className="ocr-source-image"
+                  />
+                  {/* OCR region overlays */}
+                  {ocrRegions.length > 0 && screenshotWidth > 0 && (
+                    <svg
+                      className="ocr-regions-overlay"
+                      viewBox={`0 0 ${screenshotWidth} ${screenshotHeight}`}
+                      preserveAspectRatio="xMidYMid meet"
+                    >
+                      {ocrRegions.map((region, idx) => {
+                        const [x, y, w, h] = region.bbox;
+                        // Skip invalid bounding boxes
+                        if (x === 0 && y === 0 && w === 0 && h === 0) return null;
+                        return (
+                          <g key={idx}>
+                            <rect
+                              x={x}
+                              y={y}
+                              width={w}
+                              height={h}
+                              fill="rgba(59, 130, 246, 0.15)"
+                              stroke="rgba(59, 130, 246, 0.8)"
+                              strokeWidth="2"
+                            />
+                            <title>{region.text} ({(region.confidence * 100).toFixed(1)}%)</title>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  )}
+                </div>
+                {ocrRegions.length > 0 && (
+                  <div className="ocr-regions-count">
+                    识别区域: {ocrRegions.filter(r => !(r.bbox[0] === 0 && r.bbox[1] === 0 && r.bbox[2] === 0 && r.bbox[3] === 0)).length} 个
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="detail-text">
               <span className="detail-label">识别文本:</span>
               <pre>{toStr(data.text)}</pre>

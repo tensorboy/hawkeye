@@ -31,3 +31,5 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+packages/desktop/release/
+packages/desktop/build/

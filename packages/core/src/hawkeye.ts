@@ -18,13 +18,32 @@ import { DashboardManager, type DashboardManagerConfig } from './dashboard';
 import { WorkflowManager, type WorkflowManagerConfig } from './workflow';
 import { PluginManager, type PluginManagerConfig } from './plugin';
 import {
-  AutonomousManager,
-  createAutonomousManager,
-  type AutonomousConfig,
-  type SuggestedAction,
-  type AutonomousAnalysisResult,
-} from './autonomous';
-import { EventCollector } from './debug';
+  SelfReflection,
+  createSelfReflection,
+  type SelfReflectionConfig,
+} from './autonomous/self-reflection';
+
+// ...
+
+export class Hawkeye extends EventEmitter {
+  // ...
+  private selfReflection: SelfReflection | null = null;
+
+  constructor(config: HawkeyeConfig) {
+    super();
+    // ...
+    // 初始化核心模块（非 async 部分）
+    this.perception = new PerceptionEngine(config.perception);
+    // ...
+    this.database = new HawkeyeDatabase(config.storage?.database);
+    this.vectorStore = new VectorStore(config.storage?.vectorStore);
+
+    // 初始化 SelfReflection (含 SEPO)
+    this.selfReflection = createSelfReflection({}, this.vectorStore);
+
+    // ...
+  }
+}
 import type {
   UserIntent,
   ExecutionPlan,
@@ -128,7 +147,13 @@ export class Hawkeye extends EventEmitter {
   private dashboardManager: DashboardManager | null = null;
   private workflowManager: WorkflowManager | null = null;
   private pluginManager: PluginManager | null = null;
+  private toolRegistry: ToolRegistry;
+  private skillManager: SkillManager;
+  private mcpServer: MCPServer | null = null;
   private autonomousManager: AutonomousManager | null = null;
+  private selfReflection: SelfReflection | null = null;
+  private permissionManager: PermissionManager;
+  private auditLogger: AuditLogger;
 
   // 调试事件收集器
   private eventCollector: EventCollector;
@@ -147,9 +172,28 @@ export class Hawkeye extends EventEmitter {
     this.perception = new PerceptionEngine(config.perception);
     this.intentEngine = new IntentEngine({});
     this.planGenerator = new PlanGenerator({});
-    this.planExecutor = new PlanExecutor({});
+    this.planExecutor = new PlanExecutor({}, this.perception);
     this.database = new HawkeyeDatabase(config.storage?.database);
     this.vectorStore = new VectorStore(config.storage?.vectorStore);
+
+    // 初始化安全模块
+    this.permissionManager = new PermissionManager();
+    this.auditLogger = new AuditLogger();
+
+    // 初始化 MCP 和 Skills
+    this.toolRegistry = getToolRegistry();
+    this.skillManager = new SkillManager(this.toolRegistry);
+
+    // 初始化 MCP Server (如果配置)
+    // 默认启用 stdio 模式，方便作为 MCP Server 运行
+    this.mcpServer = new MCPServer(this.toolRegistry, {
+      name: 'hawkeye',
+      version: '1.0.0',
+      transport: 'stdio'
+    });
+
+    // 初始化 SelfReflection (含 SEPO)
+    this.selfReflection = createSelfReflection({}, this.vectorStore);
 
     if (config.sync) {
       this.syncServer = new SyncServer(config.sync);
@@ -326,6 +370,12 @@ export class Hawkeye extends EventEmitter {
       if (this.pluginManager) {
         this.setupPluginEvents();
         this.emit('module:ready', 'plugin');
+      }
+
+      // 12.5 启动 MCP Server
+      if (this.mcpServer) {
+        await this.mcpServer.start();
+        this.emit('module:ready', 'mcp');
       }
 
       // 13. 初始化自主能力管理器
@@ -762,6 +812,20 @@ export class Hawkeye extends EventEmitter {
   }
 
   /**
+   * 获取 MCP 工具注册表
+   */
+  getToolRegistry(): ToolRegistry {
+    return this.toolRegistry;
+  }
+
+  /**
+   * 获取技能管理器
+   */
+  getSkillManager(): SkillManager {
+    return this.skillManager;
+  }
+
+  /**
    * 分析上下文并获取自动建议 (无需 Prompt)
    */
   async analyzeAndSuggest(): Promise<AutonomousAnalysisResult | null> {
@@ -1179,15 +1243,30 @@ export class Hawkeye extends EventEmitter {
     });
   }
 
+  // Store last screenshot for OCR events
+  private lastScreenshotData: {
+    thumbnail?: string;
+    width?: number;
+    height?: number;
+  } | null = null;
+
   private setupDebugEvents(): void {
     // 感知模块事件
     this.perception.on('screen:changed', (data) => {
+      // Store screenshot data for OCR events
+      const thumbnail = data.imageData ? `data:image/${data.format || 'png'};base64,${data.imageData}` : undefined;
+      this.lastScreenshotData = {
+        thumbnail,
+        width: data.dimensions?.width || 0,
+        height: data.dimensions?.height || 0,
+      };
+
       this.eventCollector.addScreenshot({
         width: data.dimensions?.width || 0,
         height: data.dimensions?.height || 0,
         size: data.imageData?.length,
         // Use the full image as thumbnail - can be resized in frontend
-        thumbnail: data.imageData ? `data:image/${data.format || 'png'};base64,${data.imageData}` : undefined,
+        thumbnail,
       });
     });
 
@@ -1198,6 +1277,16 @@ export class Hawkeye extends EventEmitter {
         confidence: data.confidence,
         backend: data.backend || 'unknown',
         duration: data.duration || 0,
+        // Include screenshot data for visualization
+        thumbnail: this.lastScreenshotData?.thumbnail,
+        screenshotWidth: this.lastScreenshotData?.width,
+        screenshotHeight: this.lastScreenshotData?.height,
+        // Include OCR regions for bounding box visualization
+        regions: data.regions?.map((r: any) => ({
+          text: r.text,
+          confidence: r.confidence,
+          bbox: r.bbox,
+        })),
       });
     });
 
@@ -1305,7 +1394,7 @@ export class Hawkeye extends EventEmitter {
       });
     });
 
-    this.planExecutor.on('execution:complete', (execution) => {
+    this.planExecutor.on('execution:complete', async (execution) => {
       this.eventCollector.addExecutionComplete({
         planId: execution.planId,
         executionId: execution.id,
@@ -1314,6 +1403,16 @@ export class Hawkeye extends EventEmitter {
         stepsCompleted: execution.completedSteps?.length || 0,
         stepsFailed: execution.failedSteps?.length || 0,
       });
+
+      // 触发 SEPO 优化
+      if (this.selfReflection && execution.plan) {
+        const result: ExecutionResult = {
+          success: execution.status === 'completed',
+          error: execution.error,
+          duration: (execution.completedAt || Date.now()) - execution.startedAt,
+        };
+        await this.selfReflection.optimizeProcess(execution.plan, result);
+      }
     });
 
     // 错误事件

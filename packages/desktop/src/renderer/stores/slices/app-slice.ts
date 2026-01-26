@@ -1,0 +1,38 @@
+import type { StateCreator } from 'zustand';
+import type { HawkeyeStore, AppSlice } from '../types';
+
+export const createAppSlice: StateCreator<HawkeyeStore, [], [], AppSlice> = (set) => ({
+  // Initial UI State
+  showSettings: false,
+  showModelSelector: false,
+  showChatDialog: false,
+  showDebugTimeline: false,
+  showOnboarding: false,
+  showScreenshotPreview: false,
+  isLoading: false,
+  modelTesting: false,
+  chatLoading: false,
+  screenshotZoomed: false,
+  autoScroll: true,
+
+  // Initial App Status
+  status: null,
+  smartObserveWatching: false,
+  screenshotPreview: null,
+  ocrTextPreview: null,
+
+  // Actions
+  setShowSettings: (show) => set({ showSettings: show }),
+  setShowModelSelector: (show) => set({ showModelSelector: show }),
+  setShowChatDialog: (show) => set({ showChatDialog: show }),
+  setShowDebugTimeline: (show) => set({ showDebugTimeline: show }),
+  setShowOnboarding: (show) => set({ showOnboarding: show }),
+  setShowScreenshotPreview: (show) => set({ showScreenshotPreview: show }),
+  setScreenshotZoomed: (zoomed) => set({ screenshotZoomed: zoomed }),
+  setModelTesting: (testing) => set({ modelTesting: testing }),
+  setChatLoading: (loading) => set({ chatLoading: loading }),
+  setStatus: (status) => set({ status }),
+  setSmartObserveWatching: (watching) => set({ smartObserveWatching: watching }),
+  setScreenshotPreview: (preview) => set({ screenshotPreview: preview }),
+  setOcrTextPreview: (text) => set({ ocrTextPreview: text }),
+});

@@ -11,6 +11,7 @@ import type { A2UICard, A2UIAction } from '@hawkeye/core';
 import { CardList, QuickActions, defaultQuickActions } from './components/A2UI';
 import type { QuickAction } from './components/A2UI';
 import { DebugTimeline } from './components/DebugTimeline';
+import { SettingsModal } from './components/SettingsModal';
 import logoIcon from './assets/icon.png';
 
 // Animation variants
@@ -2319,6 +2320,10 @@ export default function App() {
       <QuickActions actions={quickActions} onAction={handleQuickAction} />
 
       {/* 调试时间线面板 */}
+      <AnimatePresence>
+        {showSettings && <SettingsModal />}
+      </AnimatePresence>
+
       <AnimatePresence>
         {showDebugTimeline && (
           <motion.div

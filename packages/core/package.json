@@ -41,8 +41,10 @@
     "@anthropic-ai/sdk": "^0.32.0",
     "@types/ws": "^8.5.10",
     "agent-browser": "^0.7.0",
+    "better-sqlite3": "^12.6.2",
     "chokidar": "^3.5.3",
     "screenshot-desktop": "^1.15.0",
+    "sqlite-vec": "0.1.7-alpha.2",
     "temp": "^0.9.4",
     "uuid": "9.0.1",
     "ws": "^8.19.0"
@@ -51,6 +53,8 @@
     "@paddlejs-models/ocr": "^1.2.4"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.2",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.10.0",
     "@vitest/coverage-v8": "^2.0.0",
     "tsup": "^8.0.1",

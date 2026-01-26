@@ -170,6 +170,14 @@ export interface PlanStep {
   };
   /** 风险等级 */
   riskLevel: 'safe' | 'low' | 'medium' | 'high';
+  /** 预期状态 (用于视觉反馈) */
+  expectedState?: {
+    mustExist?: string[];
+    mustNotExist?: string[];
+    expectedText?: string[];
+    visualSimilarityThreshold?: number;
+    regionHash?: string;
+  };
 }
 
 export type ActionType =

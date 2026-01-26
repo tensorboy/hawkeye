@@ -21,7 +21,9 @@
     "package:linux": "electron-builder --linux",
     "lint": "eslint src/ || true",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist out"
+    "clean": "rm -rf dist out",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-rebuild -f -w better-sqlite3 || true"
   },
   "dependencies": {
     "@hawkeye/core": "workspace:*",
@@ -77,6 +79,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.2",
     "@types/node": "^20.10.0",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",

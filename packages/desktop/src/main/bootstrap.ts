@@ -11,10 +11,27 @@ if (process.env.ELECTRON_RUN_AS_NODE) {
   delete process.env.ELECTRON_RUN_AS_NODE;
 }
 
+// Handle EPIPE on stdout/stderr to prevent crashes when terminal closes
+// This is especially important when running in dev mode with electron-vite
+process.stdout?.on?.('error', (err: NodeJS.ErrnoException) => {
+  if (err.code !== 'EPIPE') throw err;
+});
+process.stderr?.on?.('error', (err: NodeJS.ErrnoException) => {
+  if (err.code !== 'EPIPE') throw err;
+});
+
 console.log('BOOTSTRAP: Starting...');
 
 // Set up global error handlers BEFORE anything else
 process.on('uncaughtException', (error) => {
+  // EPIPE errors are harmless - they occur when writing to a closed pipe
+  // (e.g., terminal closed, console.log to closed stdout)
+  // We should NOT crash the app or show a dialog for these
+  if ((error as NodeJS.ErrnoException).code === 'EPIPE') {
+    // Silently ignore EPIPE - it's expected when terminal closes
+    return;
+  }
+
   console.error('UNCAUGHT EXCEPTION:', error.message);
   console.error('Stack:', error.stack);
   try {

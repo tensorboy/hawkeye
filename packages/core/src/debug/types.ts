@@ -56,6 +56,18 @@ export interface OCREventData {
   confidence?: number;
   backend: 'system' | 'tesseract' | 'vision' | 'unknown';
   duration: number; // ms
+  /** Screenshot thumbnail (base64 data URL) - the source image that was OCR'd */
+  thumbnail?: string;
+  /** Screenshot dimensions */
+  screenshotWidth?: number;
+  screenshotHeight?: number;
+  /** OCR regions with bounding boxes for visualization */
+  regions?: Array<{
+    text: string;
+    confidence: number;
+    /** Bounding box [x, y, width, height] in pixels */
+    bbox: [number, number, number, number];
+  }>;
 }
 
 export interface ClipboardEventData {
