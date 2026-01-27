@@ -259,7 +259,7 @@ export const ArchitectureDiagram: React.FC = () => {
           frame={frame}
           fps={fps}
           color={theme.colors.primary}
-          subItems={["Claude / Ollama", "Intent Detection"]}
+          subItems={["Claude / Local LLM", "Intent Detection"]}
         />
         <ArchBlock
           label="Execution"

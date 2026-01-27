@@ -16,7 +16,8 @@ export type DebugEventType =
   | 'execution_start'
   | 'execution_step'
   | 'execution_complete'
-  | 'error';
+  | 'error'
+  | 'speech_segment';
 
 export interface DebugEvent {
   id: string;
@@ -40,7 +41,8 @@ export type DebugEventData =
   | ExecutionStartEventData
   | ExecutionStepEventData
   | ExecutionCompleteEventData
-  | ErrorEventData;
+  | ErrorEventData
+  | SpeechSegmentEventData;
 
 export interface ScreenshotEventData {
   width: number;
@@ -163,6 +165,13 @@ export interface ErrorEventData {
   code?: string;
   source?: string;
   stack?: string;
+}
+
+export interface SpeechSegmentEventData {
+  text: string;
+  language?: string;
+  confidence?: number;
+  speakerTurn?: boolean;
 }
 
 export interface EventCollectorConfig {

@@ -26,8 +26,6 @@ export interface WindowInfo {
 
 export interface AppConfig {
   aiProvider: string;
-  ollamaHost?: string;
-  ollamaModel?: string;
   geminiApiKey?: string;
   geminiModel?: string;
   geminiBaseUrl?: string;

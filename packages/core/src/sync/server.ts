@@ -4,6 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { randomBytes } from 'crypto';
 import type {
   SyncConfig,
   SyncMessage,
@@ -50,12 +51,20 @@ export class SyncServer extends EventEmitter {
     super();
     this.config = {
       port: 9527,
-      authToken: '',
+      authToken: config.authToken || randomBytes(32).toString('hex'),
       heartbeatInterval: 30000,
       maxReconnectAttempts: 5,
       reconnectDelay: 1000,
       ...config,
     };
+    // Ensure authToken is never empty — auto-generate if missing
+    if (!this.config.authToken) {
+      this.config.authToken = randomBytes(32).toString('hex');
+    }
+  }
+
+  getAuthToken(): string {
+    return this.config.authToken;
   }
 
   /**

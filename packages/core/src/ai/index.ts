@@ -19,10 +19,10 @@ export type {
   ActionType,
   AlternativePlan,
   PlanImpact,
+  AIRetryConfig,
 } from './types';
 
 // Provider 导出
-export { OllamaProvider, type OllamaConfig } from './providers/ollama';
 export { GeminiProvider, type GeminiConfig } from './providers/gemini';
 export { OpenAICompatibleProvider, type OpenAICompatibleConfig } from './providers/openai-compatible';
 

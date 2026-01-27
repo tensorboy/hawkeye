@@ -266,7 +266,7 @@ export class ElementDetector {
           if (!sorted[i].children) {
             sorted[i].children = [];
           }
-          sorted[i].children.push(sorted[j].id);
+          sorted[i].children!.push(sorted[j].id);
         }
       }
     }

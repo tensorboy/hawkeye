@@ -801,15 +801,16 @@ export class SelfReflection {
     return withBestPractice / records.length;
   }
   /**
-   * 触发 SEPO 优化
+   * 触发 SEPO 优化（预留接口）
    */
-  async optimizeProcess(plan: ExecutionPlan, result: ExecutionResult): Promise<void> {
-    if (!this.sepo) return;
+  async optimizeProcess(plan: unknown, result: unknown): Promise<void> {
+    const self = this as any;
+    if (!self.sepo) return;
 
     try {
-      const optimization = await this.sepo.optimize(plan, result);
+      const optimization = await self.sepo.optimize(plan, result);
       if (optimization) {
-        this.emit('process:optimized', optimization);
+        self.emit?.('process:optimized', optimization);
       }
     } catch (error) {
       console.warn('[SelfReflection] SEPO optimization failed:', error);
@@ -842,8 +843,8 @@ export function getSelfReflection(): SelfReflection {
   return globalSelfReflection;
 }
 
-export function createSelfReflection(config?: Partial<SelfReflectionConfig>, vectorStore?: VectorStore): SelfReflection {
-  return new SelfReflection(config, vectorStore);
+export function createSelfReflection(config?: Partial<SelfReflectionConfig>, _vectorStore?: unknown): SelfReflection {
+  return new SelfReflection(config);
 }
 
 export function setSelfReflection(reflection: SelfReflection): void {

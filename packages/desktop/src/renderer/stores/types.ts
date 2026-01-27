@@ -1,54 +1,28 @@
 import type { A2UICard } from '@hawkeye/core';
+import type {
+  UserIntent,
+  ExecutionPlan,
+  PlanExecution,
+  ExecutionHistoryItem,
+  HawkeyeStatus,
+  AppConfig,
+  ChatMessage,
+  InstalledModel,
+  ModelPullProgress,
+} from '../../shared/types';
 
-export interface HawkeyeStatus {
-  initialized: boolean;
-  aiReady: boolean;
-  aiProvider: string | null;
-  syncRunning: boolean;
-  syncPort: number | null;
-  connectedClients: number;
-}
-
-export interface AppConfig {
-  aiProvider: 'ollama' | 'gemini' | 'openai';
-  ollamaHost?: string;
-  ollamaModel?: string;
-  geminiApiKey?: string;
-  geminiModel?: string;
-  geminiBaseUrl?: string;
-  openaiBaseUrl?: string;
-  openaiApiKey?: string;
-  openaiModel?: string;
-  syncPort: number;
-  autoStartSync: boolean;
-  autoUpdate: boolean;
-  localOnly: boolean;
-  hasOllama: boolean;
-  hasGemini: boolean;
-  localOnlyRecommendedModel?: string;
-  localOnlyAlternatives?: string[];
-  smartObserve: boolean;
-  smartObserveInterval: number;
-  smartObserveThreshold: number;
-  onboardingCompleted?: boolean;
-
-  // Skill Configs
-  tavilyApiKey?: string;
-}
-
-export interface OllamaModel {
-  name: string;
-  id: string;
-  size: string;
-  modified: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-}
+// Re-export shared types as the single source of truth
+export type {
+  UserIntent,
+  ExecutionPlan,
+  PlanExecution,
+  ExecutionHistoryItem,
+  HawkeyeStatus,
+  AppConfig,
+  ChatMessage,
+  InstalledModel,
+  ModelPullProgress,
+};
 
 export interface AppSlice {
   // UI State
@@ -70,6 +44,16 @@ export interface AppSlice {
   screenshotPreview: string | null;
   ocrTextPreview: string | null;
 
+  // Onboarding State
+  onboardingLoading: boolean;
+  selectedOnboardingModel: string;
+  onboardingError: string | null;
+  onboardingMode: 'choose' | 'local' | 'cloud';
+
+  // Model State
+  installedModels: InstalledModel[];
+  modelPullProgress: ModelPullProgress | null;
+
   // Actions
   setShowSettings: (show: boolean) => void;
   setShowModelSelector: (show: boolean) => void;
@@ -84,30 +68,24 @@ export interface AppSlice {
   setSmartObserveWatching: (watching: boolean) => void;
   setScreenshotPreview: (preview: string | null) => void;
   setOcrTextPreview: (text: string | null) => void;
+  setOnboardingLoading: (loading: boolean) => void;
+  setSelectedOnboardingModel: (model: string) => void;
+  setOnboardingError: (error: string | null) => void;
+  setOnboardingMode: (mode: 'choose' | 'local' | 'cloud') => void;
+  setInstalledModels: (models: InstalledModel[]) => void;
+  setModelPullProgress: (progress: ModelPullProgress | null) => void;
 }
 
 export interface ConfigSlice {
   config: AppConfig | null;
   tempConfig: Partial<AppConfig>;
 
-  // Ollama
-  ollamaStatus: { installed: boolean; running: boolean } | null;
-  installedModels: OllamaModel[];
-  modelPullProgress: {
-    model: string;
-    progress: number;
-    output: string;
-    isDownloading: boolean;
-  } | null;
   modelTestResult: { success: boolean; error?: string } | null;
 
   // Actions
   setConfig: (config: AppConfig | null) => void;
   setTempConfig: (config: Partial<AppConfig>) => void;
   updateTempConfig: (updates: Partial<AppConfig>) => void;
-  setOllamaStatus: (status: { installed: boolean; running: boolean } | null) => void;
-  setInstalledModels: (models: OllamaModel[]) => void;
-  setModelPullProgress: (progress: ConfigSlice['modelPullProgress']) => void;
   setModelTestResult: (result: ConfigSlice['modelTestResult']) => void;
 }
 
@@ -127,4 +105,28 @@ export interface IntentSlice {
   clearCardsByType: (type: string) => void;
 }
 
-export type HawkeyeStore = AppSlice & ConfigSlice & IntentSlice;
+export interface ExecutionSlice {
+  currentPlan: ExecutionPlan | null;
+  currentExecution: PlanExecution | null;
+
+  // Actions
+  setCurrentPlan: (plan: ExecutionPlan | null) => void;
+  setCurrentExecution: (execution: PlanExecution | null) => void;
+}
+
+export interface LifeTreeSlice {
+  lifeTree: any | null;
+  lifeTreeLoading: boolean;
+  lifeTreeError: string | null;
+  selectedNodeId: string | null;
+  expandedNodeIds: Set<string>;
+  showLifeTree: boolean;
+
+  setShowLifeTree: (show: boolean) => void;
+  setSelectedNodeId: (id: string | null) => void;
+  toggleNodeExpanded: (id: string) => void;
+  fetchLifeTree: () => Promise<void>;
+  rebuildLifeTree: () => Promise<void>;
+}
+
+export type HawkeyeStore = AppSlice & ConfigSlice & IntentSlice & ExecutionSlice & LifeTreeSlice;

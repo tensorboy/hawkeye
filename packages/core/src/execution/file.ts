@@ -1,16 +1,39 @@
 /**
- * 文件操作执行器
+ * 文件操作执行器 - 集成 FileSystemGuard 进行路径安全校验
  */
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { ExecutionResult } from '../types';
+import { getFileSystemGuard, type FileSystemGuard } from '../security/filesystem-guard';
+import type { FileSystemOperation } from '../security/types';
 
 export class FileExecutor {
+  private guard: FileSystemGuard;
+
+  constructor(guard?: FileSystemGuard) {
+    this.guard = guard || getFileSystemGuard();
+  }
+
+  private checkAccess(targetPath: string, operation: FileSystemOperation): ExecutionResult | null {
+    const result = this.guard.checkAccess(targetPath, operation);
+    if (!result.allowed) {
+      return {
+        success: false,
+        error: `Access denied: ${result.reason} (path: ${targetPath})`,
+        duration: 0,
+      };
+    }
+    return null;
+  }
+
   /**
    * 读取文件
    */
   async read(filePath: string): Promise<ExecutionResult> {
+    const denied = this.checkAccess(filePath, 'read');
+    if (denied) return denied;
+
     const startTime = Date.now();
     try {
       const content = await fs.readFile(filePath, 'utf-8');
@@ -32,6 +55,9 @@ export class FileExecutor {
    * 写入文件
    */
   async write(filePath: string, content: string): Promise<ExecutionResult> {
+    const denied = this.checkAccess(filePath, 'write');
+    if (denied) return denied;
+
     const startTime = Date.now();
     try {
       // 确保目录存在
@@ -55,6 +81,9 @@ export class FileExecutor {
    * 追加内容到文件
    */
   async append(filePath: string, content: string): Promise<ExecutionResult> {
+    const denied = this.checkAccess(filePath, 'write');
+    if (denied) return denied;
+
     const startTime = Date.now();
     try {
       await fs.appendFile(filePath, content, 'utf-8');
@@ -76,6 +105,9 @@ export class FileExecutor {
    * 删除文件
    */
   async delete(filePath: string): Promise<ExecutionResult> {
+    const denied = this.checkAccess(filePath, 'delete');
+    if (denied) return denied;
+
     const startTime = Date.now();
     try {
       await fs.unlink(filePath);
@@ -97,6 +129,11 @@ export class FileExecutor {
    * 复制文件
    */
   async copy(source: string, destination: string): Promise<ExecutionResult> {
+    const deniedSrc = this.checkAccess(source, 'read');
+    if (deniedSrc) return deniedSrc;
+    const deniedDst = this.checkAccess(destination, 'write');
+    if (deniedDst) return deniedDst;
+
     const startTime = Date.now();
     try {
       await fs.mkdir(path.dirname(destination), { recursive: true });
@@ -119,6 +156,11 @@ export class FileExecutor {
    * 移动/重命名文件
    */
   async move(source: string, destination: string): Promise<ExecutionResult> {
+    const deniedSrc = this.checkAccess(source, 'move');
+    if (deniedSrc) return deniedSrc;
+    const deniedDst = this.checkAccess(destination, 'write');
+    if (deniedDst) return deniedDst;
+
     const startTime = Date.now();
     try {
       await fs.mkdir(path.dirname(destination), { recursive: true });
@@ -153,6 +195,9 @@ export class FileExecutor {
    * 创建目录
    */
   async createDir(dirPath: string): Promise<ExecutionResult> {
+    const denied = this.checkAccess(dirPath, 'create');
+    if (denied) return denied;
+
     const startTime = Date.now();
     try {
       await fs.mkdir(dirPath, { recursive: true });
@@ -174,6 +219,9 @@ export class FileExecutor {
    * 删除目录
    */
   async deleteDir(dirPath: string): Promise<ExecutionResult> {
+    const denied = this.checkAccess(dirPath, 'delete');
+    if (denied) return denied;
+
     const startTime = Date.now();
     try {
       await fs.rm(dirPath, { recursive: true, force: true });
@@ -195,6 +243,9 @@ export class FileExecutor {
    * 列出目录内容
    */
   async listDir(dirPath: string): Promise<ExecutionResult> {
+    const denied = this.checkAccess(dirPath, 'list');
+    if (denied) return denied;
+
     const startTime = Date.now();
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });

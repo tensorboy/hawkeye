@@ -1744,24 +1744,6 @@ body {
   border-radius: 4px;
 }
 
-/* Ollama Status */
-.ollama-status {
-  margin-left: 12px;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 4px;
-}
-
-.ollama-status.running {
-  background: rgba(0, 217, 165, 0.1);
-  color: var(--success);
-}
-
-.ollama-status.stopped {
-  background: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
-}
-
 .btn-small {
   padding: 6px 12px;
   font-size: 12px;
@@ -2444,80 +2426,6 @@ body {
     font-size: 12px;
     margin-bottom: 8px;
   }
-}
-
-/* ========== Ollama Download Progress ========== */
-
-.ollama-download-progress {
-  margin: 20px 0;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  border: 1px solid var(--border);
-}
-
-.ollama-download-progress .progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.ollama-download-progress .progress-bar {
-  height: 8px;
-  background: var(--bg-card);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.ollama-download-progress .progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.ollama-download-progress .progress-info {
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-align: center;
-}
-
-.ollama-download-progress .installing-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.ollama-download-progress .installing-status .spinner {
-  width: 20px;
-  height: 20px;
-  border-width: 2px;
-}
-
-.ollama-download-progress .install-done {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  color: var(--success);
-}
-
-.ollama-download-progress .install-done .btn {
-  margin-top: 8px;
-}
-
-.ollama-download-progress .install-error {
-  font-size: 13px;
-  color: var(--accent);
-  text-align: center;
 }
 
 /* ========== Chat Dialog ========== */

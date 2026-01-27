@@ -11,7 +11,6 @@ export * from './reasoning';
 
 // AI 模块 (export with aliases to avoid conflicts)
 export {
-  OllamaProvider,
   GeminiProvider,
   OpenAICompatibleProvider,
   AIManager,
@@ -35,15 +34,26 @@ export {
   type PlanStep,
   type AlternativePlan,
   type PlanImpact,
-  type OllamaConfig,
   type GeminiConfig,
   type OpenAICompatibleConfig,
   type AIManagerConfig,
+  type AIRetryConfig,
   type ContextCompressorConfig,
   type ContextChunk,
   type ContextPriority,
   type CompressedContext,
 } from './ai';
+
+// 工具模块 (参考 steipete 项目模式)
+export {
+  DEFAULT_RETRY_CONFIG,
+  calculateBackoffDelay,
+  executeWithBackoff,
+  executeWithBackoffAndAbort,
+  withTimeout,
+  RetryStrategy,
+  type RetryConfig,
+} from './utils';
 
 // ActionType from AI module (renamed to avoid conflict)
 export type { ActionType as AIActionType } from './ai';
@@ -336,6 +346,28 @@ export {
   type EventFilter,
 } from './debug';
 
+// 优先级任务队列 (参考 steipete/poltergeist)
+export {
+  TaskQueue,
+  getTaskQueue,
+  createTaskQueue,
+  TaskPriority,
+  TaskStatus as QueueTaskStatus,
+  DEFAULT_QUEUE_CONFIG,
+  type QueuedTask,
+  type RunningTask,
+  type TaskResult as QueueTaskResult,
+  type TaskQueueConfig,
+  type TaskExecutor,
+  type TaskExecutionContext,
+  type TaskType as QueueTaskType,
+  type TaskQueueEvents,
+  type PlanExecutionTaskData,
+  type StepExecutionTaskData,
+  type AIRequestTaskData,
+  type PerceptionTaskData,
+} from './queue';
+
 // 新版统一引擎
 export {
   Hawkeye,
@@ -344,3 +376,68 @@ export {
   getHawkeye,
   createHawkeye,
 } from './hawkeye';
+
+// MCP 工具类型
+export {
+  type MCPTool,
+  type ToolResult,
+  type MCPResource,
+  type MCPPrompt,
+  type JSONSchema,
+  type ToolPermission,
+} from './mcp/tool-types';
+
+// MCP 内置工具集
+export {
+  ALL_BUILTIN_TOOLS,
+  TOOL_CATEGORIES,
+  registerBuiltinTools,
+} from './mcp/builtin-tools';
+
+// 内置技能/工具
+export {
+  WebSearchTool,
+  type WebSearchConfig,
+} from './skills/builtin/web-search';
+
+// 人生树模块 (Life Tree)
+export {
+  LifeTreeBuilder,
+  ExperimentEngine,
+  LIFE_STAGES,
+  LIFE_STAGE_LABELS,
+  APP_STAGE_HEURISTICS,
+  DEFAULT_LIFE_TREE_CONFIG,
+  LIFE_TREE_SYSTEM_PROMPT,
+  buildClassificationPrompt,
+  buildGoalInferencePrompt,
+  buildExperimentProposalPrompt,
+  buildTreeSummaryPrompt,
+  type LifeTreeNodeType,
+  type NodeStatus,
+  type ExperimentStatus,
+  type ExperimentPhase,
+  type DataSource,
+  type LifeStage,
+  type LifeTreeNode,
+  type LifeTreeNodeMetadata,
+  type ExperimentConfig,
+  type AutomationStep,
+  type ExperimentResult,
+  type LifeTree,
+  type LifeTreeStats,
+  type LifeTreeNodeRecord,
+  type LifeTreeSnapshotRecord,
+  type ExperimentRecord,
+  type LifeTreeConfig,
+  type StageClassification,
+  type GoalInference,
+  type ExperimentProposal,
+} from './life-tree';
+
+// 存储模块
+export {
+  type ContextRecord,
+  type DatabaseConfig,
+  type HawkeyeDatabase,
+} from './storage/database';

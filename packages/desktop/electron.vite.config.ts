@@ -9,7 +9,7 @@ export default defineConfig({
           bootstrap: 'src/main/bootstrap.ts',
           index: 'src/main/index.ts',
         },
-        external: ['@hawkeye/core'],
+        external: ['@hawkeye/core', 'node-llama-cpp'],
       },
     },
   },

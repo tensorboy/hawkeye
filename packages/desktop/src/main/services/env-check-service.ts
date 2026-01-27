@@ -1,10 +1,14 @@
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+/** Validate a pip package name to prevent command injection */
+const VALID_PACKAGE_NAME = /^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$/;
 
 export interface PythonEnvironment {
   path: string;
@@ -126,11 +130,17 @@ export class EnvCheckService {
   async installPackages(packages: string[]): Promise<boolean> {
     if (!this.pythonEnv || packages.length === 0) return false;
 
+    // Validate all package names to prevent command injection
+    const invalid = packages.filter(p => !VALID_PACKAGE_NAME.test(p));
+    if (invalid.length > 0) {
+      this.debugLog(`[EnvCheck] Rejected invalid package names: ${invalid.join(', ')}`);
+      return false;
+    }
+
     this.debugLog(`[EnvCheck] Installing packages: ${packages.join(', ')}`);
-    const packagesStr = packages.join(' ');
 
     try {
-      await execAsync(`${this.pythonEnv.path} -m pip install --user ${packagesStr}`);
+      await execFileAsync(this.pythonEnv.path, ['-m', 'pip', 'install', '--user', ...packages]);
       await this.refreshPackageList();
       return true;
     } catch (e) {

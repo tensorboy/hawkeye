@@ -10,10 +10,15 @@ import type {
   AIProviderConfig,
   AIMessage,
   AIResponse,
+  AIRetryConfig,
+  AIStreamCallback,
+  ProviderCapabilities,
+  ProviderHealthStatus,
 } from './types';
-import { OllamaProvider, type OllamaConfig } from './providers/ollama';
 import { GeminiProvider, type GeminiConfig } from './providers/gemini';
 import { OpenAICompatibleProvider, type OpenAICompatibleConfig } from './providers/openai-compatible';
+import { LlamaCppProvider, type LlamaCppConfig } from './providers/llama-cpp';
+import { calculateBackoffDelay, DEFAULT_RETRY_CONFIG } from '../utils/retry-strategy';
 
 // ============ Provider 注册表 (LiteLLM 模式) ============
 
@@ -88,8 +93,8 @@ class ProviderRegistry {
    * 注册内置 Provider
    */
   private registerBuiltinProviders(): void {
-    // Ollama - 本地 LLM
-    this.register('ollama', (config) => new OllamaProvider(config as OllamaConfig));
+    // LlamaCpp - 本地 LLM (推荐)
+    this.register('llama-cpp', (config) => new LlamaCppProvider(config as LlamaCppConfig));
 
     // Gemini - Google AI
     this.register('gemini', (config) => new GeminiProvider(config as GeminiConfig));
@@ -172,9 +177,18 @@ export interface AIManagerConfig {
   preferredProvider?: AIProviderType;
   /** 是否启用故障转移 */
   enableFailover?: boolean;
-  /** 重试次数 */
+  /**
+   * 重试策略配置 (指数退避)
+   * 参考 steipete/wacli 的 ReconnectWithBackoff 模式
+   */
+  retry?: AIRetryConfig;
+  /**
+   * @deprecated 使用 retry.maxRetries 代替
+   */
   retryCount?: number;
-  /** 重试延迟 (ms) */
+  /**
+   * @deprecated 使用 retry.minDelay 代替
+   */
   retryDelay?: number;
 }
 
@@ -185,20 +199,36 @@ interface ProviderEntry {
   lastError?: Error;
 }
 
+/** 内部使用的完整配置类型 */
+interface ResolvedAIManagerConfig {
+  providers: AIProviderConfig[];
+  preferredProvider: AIProviderType;
+  enableFailover: boolean;
+  retry: Required<AIRetryConfig>;
+}
+
 export class AIManager extends EventEmitter {
   private providers: Map<AIProviderType, ProviderEntry> = new Map();
-  private config: Required<AIManagerConfig>;
+  private config: ResolvedAIManagerConfig;
   private currentProvider: AIProviderType | null = null;
   private _isReady: boolean = false;
 
   constructor(config: AIManagerConfig) {
     super();
+    // 合并重试配置，支持旧的 retryCount/retryDelay 兼容
+    const retryConfig: Required<AIRetryConfig> = {
+      minDelay: config.retry?.minDelay ?? config.retryDelay ?? DEFAULT_RETRY_CONFIG.minDelay,
+      maxDelay: config.retry?.maxDelay ?? DEFAULT_RETRY_CONFIG.maxDelay,
+      multiplier: config.retry?.multiplier ?? DEFAULT_RETRY_CONFIG.multiplier,
+      jitter: config.retry?.jitter ?? DEFAULT_RETRY_CONFIG.jitter,
+      maxRetries: config.retry?.maxRetries ?? config.retryCount ?? DEFAULT_RETRY_CONFIG.maxRetries,
+    };
+
     this.config = {
-      preferredProvider: 'ollama',
-      enableFailover: true,
-      retryCount: 2,
-      retryDelay: 1000,
-      ...config,
+      providers: config.providers,
+      preferredProvider: config.preferredProvider ?? 'llama-cpp',
+      enableFailover: config.enableFailover ?? true,
+      retry: retryConfig,
     };
   }
 
@@ -376,6 +406,88 @@ export class AIManager extends EventEmitter {
   }
 
   /**
+   * 流式对话 (通过当前 Provider)
+   */
+  async chatStream(messages: AIMessage[], callback: AIStreamCallback): Promise<void> {
+    if (!this.currentProvider) {
+      callback({ type: 'error', error: '没有可用的 AI Provider' });
+      return;
+    }
+
+    const entry = this.providers.get(this.currentProvider);
+    if (!entry?.provider.chatStream) {
+      callback({ type: 'error', error: `Provider ${this.currentProvider} 不支持流式输出` });
+      return;
+    }
+
+    await entry.provider.chatStream(messages, callback);
+  }
+
+  /**
+   * 获取当前 Provider 能力
+   */
+  getCapabilities(): ProviderCapabilities | null {
+    if (!this.currentProvider) return null;
+    return this.providers.get(this.currentProvider)?.provider.capabilities || null;
+  }
+
+  /**
+   * 获取所有 Provider 能力
+   */
+  getAllCapabilities(): Record<AIProviderType, ProviderCapabilities> {
+    const result: Record<string, ProviderCapabilities> = {};
+    for (const [type, entry] of this.providers) {
+      result[type] = entry.provider.capabilities;
+    }
+    return result;
+  }
+
+  /**
+   * 健康检查当前 Provider
+   */
+  async healthCheck(): Promise<ProviderHealthStatus | null> {
+    if (!this.currentProvider) return null;
+    const entry = this.providers.get(this.currentProvider);
+    if (!entry?.provider.healthCheck) return null;
+    return entry.provider.healthCheck();
+  }
+
+  /**
+   * 健康检查所有 Provider
+   */
+  async healthCheckAll(): Promise<Record<AIProviderType, ProviderHealthStatus>> {
+    const result: Record<string, ProviderHealthStatus> = {};
+    const checks = Array.from(this.providers.entries()).map(async ([type, entry]) => {
+      if (entry.provider.healthCheck) {
+        result[type] = await entry.provider.healthCheck();
+      } else {
+        result[type] = {
+          healthy: entry.provider.isAvailable,
+          latencyMs: 0,
+          message: entry.provider.isAvailable ? 'Available (no health check)' : 'Not available',
+          checkedAt: Date.now(),
+        };
+      }
+    });
+    await Promise.all(checks);
+    return result;
+  }
+
+  /**
+   * 根据能力选择 Provider
+   * 例如: findProviderWithCapability('vision') 返回支持视觉的 Provider
+   */
+  findProviderWithCapability(capability: keyof ProviderCapabilities): AIProviderType | null {
+    for (const type of AIManager.DEFAULT_PRIORITY) {
+      const entry = this.providers.get(type);
+      if (entry?.provider.isAvailable && entry.provider.capabilities[capability]) {
+        return type;
+      }
+    }
+    return null;
+  }
+
+  /**
    * 终止所有 Provider
    */
   async terminate(): Promise<void> {
@@ -405,7 +517,7 @@ export class AIManager extends EventEmitter {
    * Provider 优先级列表 - 可通过配置扩展
    */
   private static readonly DEFAULT_PRIORITY: AIProviderType[] = [
-    'ollama', 'gemini', 'claude', 'openai', 'deepseek',
+    'llama-cpp', 'gemini', 'claude', 'openai', 'deepseek',
     'qwen', 'doubao', 'groq', 'together', 'fireworks', 'mistral'
   ];
 
@@ -461,8 +573,9 @@ export class AIManager extends EventEmitter {
         break;
       }
 
-      // 重试逻辑
-      for (let attempt = 0; attempt <= this.config.retryCount; attempt++) {
+      // 重试逻辑 (指数退避)
+      const { maxRetries } = this.config.retry;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
           const response = method === 'chatWithVision'
             ? await entry.provider.chatWithVision(messages, images!)
@@ -476,15 +589,19 @@ export class AIManager extends EventEmitter {
           entry.failureCount++;
           entry.lastError = lastError;
 
+          // 计算指数退避延迟
+          const delay = calculateBackoffDelay(attempt, this.config.retry);
+
           this.emit('provider:error', {
             type: providerType,
             error: lastError,
             attempt: attempt + 1,
+            nextRetryDelay: attempt < maxRetries ? delay : undefined,
           });
 
-          // 如果还有重试次数，等待后重试
-          if (attempt < this.config.retryCount) {
-            await this.delay(this.config.retryDelay * (attempt + 1));
+          // 如果还有重试次数，等待后重试 (指数退避 + 抖动)
+          if (attempt < maxRetries) {
+            await this.delay(delay);
           }
         }
       }

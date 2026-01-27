@@ -357,7 +357,7 @@ function SettingsModal({ config, onClose, onSave }: SettingsModalProps) {
                 }
               >
                 <option value="gemini">Google Gemini</option>
-                <option value="ollama">Ollama (Local)</option>
+                <option value="llama-cpp">Local LLM (LlamaCpp)</option>
                 <option value="openai">OpenAI Compatible</option>
               </select>
             </div>
@@ -397,40 +397,6 @@ function SettingsModal({ config, onClose, onSave }: SettingsModalProps) {
               </>
             )}
 
-            {localConfig.aiProvider === 'ollama' && (
-              <>
-                <div className="form-group">
-                  <label className="form-label">Host</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={localConfig.ollamaHost || ''}
-                    onChange={(e) =>
-                      setLocalConfig({
-                        ...localConfig,
-                        ollamaHost: e.target.value,
-                      })
-                    }
-                    placeholder="http://localhost:11434"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Model</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={localConfig.ollamaModel || ''}
-                    onChange={(e) =>
-                      setLocalConfig({
-                        ...localConfig,
-                        ollamaModel: e.target.value,
-                      })
-                    }
-                    placeholder="qwen3-vl:2b"
-                  />
-                </div>
-              </>
-            )}
 
             {localConfig.aiProvider === 'openai' && (
               <>

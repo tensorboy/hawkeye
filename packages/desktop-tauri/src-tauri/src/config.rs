@@ -9,12 +9,8 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppConfig {
-    /// AI provider type: "ollama", "gemini", or "openai"
+    /// AI provider type: "llama-cpp", "gemini", or "openai"
     pub ai_provider: String,
-
-    /// Ollama settings
-    pub ollama_host: Option<String>,
-    pub ollama_model: Option<String>,
 
     /// Gemini settings
     pub gemini_api_key: Option<String>,
@@ -40,8 +36,6 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             ai_provider: "gemini".to_string(),
-            ollama_host: Some("http://localhost:11434".to_string()),
-            ollama_model: Some("qwen3-vl:2b".to_string()),
             gemini_api_key: None,
             gemini_model: Some("gemini-2.5-flash-preview-05-20".to_string()),
             gemini_base_url: None,

@@ -4,9 +4,6 @@ import type { HawkeyeStore, ConfigSlice } from '../types';
 export const createConfigSlice: StateCreator<HawkeyeStore, [], [], ConfigSlice> = (set) => ({
   config: null,
   tempConfig: {},
-  ollamaStatus: null,
-  installedModels: [],
-  modelPullProgress: null,
   modelTestResult: null,
 
   setConfig: (config) => set({ config, tempConfig: config || {} }),
@@ -14,8 +11,5 @@ export const createConfigSlice: StateCreator<HawkeyeStore, [], [], ConfigSlice> 
   updateTempConfig: (updates) => set((state) => ({
     tempConfig: { ...state.tempConfig, ...updates }
   })),
-  setOllamaStatus: (status) => set({ ollamaStatus: status }),
-  setInstalledModels: (models) => set({ installedModels: models }),
-  setModelPullProgress: (progress) => set({ modelPullProgress: progress }),
   setModelTestResult: (result) => set({ modelTestResult: result }),
 });

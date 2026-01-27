@@ -2,6 +2,12 @@ import { ipcMain, desktopCapturer } from 'electron';
 import type { HawkeyeService } from '../services/hawkeye-service';
 import type { ConfigService } from '../services/config-service';
 import { nativeImage } from 'electron';
+import {
+  AdaptiveRefreshService,
+  createAdaptiveRefreshService,
+  getAdaptiveRefreshService,
+  type ActivityLevel,
+} from '../services/adaptive-refresh-service';
 
 export function registerSmartObserveHandlers(
   hawkeyeService: HawkeyeService,
@@ -12,6 +18,34 @@ export function registerSmartObserveHandlers(
   let lastScreenHash: string | null = null;
   let isWatching = false;
   let isSmartObserveRunning = false;
+
+  // 初始化自适应刷新服务 (参考 steipete/VibeMeter)
+  const adaptiveRefresh = createAdaptiveRefreshService({
+    enabled: true,
+    minInterval: 1000,   // 高活跃: 1秒
+    maxInterval: 10000,  // 空闲: 10秒
+    defaultInterval: configService.getConfig().smartObserveInterval,
+  });
+
+  // 监听间隔变化，动态调整
+  adaptiveRefresh.setOnIntervalChange((newInterval, level) => {
+    if (isWatching && screenWatcherInterval) {
+      debugLog(`Adaptive refresh: interval=${newInterval}ms, level=${level}`);
+      // 重新设置定时器
+      clearInterval(screenWatcherInterval);
+      screenWatcherInterval = setInterval(smartObserveCheck, newInterval);
+
+      // 通知前端
+      const mainWindow = mainWindowGetter();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('smart-observe-interval-changed', {
+          interval: newInterval,
+          level,
+          activityScore: adaptiveRefresh.getActivityScore(),
+        });
+      }
+    }
+  });
 
   function debugLog(msg: string) {
     console.log(`[SmartObserve] ${msg}`);
@@ -87,6 +121,9 @@ export function registerSmartObserveHandlers(
         debugLog(`Change detected: ${(changeRatio * 100).toFixed(1)}%`);
         lastScreenHash = currentHash;
 
+        // 记录屏幕变化活动，触发自适应刷新
+        adaptiveRefresh.recordActivity('screen_change', changeRatio);
+
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('smart-observe-change-detected');
         }
@@ -110,7 +147,14 @@ export function registerSmartObserveHandlers(
 
     isWatching = true;
     lastScreenHash = null;
-    screenWatcherInterval = setInterval(smartObserveCheck, config.smartObserveInterval);
+
+    // 启动自适应刷新服务
+    adaptiveRefresh.start();
+
+    // 使用自适应刷新当前间隔（初始为默认间隔）
+    const initialInterval = adaptiveRefresh.getCurrentInterval();
+    screenWatcherInterval = setInterval(smartObserveCheck, initialInterval);
+    debugLog(`Started with adaptive interval: ${initialInterval}ms`);
 
     const mainWindow = mainWindowGetter();
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -123,6 +167,10 @@ export function registerSmartObserveHandlers(
       clearInterval(screenWatcherInterval);
       screenWatcherInterval = null;
     }
+
+    // 停止自适应刷新服务
+    adaptiveRefresh.stop();
+
     isWatching = false;
     isSmartObserveRunning = false;
     lastScreenHash = null;
@@ -150,11 +198,20 @@ export function registerSmartObserveHandlers(
 
   ipcMain.handle('get-smart-observe-status', () => {
     const config = configService.getConfig();
+    const adaptiveStatus = adaptiveRefresh.getStatus();
     return {
       watching: isWatching,
       interval: config.smartObserveInterval,
       threshold: config.smartObserveThreshold,
       enabled: config.smartObserve,
+      // 自适应刷新状态
+      adaptive: {
+        enabled: adaptiveStatus.enabled,
+        currentInterval: adaptiveStatus.currentInterval,
+        activityLevel: adaptiveStatus.activityLevel,
+        activityScore: adaptiveStatus.activityScore,
+        recentActivityCount: adaptiveStatus.recentActivityCount,
+      },
     };
   });
 
@@ -162,6 +219,21 @@ export function registerSmartObserveHandlers(
     if (isWatching) stopSmartObserve();
     else startSmartObserve();
     return { watching: isWatching };
+  });
+
+  // 自适应刷新状态 IPC
+  ipcMain.handle('get-adaptive-refresh-status', () => {
+    return adaptiveRefresh.getStatus();
+  });
+
+  // 记录用户交互活动（提升活跃度）
+  ipcMain.handle('record-user-activity', (_event, type: string) => {
+    const validTypes = ['user_interaction', 'window_switch', 'clipboard_change', 'ai_request', 'plan_execution'];
+    if (validTypes.includes(type)) {
+      adaptiveRefresh.recordActivity(type as any);
+      return { success: true, status: adaptiveRefresh.getStatus() };
+    }
+    return { success: false, error: 'Invalid activity type' };
   });
 
   ipcMain.handle('get-screenshot', async () => {

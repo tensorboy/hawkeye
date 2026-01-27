@@ -6,3 +6,23 @@
 export * from './tool-types';
 export * from './tool-registry';
 export * from './mcp-server';
+export {
+  ALL_BUILTIN_TOOLS,
+  TOOL_CATEGORIES,
+  registerBuiltinTools,
+  screenCaptureTool,
+  ocrTool,
+  windowInfoTool,
+  clipboardReadTool,
+  mouseClickTool,
+  keyboardTypeTool,
+  hotkeyTool,
+  scrollTool,
+  shellExecuteTool,
+  fileReadTool,
+  fileWriteTool,
+  fileListTool,
+  searchTool,
+  queueStatusTool,
+  aiChatTool,
+} from './builtin-tools';

@@ -1,6 +1,6 @@
 {
   "name": "hawkeye",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Hawkeye - Intelligent Task Perception and Execution Assistant",
   "private": true,
   "workspaces": [

@@ -11,8 +11,10 @@ import * as os from 'os';
 
 import { ConfigService } from './services/config-service';
 import { HawkeyeService } from './services/hawkeye-service';
-import { OllamaService } from './services/ollama-service';
+import { ModelManagerService } from './services/model-manager-service';
 import { EnvCheckService } from './services/env-check-service';
+import { WhisperService } from './services/whisper-service';
+import { TrayStatusService } from './services/tray-status-service';
 import { registerAllHandlers } from './ipc';
 import { initI18n, t } from './i18n';
 
@@ -36,8 +38,10 @@ let isAppQuitting = false;
 // Services
 const configService = new ConfigService(debugLog);
 const hawkeyeService = new HawkeyeService(() => mainWindow, debugLog);
-const ollamaService = new OllamaService(() => mainWindow, debugLog);
+const modelManagerService = new ModelManagerService(() => mainWindow, debugLog);
 const envCheckService = new EnvCheckService(debugLog);
+const whisperService = new WhisperService(() => mainWindow, debugLog);
+const trayStatusService = new TrayStatusService(() => mainWindow, debugLog);
 
 // Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -59,8 +63,9 @@ if (!gotTheLock) {
 registerAllHandlers({
   configService,
   hawkeyeService,
-  ollamaService,
+  modelManagerService,
   envCheckService,
+  whisperService,
   mainWindowGetter: () => mainWindow,
 });
 
@@ -103,7 +108,8 @@ function setupAutoUpdater() {
   autoUpdater.on('update-downloaded', (info) => {
     debugLog(`Update downloaded: ${info.version}`);
     mainWindow?.webContents.send('update-downloaded', { version: info.version });
-    if (tray) tray.setToolTip(`Hawkeye - Update Ready (v${info.version})`);
+    // Use trayStatusService for update status
+    trayStatusService.setStatus('updating', { updateVersion: info.version });
   });
 
   if (!process.env.NODE_ENV && config.autoUpdate) {
@@ -150,77 +156,67 @@ function createWindow() {
 }
 
 function createTray() {
-  let icon: Electron.NativeImage;
-  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-  const iconPath = isDev
-    ? path.join(__dirname, '../../resources/icon.png')
-    : path.join(process.resourcesPath, 'resources/icon.png');
+  // Initialize tray via TrayStatusService for dynamic status management
+  tray = trayStatusService.initialize();
 
-  try {
-    icon = nativeImage.createFromPath(iconPath);
-    if (!icon.isEmpty()) {
-      icon = icon.resize({ width: 18, height: 18 });
-      icon.setTemplateImage(true);
-    }
-  } catch (e) {
-    icon = nativeImage.createEmpty();
-  }
-
-  if (icon.isEmpty()) {
-    // Fallback icon
-    const fallbackIconBase64 = 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA' +
-      'BHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3' +
-      'Lmlua3NjYXBlLm9yZ5vuPBoAAABfSURBVDiNY2CgNmBkZPzPQCbABOWMJFcIBv9JdAETI4' +
-      'GA8v8Z/jMwMv5n/M/AwAAGUEEGRgYGCE2KARjNDAyU+4CRkZERbgAy+E9FAwbIgEEZhANN' +
-      'AEACP8JAHLQAAAAASUVORK5CYII=';
-    icon = nativeImage.createFromDataURL(`data:image/png;base64,${fallbackIconBase64}`);
-  }
-
-  tray = new Tray(icon);
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: t('tray.observeScreen'),
-      accelerator: 'CmdOrCtrl+Shift+H',
-      click: () => {
-        mainWindow?.webContents.send('loading', true);
-        hawkeyeService.perceiveAndRecognize()
-          .catch(e => mainWindow?.webContents.send('error', e.message))
-          .finally(() => {
-            mainWindow?.webContents.send('loading', false);
-            mainWindow?.show();
-          });
-      },
-    },
-    {
-      label: t('tray.showSuggestions'),
-      click: () => {
+  // Set up tray status event handlers
+  trayStatusService.on('observeRequested', () => {
+    trayStatusService.setStatus('observing');
+    mainWindow?.webContents.send('loading', true);
+    hawkeyeService.perceiveAndRecognize()
+      .then(() => {
+        trayStatusService.setStatus('idle');
+      })
+      .catch(e => {
+        trayStatusService.setStatus('error', { errorMessage: e.message });
+        mainWindow?.webContents.send('error', e.message);
+      })
+      .finally(() => {
+        mainWindow?.webContents.send('loading', false);
         mainWindow?.show();
-        mainWindow?.focus();
-      },
-    },
-    { type: 'separator' },
-    {
-      label: t('tray.settings'),
-      click: () => {
-        mainWindow?.webContents.send('show-settings');
-        mainWindow?.show();
-      },
-    },
-    { type: 'separator' },
-    {
-      label: t('tray.quit'),
-      click: () => app.quit(),
-    },
-  ]);
+      });
+  });
 
-  tray.setToolTip(t('tray.tooltip'));
-  tray.setContextMenu(contextMenu);
+  trayStatusService.on('cancelRequested', () => {
+    debugLog('Cancel requested from tray');
+    // TODO: Implement cancellation logic when agent monitoring is added
+    trayStatusService.setStatus('idle');
+  });
+
+  trayStatusService.on('installUpdateRequested', () => {
+    debugLog('Install update requested from tray');
+    autoUpdater.quitAndInstall();
+  });
+
+  // Handle tray click
   tray.on('click', () => {
     if (mainWindow?.isVisible()) mainWindow.hide();
     else {
       mainWindow?.show();
       mainWindow?.focus();
     }
+  });
+}
+
+/**
+ * Update tray status from HawkeyeService events
+ */
+function setupTrayStatusSync() {
+  // Connect hawkeyeService status changes to tray
+  hawkeyeService.on('analyzing', () => {
+    trayStatusService.setStatus('analyzing', { currentTask: 'Analyzing screen content...' });
+  });
+
+  hawkeyeService.on('executing', (task: string) => {
+    trayStatusService.setStatus('executing', { currentTask: task });
+  });
+
+  hawkeyeService.on('idle', () => {
+    trayStatusService.setStatus('idle');
+  });
+
+  hawkeyeService.on('error', (error: string) => {
+    trayStatusService.setStatus('error', { errorMessage: error });
   });
 }
 
@@ -237,6 +233,7 @@ app.whenReady().then(async () => {
     await checkScreenRecordingPermission();
     createWindow();
     createTray();
+    setupTrayStatusSync();
 
     globalShortcut.register('CommandOrControl+Shift+H', () => {
       mainWindow?.webContents.send('loading', true);
@@ -250,6 +247,44 @@ app.whenReady().then(async () => {
 
     // Init Hawkeye
     await hawkeyeService.initialize(configService.getConfig());
+
+    // Init Whisper (auto-download model if not present)
+    const appConfig = configService.getConfig();
+    let whisperModelPath = appConfig.whisperModelPath;
+
+    if (!whisperModelPath || !fs.existsSync(whisperModelPath)) {
+      // Check if default model already exists
+      const defaultPath = whisperService.getDefaultModelPath();
+      if (fs.existsSync(defaultPath)) {
+        whisperModelPath = defaultPath;
+        configService.saveConfig({
+          whisperModelPath: defaultPath,
+          whisperEnabled: true,
+        });
+        debugLog(`[Whisper] Found existing model at: ${defaultPath}`);
+      } else {
+        // Auto-download on first launch
+        debugLog('[Whisper] Model not found, starting auto-download...');
+        try {
+          whisperModelPath = await whisperService.downloadModel();
+          configService.saveConfig({
+            whisperModelPath,
+            whisperEnabled: true,
+          });
+          debugLog(`[Whisper] Auto-download complete: ${whisperModelPath}`);
+        } catch (error) {
+          debugLog(`[Whisper] Auto-download failed: ${error}`);
+          whisperModelPath = '';
+        }
+      }
+    }
+
+    if (whisperModelPath) {
+      await whisperService.initialize({
+        modelPath: whisperModelPath,
+        language: appConfig.whisperLanguage,
+      });
+    }
 
     // Check Python Environment
     const pythonEnv = await envCheckService.detectEnvironment();
@@ -286,6 +321,8 @@ app.on('will-quit', async () => {
   globalShortcut.unregisterAll();
   // @ts-ignore
   if (global.stopSmartObserve) global.stopSmartObserve();
+  trayStatusService.destroy();
+  await whisperService.shutdown();
   await hawkeyeService.shutdown();
 });
 

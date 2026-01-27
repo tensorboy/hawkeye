@@ -12,10 +12,7 @@ export function registerConfigHandlers(
     const config = configService.getConfig();
     return {
       ...config,
-      hasOllama: !!config.ollamaHost,
       hasGemini: !!config.geminiApiKey,
-      localOnlyRecommendedModel: localOnlyConfig.model,
-      localOnlyAlternatives: localOnlyConfig.alternativeModels,
     };
   });
 

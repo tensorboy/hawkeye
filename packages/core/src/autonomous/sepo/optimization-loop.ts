@@ -6,9 +6,9 @@
 import { SEPOEvaluator } from './evaluator';
 import { SEPOEditor } from './editor';
 import { FeedbackCollector } from './feedback-collector';
-import type { VectorStore } from '../../../storage/vector-store';
-import type { ExecutionPlan } from '../../../ai/types';
-import type { ExecutionResult } from '../../../types';
+import type { VectorStore } from '../../storage/vector-store';
+import type { ExecutionPlan } from '../../ai/types';
+import type { ExecutionResult } from '../../types';
 
 export interface OptimizedPlanResult {
   original: ExecutionPlan;

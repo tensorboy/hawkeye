@@ -15,7 +15,8 @@ export type DebugEventType =
   | 'execution_start'
   | 'execution_step'
   | 'execution_complete'
-  | 'error';
+  | 'error'
+  | 'speech_segment';
 
 export interface DebugEvent {
   id: string;
@@ -60,4 +61,5 @@ export const EVENT_TYPE_CONFIG: Record<DebugEventType, { icon: string; label: st
   execution_step: { icon: '⚙️', label: '执行步骤', color: '#64748b' },
   execution_complete: { icon: '✅', label: '执行完成', color: '#22c55e' },
   error: { icon: '❌', label: '错误', color: '#ef4444' },
+  speech_segment: { icon: '🎤', label: '语音转录', color: '#ec4899' },
 };

@@ -24,6 +24,7 @@ import {
   ExecutionStepEventData,
   ExecutionCompleteEventData,
   ErrorEventData,
+  SpeechSegmentEventData,
 } from './types';
 
 const DEFAULT_CONFIG: EventCollectorConfig = {
@@ -208,6 +209,18 @@ export class EventCollector extends EventEmitter {
    */
   addError(data: ErrorEventData): DebugEvent {
     return this.add('error', data);
+  }
+
+  /**
+   * Record a speech transcription segment
+   */
+  addSpeechSegment(data: SpeechSegmentEventData): DebugEvent {
+    const truncatedData = { ...data };
+    if (truncatedData.text.length > this.config.truncateTextAt) {
+      truncatedData.text =
+        truncatedData.text.substring(0, this.config.truncateTextAt) + '... [truncated]';
+    }
+    return this.add('speech_segment', truncatedData);
   }
 
   // ============================================

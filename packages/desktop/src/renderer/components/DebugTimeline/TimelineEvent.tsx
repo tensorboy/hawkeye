@@ -66,6 +66,8 @@ export const TimelineEvent: React.FC<TimelineEventProps> = ({ event, onSelect, i
         return `${data.status}: ${data.stepsCompleted}/${(data.stepsCompleted as number) + (data.stepsFailed as number)} 完成`;
       case 'error':
         return truncateText(String(data.message || ''), 80);
+      case 'speech_segment':
+        return truncateText(String(data.text || ''), 80);
       default:
         return JSON.stringify(data).substring(0, 80);
     }
@@ -85,6 +87,8 @@ export const TimelineEvent: React.FC<TimelineEventProps> = ({ event, onSelect, i
         return steps.map(s => `${s.order}. [${s.actionType}] ${s.description}`).join('\n');
       case 'error':
         return `${data.message}\n\nSource: ${data.source || 'unknown'}\n\n${data.stack || ''}`;
+      case 'speech_segment':
+        return `${data.text}${data.language ? `\n\nLanguage: ${data.language}` : ''}${data.speakerTurn ? '\n\n[Speaker Turn]' : ''}`;
       default:
         return JSON.stringify(data, null, 2);
     }

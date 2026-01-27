@@ -3,8 +3,8 @@
  * 定义评估执行计划和结果的量化指标
  */
 
-import type { ExecutionResult } from '../../../types';
-import type { ExecutionPlan } from '../../../ai/types';
+import type { ExecutionResult } from '../../types';
+import type { ExecutionPlan } from '../../ai/types';
 
 /**
  * 质量评分维度

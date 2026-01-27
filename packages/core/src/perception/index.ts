@@ -42,3 +42,26 @@ export type {
   BrowserContext,
   SimplifiedElement,
 } from './browser';
+
+// Screen Coordinate Scaling (Anthropic Computer Use pattern)
+export {
+  ScreenScaler,
+  createScreenScaler,
+  TARGET_RESOLUTIONS,
+} from './screen-scaling';
+export type {
+  Point,
+  Size,
+  ScalingConfig,
+  ScalingFactors,
+  ResolutionPreset,
+} from './screen-scaling';
+
+// Accessibility API (macOS AXorcist-style)
+export { AccessibilityService } from './accessibility';
+export type {
+  AXElement,
+  AXWindow,
+  AXApplication,
+  FocusedElement,
+} from './accessibility';

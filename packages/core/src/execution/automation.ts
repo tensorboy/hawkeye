@@ -3,11 +3,31 @@
  * 支持 macOS AppleScript / Windows PowerShell
  */
 
-import { exec } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
 import type { ExecutionResult } from '../types';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+/**
+ * Write data to a command's stdin (replaces shell pipes like `echo x | cmd`).
+ */
+function spawnWrite(command: string, args: string[], input: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (data: Buffer) => { stdout += data.toString(); });
+    proc.stderr.on('data', (data: Buffer) => { stderr += data.toString(); });
+    proc.on('close', (code) => {
+      if (code === 0) resolve(stdout);
+      else reject(new Error(`${command} exited with code ${code}: ${stderr}`));
+    });
+    proc.on('error', reject);
+    proc.stdin.write(input);
+    proc.stdin.end();
+  });
+}
 
 export class AutomationExecutor {
   private platform: NodeJS.Platform;
@@ -24,13 +44,17 @@ export class AutomationExecutor {
     try {
       switch (this.platform) {
         case 'darwin':
-          await execAsync(`open -a "${appName}"`);
+          await execFileAsync('open', ['-a', appName]);
           break;
         case 'win32':
-          await execAsync(`start "" "${appName}"`);
+          await execFileAsync('cmd', ['/c', 'start', '', appName]);
           break;
         case 'linux':
-          await execAsync(`xdg-open "${appName}" || ${appName}`);
+          try {
+            await execFileAsync('xdg-open', [appName]);
+          } catch {
+            await execFileAsync(appName, []);
+          }
           break;
         default:
           throw new Error(`不支持的平台: ${this.platform}`);
@@ -57,13 +81,13 @@ export class AutomationExecutor {
     try {
       switch (this.platform) {
         case 'darwin':
-          await execAsync(`open "${url}"`);
+          await execFileAsync('open', [url]);
           break;
         case 'win32':
-          await execAsync(`start "" "${url}"`);
+          await execFileAsync('cmd', ['/c', 'start', '', url]);
           break;
         case 'linux':
-          await execAsync(`xdg-open "${url}"`);
+          await execFileAsync('xdg-open', [url]);
           break;
         default:
           throw new Error(`不支持的平台: ${this.platform}`);
@@ -90,13 +114,13 @@ export class AutomationExecutor {
     try {
       switch (this.platform) {
         case 'darwin':
-          await execAsync(`open "${filePath}"`);
+          await execFileAsync('open', [filePath]);
           break;
         case 'win32':
-          await execAsync(`start "" "${filePath}"`);
+          await execFileAsync('cmd', ['/c', 'start', '', filePath]);
           break;
         case 'linux':
-          await execAsync(`xdg-open "${filePath}"`);
+          await execFileAsync('xdg-open', [filePath]);
           break;
         default:
           throw new Error(`不支持的平台: ${this.platform}`);
@@ -130,7 +154,7 @@ export class AutomationExecutor {
     }
 
     try {
-      const { stdout } = await execAsync(`osascript -e '${script.replace(/'/g, "'\"'\"'")}'`);
+      const { stdout } = await execFileAsync('osascript', ['-e', script]);
       return {
         success: true,
         output: stdout.trim(),
@@ -160,7 +184,7 @@ export class AutomationExecutor {
     }
 
     try {
-      const { stdout } = await execAsync(`powershell -Command "${command.replace(/"/g, '\\"')}"`);
+      const { stdout } = await execFileAsync('powershell', ['-Command', command]);
       return {
         success: true,
         output: stdout.trim(),
@@ -184,17 +208,20 @@ export class AutomationExecutor {
     try {
       switch (this.platform) {
         case 'darwin':
-          await execAsync(
-            `osascript -e 'display notification "${message}" with title "${title}"'`
-          );
+          await execFileAsync('osascript', ['-e',
+            `display notification "${message.replace(/"/g, '\\"')}" with title "${title.replace(/"/g, '\\"')}"`
+          ]);
           break;
-        case 'win32':
-          await execAsync(
-            `powershell -Command "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null; $xml = '<toast><visual><binding template=\"ToastText02\"><text id=\"1\">${title}</text><text id=\"2\">${message}</text></binding></visual></toast>'; $toast = [Windows.Data.Xml.Dom.XmlDocument]::new(); $toast.LoadXml($xml); [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Hawkeye').Show([Windows.UI.Notifications.ToastNotification]::new($toast))"`
-          );
+        case 'win32': {
+          const safeTitle = title.replace(/[<>&'"]/g, '');
+          const safeMessage = message.replace(/[<>&'"]/g, '');
+          await execFileAsync('powershell', ['-Command',
+            `[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null; $xml = '<toast><visual><binding template="ToastText02"><text id="1">${safeTitle}</text><text id="2">${safeMessage}</text></binding></visual></toast>'; $toast = [Windows.Data.Xml.Dom.XmlDocument]::new(); $toast.LoadXml($xml); [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Hawkeye').Show([Windows.UI.Notifications.ToastNotification]::new($toast))`
+          ]);
           break;
+        }
         case 'linux':
-          await execAsync(`notify-send "${title}" "${message}"`);
+          await execFileAsync('notify-send', [title, message]);
           break;
         default:
           throw new Error(`不支持的平台: ${this.platform}`);
@@ -222,13 +249,13 @@ export class AutomationExecutor {
     try {
       switch (this.platform) {
         case 'darwin':
-          await execAsync(`echo "${text.replace(/"/g, '\\"')}" | pbcopy`);
+          await spawnWrite('pbcopy', [], text);
           break;
         case 'win32':
-          await execAsync(`echo ${text} | clip`);
+          await spawnWrite('clip', [], text);
           break;
         case 'linux':
-          await execAsync(`echo "${text.replace(/"/g, '\\"')}" | xclip -selection clipboard`);
+          await spawnWrite('xclip', ['-selection', 'clipboard'], text);
           break;
         default:
           throw new Error(`不支持的平台: ${this.platform}`);
@@ -264,17 +291,17 @@ export class AutomationExecutor {
       let content: string;
       switch (this.platform) {
         case 'darwin': {
-          const { stdout } = await execAsync('pbpaste');
+          const { stdout } = await execFileAsync('pbpaste', []);
           content = stdout;
           break;
         }
         case 'win32': {
-          const { stdout } = await execAsync('powershell -Command "Get-Clipboard"');
+          const { stdout } = await execFileAsync('powershell', ['-Command', 'Get-Clipboard']);
           content = stdout;
           break;
         }
         case 'linux': {
-          const { stdout } = await execAsync('xclip -selection clipboard -o');
+          const { stdout } = await execFileAsync('xclip', ['-selection', 'clipboard', '-o']);
           content = stdout;
           break;
         }
@@ -311,9 +338,9 @@ export class AutomationExecutor {
 
         case 'refresh':
           if (this.platform === 'darwin') {
-            await execAsync(`osascript -e 'tell application "System Events" to keystroke "r" using command down'`);
+            await execFileAsync('osascript', ['-e', 'tell application "System Events" to keystroke "r" using command down']);
           } else if (this.platform === 'win32') {
-            await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('^r')"`);
+            await execFileAsync('powershell', ['-Command', '$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys("^r")']);
           }
           return {
             success: true,
@@ -323,9 +350,9 @@ export class AutomationExecutor {
 
         case 'back':
           if (this.platform === 'darwin') {
-            await execAsync(`osascript -e 'tell application "System Events" to keystroke "[" using command down'`);
+            await execFileAsync('osascript', ['-e', 'tell application "System Events" to keystroke "[" using command down']);
           } else if (this.platform === 'win32') {
-            await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('%{LEFT}')"`);
+            await execFileAsync('powershell', ['-Command', '$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys("%{LEFT}")']);
           }
           return {
             success: true,
@@ -335,9 +362,9 @@ export class AutomationExecutor {
 
         case 'forward':
           if (this.platform === 'darwin') {
-            await execAsync(`osascript -e 'tell application "System Events" to keystroke "]" using command down'`);
+            await execFileAsync('osascript', ['-e', 'tell application "System Events" to keystroke "]" using command down']);
           } else if (this.platform === 'win32') {
-            await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('%{RIGHT}')"`);
+            await execFileAsync('powershell', ['-Command', '$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys("%{RIGHT}")']);
           }
           return {
             success: true,
@@ -397,14 +424,14 @@ export class AutomationExecutor {
         // Windows 下的应用动作较有限
         switch (action) {
           case 'activate':
-            await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.AppActivate('${app}')"`);
+            await execFileAsync('powershell', ['-Command', `$wsh = New-Object -ComObject WScript.Shell; $wsh.AppActivate('${app.replace(/'/g, "''")}')`]);
             return {
               success: true,
               output: `已激活应用: ${app}`,
               duration: Date.now() - startTime,
             };
           case 'minimize':
-            await execAsync(`powershell -Command "Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class W32 { [DllImport(\\\"user32.dll\\\")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); }'; $hwnd = (Get-Process -Name '${app}' | Select-Object -First 1).MainWindowHandle; [W32]::ShowWindow($hwnd, 6)"`);
+            await execFileAsync('powershell', ['-Command', `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class W32 { [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); }'; $hwnd = (Get-Process -Name '${app.replace(/'/g, "''")}' | Select-Object -First 1).MainWindowHandle; [W32]::ShowWindow($hwnd, 6)`]);
             return {
               success: true,
               output: `已最小化应用: ${app}`,
@@ -440,13 +467,13 @@ export class AutomationExecutor {
     try {
       switch (this.platform) {
         case 'darwin':
-          await execAsync(`osascript -e 'quit app "${appName}"'`);
+          await execFileAsync('osascript', ['-e', `quit app "${appName.replace(/"/g, '\\"')}"`]);
           break;
         case 'win32':
-          await execAsync(`taskkill /IM "${appName}.exe" /F`);
+          await execFileAsync('taskkill', ['/IM', `${appName}.exe`, '/F']);
           break;
         case 'linux':
-          await execAsync(`pkill -f "${appName}"`);
+          await execFileAsync('pkill', ['-f', appName]);
           break;
         default:
           throw new Error(`不支持的平台: ${this.platform}`);
@@ -478,12 +505,12 @@ export class AutomationExecutor {
             ? modifiers.map(m => `${m} down`).join(', ') + ', '
             : '';
           const script = `tell application "System Events" to key code ${this.getKeyCode(key)} using {${modifierScript.slice(0, -2)}}`;
-          await execAsync(`osascript -e '${script}'`);
+          await execFileAsync('osascript', ['-e', script]);
           break;
         }
         case 'win32': {
           const modifierKeys = modifiers?.map(m => `{${m}}`).join('') || '';
-          await execAsync(`powershell -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('${modifierKeys}${key}')"`);
+          await execFileAsync('powershell', ['-Command', `$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('${modifierKeys}${key}')`]);
           break;
         }
         default:
@@ -516,5 +543,405 @@ export class AutomationExecutor {
       'up': 126, 'down': 125, 'left': 123, 'right': 124,
     };
     return keyCodes[key.toLowerCase()] || 0;
+  }
+
+  // ============================================
+  // 鼠标控制 (Peekaboo/Computer Use 风格)
+  // ============================================
+
+  private cliclickAvailable: boolean | null = null;
+
+  /**
+   * 检查 cliclick 是否可用 (macOS)
+   */
+  private async checkCliclick(): Promise<boolean> {
+    if (this.cliclickAvailable !== null) return this.cliclickAvailable;
+    if (this.platform !== 'darwin') {
+      this.cliclickAvailable = false;
+      return false;
+    }
+    try {
+      await execFileAsync('which', ['cliclick']);
+      this.cliclickAvailable = true;
+    } catch {
+      this.cliclickAvailable = false;
+    }
+    return this.cliclickAvailable;
+  }
+
+  /**
+   * 移动鼠标到指定位置
+   */
+  async moveTo(x: number, y: number): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    try {
+      switch (this.platform) {
+        case 'darwin':
+          if (await this.checkCliclick()) {
+            await execFileAsync('cliclick', [`m:${Math.round(x)},${Math.round(y)}`]);
+          } else {
+            const pyScript = `import Quartz\nQuartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventMouseMoved, (${x}, ${y}), 0))`;
+            await execFileAsync('python3', ['-c', pyScript]);
+          }
+          break;
+        case 'linux':
+          await execFileAsync('xdotool', ['mousemove', String(Math.round(x)), String(Math.round(y))]);
+          break;
+        case 'win32':
+          await execFileAsync('powershell', ['-Command', `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${Math.round(x)}, ${Math.round(y)})`]);
+          break;
+        default:
+          throw new Error(`鼠标移动在 ${this.platform} 上不支持`);
+      }
+      return {
+        success: true,
+        output: `鼠标已移动到 (${x}, ${y})`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 点击指定位置
+   */
+  async clickAt(x: number, y: number, button: 'left' | 'right' | 'middle' = 'left'): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    try {
+      switch (this.platform) {
+        case 'darwin':
+          if (await this.checkCliclick()) {
+            const cmd = button === 'right' ? 'rc' : button === 'middle' ? 'mc' : 'c';
+            await execFileAsync('cliclick', [`${cmd}:${Math.round(x)},${Math.round(y)}`]);
+          } else {
+            const buttonNum = button === 'right' ? 1 : button === 'middle' ? 2 : 0;
+            const pyScript = [
+              'import Quartz, time',
+              `pos = (${x}, ${y})`,
+              'Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventMouseMoved, pos, 0))',
+              'time.sleep(0.05)',
+              `Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseDown, pos, ${buttonNum}))`,
+              `Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseUp, pos, ${buttonNum}))`,
+            ].join('\n');
+            await execFileAsync('python3', ['-c', pyScript]);
+          }
+          break;
+        case 'linux': {
+          const linuxButton = button === 'right' ? 3 : button === 'middle' ? 2 : 1;
+          await execFileAsync('xdotool', ['mousemove', String(Math.round(x)), String(Math.round(y)), 'click', String(linuxButton)]);
+          break;
+        }
+        case 'win32': {
+          const downFlag = button === 'right' ? 'MOUSEEVENTF_RIGHTDOWN' : button === 'middle' ? 'MOUSEEVENTF_MIDDLEDOWN' : 'MOUSEEVENTF_LEFTDOWN';
+          const upFlag = button === 'right' ? 'MOUSEEVENTF_RIGHTUP' : button === 'middle' ? 'MOUSEEVENTF_MIDDLEUP' : 'MOUSEEVENTF_LEFTUP';
+          await execFileAsync('powershell', ['-Command', `
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class MouseOps { [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, int dwExtraInfo); public const uint MOUSEEVENTF_LEFTDOWN = 0x0002; public const uint MOUSEEVENTF_LEFTUP = 0x0004; public const uint MOUSEEVENTF_RIGHTDOWN = 0x0008; public const uint MOUSEEVENTF_RIGHTUP = 0x0010; public const uint MOUSEEVENTF_MIDDLEDOWN = 0x0020; public const uint MOUSEEVENTF_MIDDLEUP = 0x0040; }'
+[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${Math.round(x)}, ${Math.round(y)})
+Start-Sleep -Milliseconds 50
+[MouseOps]::mouse_event([MouseOps]::${downFlag}, 0, 0, 0, 0); [MouseOps]::mouse_event([MouseOps]::${upFlag}, 0, 0, 0, 0)
+`]);
+          break;
+        }
+        default:
+          throw new Error(`点击操作在 ${this.platform} 上不支持`);
+      }
+      return {
+        success: true,
+        output: `已${button === 'right' ? '右键' : button === 'middle' ? '中键' : ''}点击 (${x}, ${y})`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 双击指定位置
+   */
+  async doubleClickAt(x: number, y: number): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    try {
+      switch (this.platform) {
+        case 'darwin':
+          if (await this.checkCliclick()) {
+            await execFileAsync('cliclick', [`dc:${Math.round(x)},${Math.round(y)}`]);
+          } else {
+            const pyScript = [
+              'import Quartz, time',
+              `pos = (${x}, ${y})`,
+              'for _ in range(2):',
+              '  Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseDown, pos, 0))',
+              '  Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseUp, pos, 0))',
+              '  time.sleep(0.05)',
+            ].join('\n');
+            await execFileAsync('python3', ['-c', pyScript]);
+          }
+          break;
+        case 'linux':
+          await execFileAsync('xdotool', ['mousemove', String(Math.round(x)), String(Math.round(y)), 'click', '--repeat', '2', '--delay', '50', '1']);
+          break;
+        case 'win32':
+          await execFileAsync('powershell', ['-Command', `
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class MouseOps { [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, int dwExtraInfo); public const uint MOUSEEVENTF_LEFTDOWN = 0x0002; public const uint MOUSEEVENTF_LEFTUP = 0x0004; }'
+[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${Math.round(x)}, ${Math.round(y)})
+Start-Sleep -Milliseconds 50
+[MouseOps]::mouse_event([MouseOps]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0); [MouseOps]::mouse_event([MouseOps]::MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+Start-Sleep -Milliseconds 50
+[MouseOps]::mouse_event([MouseOps]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0); [MouseOps]::mouse_event([MouseOps]::MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+`]);
+          break;
+        default:
+          throw new Error(`双击操作在 ${this.platform} 上不支持`);
+      }
+      return {
+        success: true,
+        output: `已双击 (${x}, ${y})`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 拖拽操作
+   */
+  async drag(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    duration: number = 500
+  ): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    try {
+      switch (this.platform) {
+        case 'darwin':
+          if (await this.checkCliclick()) {
+            await execFileAsync('cliclick', [`dd:${Math.round(startX)},${Math.round(startY)}`, `du:${Math.round(endX)},${Math.round(endY)}`]);
+          } else {
+            const steps = Math.max(10, Math.floor(duration / 20));
+            const pyScript = [
+              'import Quartz, time',
+              `start = (${startX}, ${startY})`,
+              `end = (${endX}, ${endY})`,
+              `steps = ${steps}`,
+              'Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventMouseMoved, start, 0))',
+              'time.sleep(0.05)',
+              'Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseDown, start, 0))',
+              'for i in range(steps + 1):',
+              '  t = i / steps',
+              '  x = start[0] + (end[0] - start[0]) * t',
+              '  y = start[1] + (end[1] - start[1]) * t',
+              '  Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseDragged, (x, y), 0))',
+              `  time.sleep(${duration / 1000 / steps})`,
+              'Quartz.CGEventPost(Quartz.kCGHIDEventTap, Quartz.CGEventCreateMouseEvent(None, Quartz.kCGEventLeftMouseUp, end, 0))',
+            ].join('\n');
+            await execFileAsync('python3', ['-c', pyScript]);
+          }
+          break;
+        case 'linux':
+          await execFileAsync('xdotool', ['mousemove', String(Math.round(startX)), String(Math.round(startY)), 'mousedown', '1', 'mousemove', '--delay', String(Math.floor(duration / 10)), String(Math.round(endX)), String(Math.round(endY)), 'mouseup', '1']);
+          break;
+        case 'win32':
+          await execFileAsync('powershell', ['-Command', `
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class MouseOps { [DllImport("user32.dll") ] public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, int dwExtraInfo); public const uint MOUSEEVENTF_LEFTDOWN = 0x0002; public const uint MOUSEEVENTF_LEFTUP = 0x0004; public const uint MOUSEEVENTF_MOVE = 0x0001; }'
+[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${Math.round(startX)}, ${Math.round(startY)})
+Start-Sleep -Milliseconds 50
+[MouseOps]::mouse_event([MouseOps]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+$steps = 20
+for ($i = 1; $i -le $steps; $i++) { $t = $i / $steps; $x = [int](${startX} + (${endX} - ${startX}) * $t); $y = [int](${startY} + (${endY} - ${startY}) * $t); [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point($x, $y); Start-Sleep -Milliseconds ${Math.floor(duration / 20)} }
+[MouseOps]::mouse_event([MouseOps]::MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+`]);
+          break;
+        default:
+          throw new Error(`拖拽操作在 ${this.platform} 上不支持`);
+      }
+      return {
+        success: true,
+        output: `已拖拽从 (${startX}, ${startY}) 到 (${endX}, ${endY})`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 滚动操作
+   */
+  async scroll(
+    x: number,
+    y: number,
+    deltaX: number = 0,
+    deltaY: number = 0
+  ): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    try {
+      // First move to position
+      await this.moveTo(x, y);
+
+      switch (this.platform) {
+        case 'darwin':
+          if (await this.checkCliclick()) {
+            const scrollAmount = Math.round(deltaY / 10) || Math.round(-deltaX / 10);
+            await execFileAsync('cliclick', [`m:${Math.round(x)},${Math.round(y)}`]);
+            await execFileAsync('cliclick', [`kd:${scrollAmount > 0 ? 'arrow-down' : 'arrow-up'}`]);
+          } else {
+            const pyScript = [
+              'import Quartz',
+              `scroll_event = Quartz.CGEventCreateScrollWheelEvent(None, Quartz.kCGScrollEventUnitPixel, 2, ${Math.round(-deltaY / 10)}, ${Math.round(-deltaX / 10)})`,
+              'Quartz.CGEventPost(Quartz.kCGHIDEventTap, scroll_event)',
+            ].join('\n');
+            await execFileAsync('python3', ['-c', pyScript]);
+          }
+          break;
+        case 'linux':
+          if (deltaY !== 0) {
+            const clicks = Math.abs(Math.round(deltaY / 30));
+            const button = deltaY > 0 ? 5 : 4;
+            await execFileAsync('xdotool', ['click', '--repeat', String(clicks), '--delay', '10', String(button)]);
+          }
+          if (deltaX !== 0) {
+            const clicks = Math.abs(Math.round(deltaX / 30));
+            const button = deltaX > 0 ? 7 : 6;
+            await execFileAsync('xdotool', ['click', '--repeat', String(clicks), '--delay', '10', String(button)]);
+          }
+          break;
+        case 'win32': {
+          let psCmd = `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class MouseOps { [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, int dwExtraInfo); public const uint MOUSEEVENTF_WHEEL = 0x0800; public const uint MOUSEEVENTF_HWHEEL = 0x01000; }'\n`;
+          psCmd += `[MouseOps]::mouse_event([MouseOps]::MOUSEEVENTF_WHEEL, 0, 0, ${Math.round(-deltaY)}, 0)\n`;
+          if (deltaX !== 0) {
+            psCmd += `[MouseOps]::mouse_event([MouseOps]::MOUSEEVENTF_HWHEEL, 0, 0, ${Math.round(-deltaX)}, 0)\n`;
+          }
+          await execFileAsync('powershell', ['-Command', psCmd]);
+          break;
+        }
+        default:
+          throw new Error(`滚动操作在 ${this.platform} 上不支持`);
+      }
+      return {
+        success: true,
+        output: `已在 (${x}, ${y}) 滚动 (${deltaX}, ${deltaY})`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 输入文本 (模拟键盘输入)
+   */
+  async typeText(text: string, delayMs: number = 12): Promise<ExecutionResult> {
+    const startTime = Date.now();
+    try {
+      switch (this.platform) {
+        case 'darwin':
+          if (await this.checkCliclick()) {
+            await execFileAsync('cliclick', [`t:${text}`]);
+          } else {
+            await execFileAsync('osascript', ['-e', `tell application "System Events" to keystroke "${text.replace(/"/g, '\\"')}"`]);
+          }
+          break;
+        case 'linux':
+          await execFileAsync('xdotool', ['type', '--delay', String(delayMs), '--', text]);
+          break;
+        case 'win32': {
+          const escaped = text
+            .replace(/\+/g, '{+}')
+            .replace(/\^/g, '{^}')
+            .replace(/%/g, '{%}')
+            .replace(/~/g, '{~}')
+            .replace(/\(/g, '{(}')
+            .replace(/\)/g, '{)}')
+            .replace(/\[/g, '{[}')
+            .replace(/\]/g, '{]}')
+            .replace(/{/g, '{{}')
+            .replace(/}/g, '{}}');
+          await execFileAsync('powershell', ['-Command', `$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('${escaped}')`]);
+          break;
+        }
+        default:
+          throw new Error(`文本输入在 ${this.platform} 上不支持`);
+      }
+      return {
+        success: true,
+        output: `已输入文本: ${text.substring(0, 20)}${text.length > 20 ? '...' : ''}`,
+        duration: Date.now() - startTime,
+      };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: (error as Error).message || String(error),
+        duration: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 获取当前鼠标位置
+   */
+  async getMousePosition(): Promise<{ x: number; y: number } | null> {
+    try {
+      switch (this.platform) {
+        case 'darwin': {
+          const pyScript = [
+            'import Quartz',
+            'loc = Quartz.NSEvent.mouseLocation()',
+            'print(int(loc.x), int(Quartz.CGDisplayPixelsHigh(Quartz.CGMainDisplayID()) - loc.y))',
+          ].join('\n');
+          const { stdout } = await execFileAsync('python3', ['-c', pyScript]);
+          const [x, y] = stdout.trim().split(' ').map(Number);
+          return { x, y };
+        }
+        case 'linux': {
+          const { stdout } = await execFileAsync('xdotool', ['getmouselocation', '--shell']);
+          const xMatch = stdout.match(/X=(\d+)/);
+          const yMatch = stdout.match(/Y=(\d+)/);
+          if (xMatch && yMatch) {
+            return { x: parseInt(xMatch[1]), y: parseInt(yMatch[1]) };
+          }
+          return null;
+        }
+        case 'win32': {
+          const { stdout } = await execFileAsync('powershell', ['-Command', '[System.Windows.Forms.Cursor]::Position | Format-List X,Y']);
+          const xMatch = stdout.match(/X\s*:\s*(\d+)/);
+          const yMatch = stdout.match(/Y\s*:\s*(\d+)/);
+          if (xMatch && yMatch) {
+            return { x: parseInt(xMatch[1]), y: parseInt(yMatch[1]) };
+          }
+          return null;
+        }
+        default:
+          return null;
+      }
+    } catch {
+      return null;
+    }
   }
 }

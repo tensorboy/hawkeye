@@ -34,10 +34,17 @@ import {
   ToolRegistry,
   getToolRegistry,
   MCPServer,
+  registerBuiltinTools,
 } from './mcp';
 import {
   SkillManager,
 } from './skills';
+import {
+  TaskQueue,
+  createTaskQueue,
+  TaskPriority,
+  type TaskQueueConfig,
+} from './queue';
 import { EventCollector } from './debug';
 import type {
   UserIntent,
@@ -50,7 +57,7 @@ export interface HawkeyeConfig {
   /** AI Provider 配置 */
   ai: {
     providers: AIProviderConfig[];
-    preferredProvider?: 'ollama' | 'gemini' | 'openai';
+    preferredProvider?: 'llama-cpp' | 'gemini' | 'openai';
     enableFailover?: boolean;
   };
 
@@ -107,6 +114,12 @@ export interface HawkeyeConfig {
 
   /** 是否启用自主能力 (无需 Prompt 的自动建议) */
   enableAutonomous?: boolean;
+
+  /** 任务队列配置 */
+  taskQueue?: Partial<TaskQueueConfig>;
+
+  /** 是否启用任务队列 */
+  enableTaskQueue?: boolean;
 }
 
 export interface HawkeyeStatus {
@@ -150,6 +163,9 @@ export class Hawkeye extends EventEmitter {
   private toolRegistry: ToolRegistry;
   private skillManager: SkillManager;
   private mcpServer: MCPServer | null = null;
+
+  // 任务队列
+  private taskQueue: TaskQueue | null = null;
 
   // 调试事件收集器
   private eventCollector: EventCollector;
@@ -223,6 +239,11 @@ export class Hawkeye extends EventEmitter {
     // 初始化自主能力管理器
     if (config.enableAutonomous !== false) {
       this.autonomousManager = createAutonomousManager(config.autonomous);
+    }
+
+    // 初始化任务队列
+    if (config.enableTaskQueue !== false) {
+      this.taskQueue = createTaskQueue(config.taskQueue);
     }
 
     // 初始化调试事件收集器
@@ -368,7 +389,10 @@ export class Hawkeye extends EventEmitter {
         this.emit('module:ready', 'plugin');
       }
 
-      // 12.5 启动 MCP Server
+      // 12.5 注册内置 MCP 工具并启动 MCP Server
+      registerBuiltinTools(this.toolRegistry);
+      console.log(`[Hawkeye] ✓ 已注册 ${this.toolRegistry.getAllTools().length} 个 MCP 工具`);
+
       if (this.mcpServer) {
         await this.mcpServer.start();
         this.emit('module:ready', 'mcp');
@@ -381,7 +405,13 @@ export class Hawkeye extends EventEmitter {
         this.emit('module:ready', 'autonomous');
       }
 
-      // 14. 设置调试事件收集
+      // 14. 初始化任务队列
+      if (this.taskQueue) {
+        this.setupTaskQueue();
+        this.emit('module:ready', 'taskQueue');
+      }
+
+      // 15. 设置调试事件收集
       this.setupDebugEvents();
       this.emit('module:ready', 'debug');
 
@@ -801,6 +831,13 @@ export class Hawkeye extends EventEmitter {
   // ============ 调试事件收集 ============
 
   /**
+   * 获取任务队列
+   */
+  getTaskQueue(): TaskQueue | null {
+    return this.taskQueue;
+  }
+
+  /**
    * 获取调试事件收集器
    */
   getEventCollector(): EventCollector {
@@ -881,7 +918,7 @@ export class Hawkeye extends EventEmitter {
   /**
    * 切换 AI Provider
    */
-  switchAIProvider(type: 'ollama' | 'gemini'): boolean {
+  switchAIProvider(type: 'llama-cpp' | 'gemini' | 'openai'): boolean {
     return this.aiManager?.switchProvider(type) ?? false;
   }
 
@@ -953,6 +990,11 @@ export class Hawkeye extends EventEmitter {
     // 停止自主能力
     if (this.autonomousManager) {
       this.autonomousManager.stop();
+    }
+
+    // 停止任务队列
+    if (this.taskQueue) {
+      this.taskQueue.destroy();
     }
 
     // 停止 MCP Server
@@ -1241,6 +1283,70 @@ export class Hawkeye extends EventEmitter {
     // 分析完成事件
     this.autonomousManager.on('analysis:complete', (result: AutonomousAnalysisResult) => {
       this.emit('autonomous:analysis', result);
+    });
+  }
+
+  private setupTaskQueue(): void {
+    if (!this.taskQueue) return;
+
+    // 注册 AI 请求执行器
+    this.taskQueue.registerExecutor('ai_request', async (task) => {
+      if (!this.aiManager) throw new Error('AI Manager not initialized');
+      const data = task.data as { messages: AIMessage[]; images?: string[] };
+      if (data.images && data.images.length > 0) {
+        return this.aiManager.chatWithVision(data.messages, data.images);
+      }
+      return this.aiManager.chat(data.messages);
+    });
+
+    // 注册感知任务执行器
+    this.taskQueue.registerExecutor('perception', async () => {
+      return this.perception.perceive();
+    });
+
+    // 注册计划执行任务执行器
+    this.taskQueue.registerExecutor('plan_execution', async (task) => {
+      const data = task.data as { plan: ExecutionPlan };
+      return this.planExecutor.execute(data.plan);
+    });
+
+    // 注册文件操作执行器
+    this.taskQueue.registerExecutor('file_operation', async (task) => {
+      const step = task.data as import('./ai/types').PlanStep;
+      return this.planExecutor.executeSingleAction(step);
+    });
+
+    // 注册系统动作执行器
+    this.taskQueue.registerExecutor('system_action', async (task) => {
+      const step = task.data as import('./ai/types').PlanStep;
+      return this.planExecutor.executeSingleAction(step);
+    });
+
+    // 注册浏览器动作执行器
+    this.taskQueue.registerExecutor('browser_action', async (task) => {
+      const step = task.data as import('./ai/types').PlanStep;
+      return this.planExecutor.executeSingleAction(step);
+    });
+
+    // 队列事件
+    this.taskQueue.on('task:started', (task) => {
+      this.emit('queue:task:started', task);
+    });
+
+    this.taskQueue.on('task:completed', (task, result) => {
+      this.emit('queue:task:completed', { task, result });
+    });
+
+    this.taskQueue.on('task:failed', (task, error) => {
+      this.emit('queue:task:failed', { task, error });
+    });
+
+    this.taskQueue.on('task:retry', (task, attempt) => {
+      this.emit('queue:task:retry', { task, attempt });
+    });
+
+    this.taskQueue.on('queue:idle', () => {
+      this.emit('queue:idle');
     });
   }
 

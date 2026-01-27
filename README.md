@@ -6,13 +6,15 @@
 
 ### 🦅 The First Proactive AI Assistant for Desktop
 
-**Watch keenly. Act thoughtfully. 10x your productivity.**
+**AI that enhances your story. Watch keenly. Act thoughtfully. 10x your productivity.**
 
-[![GitHub Stars](https://img.shields.io/github/stars/anthropics/hawkeye?style=for-the-badge&logo=github&color=yellow)](https://github.com/anthropics/hawkeye)
-[![License](https://img.shields.io/github/license/anthropics/hawkeye?style=for-the-badge&color=blue)](LICENSE)
-[![Build](https://img.shields.io/github/actions/workflow/status/anthropics/hawkeye/ci.yml?style=for-the-badge&label=build)](https://github.com/anthropics/hawkeye/actions)
+<kbd>⌘</kbd> + <kbd>⇧</kbd> + <kbd>H</kbd> to observe your screen instantly
 
-[🌐 Website](https://hawkiyi.com) · [📖 Documentation](https://hawkiyi.com/docs) · [🐛 Report Bug](https://github.com/anthropics/hawkeye/issues) · [💡 Request Feature](https://github.com/anthropics/hawkeye/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/tensorboy/hawkeye?style=for-the-badge&logo=github&color=yellow)](https://github.com/tensorboy/hawkeye)
+[![License](https://img.shields.io/github/license/tensorboy/hawkeye?style=for-the-badge&color=blue)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/tensorboy/hawkeye?style=for-the-badge&color=green)](https://github.com/tensorboy/hawkeye/releases)
+
+[🌐 Website](https://hawkiyi.com) · [📖 Documentation](https://hawkiyi.com/docs) · [🐛 Report Bug](https://github.com/tensorboy/hawkeye/issues) · [💡 Request Feature](https://github.com/tensorboy/hawkeye/issues)
 
 <br/>
 
@@ -35,6 +37,8 @@
 > **Traditional AI waits for your commands. Hawkeye watches and helps proactively.**
 
 Hawkeye is an **AI-powered desktop assistant** that observes your work environment—screen, clipboard, files—and proactively offers intelligent suggestions. No prompts needed.
+
+The AI behind Hawkeye is designed to **enhance your own story** — turning your screen time into meaningful personal growth by automatically mapping your goals, habits, and progress into a living **Life Tree**.
 
 | Feature | Copilot / Cursor / Claude Code | **Hawkeye** |
 |---------|-------------------------------|-------------|
@@ -84,6 +88,17 @@ Hawkeye is an **AI-powered desktop assistant** that observes your work environme
 
 </td>
 </tr>
+<tr>
+<td colspan="2">
+
+### 🌳 Life Tree — AI Enhances Your Story
+- Automatically maps your activities into life stages, goals, and tasks
+- Proposes micro-experiments to optimize your habits and workflows
+- Graduated experiment phases: task → goal → automation
+- Your AI companion that turns screen time into personal growth
+
+</td>
+</tr>
 </table>
 
 <br/>
@@ -101,7 +116,7 @@ Hawkeye is an **AI-powered desktop assistant** that observes your work environme
 <td><img src="https://img.shields.io/badge/-macOS-000000?style=flat&logo=apple&logoColor=white" /></td>
 <td>
 
-[Apple Silicon (.dmg)](https://github.com/anthropics/hawkeye/releases/latest) · [Intel (.dmg)](https://github.com/anthropics/hawkeye/releases/latest)
+[Apple Silicon (.dmg)](https://github.com/tensorboy/hawkeye/releases/latest) · [Intel (.dmg)](https://github.com/tensorboy/hawkeye/releases/latest)
 
 </td>
 </tr>
@@ -109,7 +124,7 @@ Hawkeye is an **AI-powered desktop assistant** that observes your work environme
 <td><img src="https://img.shields.io/badge/-Windows-0078D6?style=flat&logo=windows&logoColor=white" /></td>
 <td>
 
-[Installer (.exe)](https://github.com/anthropics/hawkeye/releases/latest)
+[Installer (.exe)](https://github.com/tensorboy/hawkeye/releases/latest)
 
 </td>
 </tr>
@@ -117,7 +132,7 @@ Hawkeye is an **AI-powered desktop assistant** that observes your work environme
 <td><img src="https://img.shields.io/badge/-Linux-FCC624?style=flat&logo=linux&logoColor=black" /></td>
 <td>
 
-[Debian/Ubuntu (.deb)](https://github.com/anthropics/hawkeye/releases/latest) · [AppImage](https://github.com/anthropics/hawkeye/releases/latest)
+[Debian/Ubuntu (.deb)](https://github.com/tensorboy/hawkeye/releases/latest) · [AppImage](https://github.com/tensorboy/hawkeye/releases/latest)
 
 </td>
 </tr>
@@ -137,7 +152,7 @@ xattr -cr /Applications/Hawkeye.app
 
 ```bash
 # 1. Clone
-git clone https://github.com/anthropics/hawkeye.git && cd hawkeye
+git clone https://github.com/tensorboy/hawkeye.git && cd hawkeye
 
 # 2. Install
 pnpm install
@@ -149,26 +164,43 @@ pnpm dev
 ### Configure AI Provider
 
 <details>
-<summary><b>Option 1: Claude API (Recommended)</b></summary>
+<summary><b>Option 1: Google Gemini (Recommended — free tier)</b></summary>
 
-Enter your Anthropic API key in Settings → API Configuration.
+1. Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+2. Enter your key in Settings → Gemini API Key
+3. Model defaults to `gemini-2.0-flash` (1M context window)
 
 </details>
 
 <details>
-<summary><b>Option 2: Local LLM with Ollama (100% Offline)</b></summary>
+<summary><b>Option 2: OpenAI-Compatible API</b></summary>
+
+Works with OpenAI, DeepSeek, Groq, Together AI, or any OpenAI-compatible endpoint.
+
+Set your base URL, API key, and model name in Settings.
+
+</details>
+
+<details>
+<summary><b>Option 3: Local LLM with node-llama-cpp (100% Offline)</b></summary>
+
+Download a GGUF model and set the model path in Settings. Supports Metal GPU acceleration on macOS.
+
+Recommended models:
+- **Qwen 2.5 7B** — general purpose (4.7 GB)
+- **Llama 3.2 3B** — lightweight (2.0 GB)
+- **LLaVA 1.6 7B** — vision support (4.5 GB)
+
+</details>
+
+<details>
+<summary><b>Option 4: Ollama (Legacy)</b></summary>
 
 ```bash
-# Install Ollama
-brew install ollama  # macOS
-# Windows/Linux: https://ollama.com/download
-
-# Download models
-ollama pull qwen3:8b        # Text (8GB+ RAM)
-ollama pull qwen2.5vl:7b    # Vision
-
-# Select "Ollama" in Hawkeye settings
+brew install ollama && ollama pull qwen3:8b
 ```
+
+Select "Ollama" in Hawkeye settings.
 
 </details>
 
@@ -272,13 +304,52 @@ watcher.on('change', (event) => {
 
 <br/>
 
+## 🛡️ Advanced Features
+
+### Exponential Backoff Retry
+AI provider calls use exponential backoff with jitter to handle transient failures gracefully, preventing thundering herd effects.
+
+### SQLite FTS5 Full-Text Search
+Context history (window titles, clipboard, OCR text) is indexed with SQLite FTS5 for instant fuzzy search across all recorded observations.
+
+### Adaptive Refresh Rate
+The observation interval adjusts dynamically based on user activity — fast polling when active, slow polling when idle — saving CPU and battery.
+
+### Priority Task Queue
+A priority-based task queue with deduplication ensures that AI requests and plan executions are processed efficiently without duplicate work.
+
+### MCP Server Tools
+Hawkeye exposes 15+ tools via MCP (Model Context Protocol) for screen perception, window management, file organization, and automation.
+
+### Safety Guardrails
+An agent monitor enforces cost limits, blocks dangerous operations (e.g. `rm -rf /`), requires confirmation for risky actions, and supports a sandbox mode.
+
+### Menu Bar Panel
+A macOS-style popover panel accessible from the system tray provides quick actions, recent activity feed, and real-time module status indicators.
+
+### Provider Unified Protocol
+All AI providers declare their capabilities (chat, vision, streaming, function calling), enabling intelligent routing and health monitoring across providers.
+
+<br/>
+
 ## 🗺️ Roadmap
 
 - [x] Core perception engine
 - [x] Desktop app (Electron)
 - [x] VS Code extension
 - [x] Chrome extension
-- [x] Local LLM support (Ollama)
+- [x] Local LLM support (Ollama, node-llama-cpp)
+- [x] Multi-provider AI (Gemini, OpenAI-compatible, LlamaCpp)
+- [x] Provider unified protocol with capability routing
+- [x] Streaming and health check support
+- [x] SQLite FTS5 full-text search
+- [x] Exponential backoff retry strategy
+- [x] Adaptive refresh rate
+- [x] Priority task queue
+- [x] MCP Server with 15+ tools
+- [x] Safety guardrails and agent monitoring
+- [x] Menu bar panel (macOS-style popover)
+- [x] Life Tree — AI maps your life journey and enhances your story
 - [ ] Desktop ↔ Extension real-time sync
 - [ ] Plugin system
 - [ ] Custom workflow builder
@@ -302,11 +373,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## ⭐ Star History
 
-<a href="https://star-history.com/#anthropics/hawkeye&Date">
+<a href="https://star-history.com/#tensorboy/hawkeye&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=anthropics/hawkeye&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=anthropics/hawkeye&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=anthropics/hawkeye&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=tensorboy/hawkeye&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=tensorboy/hawkeye&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=tensorboy/hawkeye&type=Date" />
  </picture>
 </a>
 
@@ -315,6 +386,24 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 ## 📄 License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+<br/>
+
+## ☕ Support
+
+<div align="center">
+
+If you find Hawkeye useful, consider buying me a coffee!
+
+<a href="https://buymeacoffee.com/7xyxbngjf1">
+  <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" />
+</a>
+
+<br/><br/>
+
+<img src="./bmc_qr.png" alt="Buy Me a Coffee QR Code" width="180"/>
+
+</div>
 
 <br/>
 

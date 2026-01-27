@@ -1,4 +1,5 @@
 import { BrowserWindow } from 'electron';
+import { EventEmitter } from 'events';
 import {
   Hawkeye,
   createHawkeye,
@@ -6,25 +7,30 @@ import {
   type HawkeyeStatus,
   type UserIntent,
   type ExecutionPlan,
+  WebSearchTool,
 } from '@hawkeye/core';
-import { WebSearchTool } from '@hawkeye/core/src/skills/builtin/web-search';
 import { type AppConfig, LOCAL_ONLY_CONFIG } from './config-service';
 import * as path from 'path';
 import { app } from 'electron';
 
-export class HawkeyeService {
+export class HawkeyeService extends EventEmitter {
   private hawkeye: Hawkeye | null = null;
 
   constructor(
     private mainWindowGetter: () => BrowserWindow | null,
     private debugLog: (msg: string) => void
-  ) {}
+  ) {
+    super();
+  }
 
   async initialize(config: AppConfig): Promise<void> {
+    // 确定首选 provider
+    const preferredProvider = config.localOnly ? 'llama-cpp' : config.aiProvider;
+
     const coreConfig: HawkeyeConfig = {
       ai: {
         providers: [],
-        preferredProvider: config.localOnly ? 'ollama' : config.aiProvider,
+        preferredProvider,
         enableFailover: !config.localOnly,
       },
       sync: {
@@ -34,17 +40,25 @@ export class HawkeyeService {
     };
 
     if (config.localOnly) {
-      coreConfig.ai.providers.push({
-        type: 'ollama',
-        baseUrl: config.ollamaHost || 'http://localhost:11434',
-        model: config.ollamaModel || LOCAL_ONLY_CONFIG.model,
-      } as any);
-    } else {
-      if (config.aiProvider === 'ollama' && config.ollamaHost) {
+      // 本地模式: 使用 llama-cpp
+      if (config.llamaCppModelPath) {
         coreConfig.ai.providers.push({
-          type: 'ollama',
-          baseUrl: config.ollamaHost,
-          model: config.ollamaModel || 'qwen2.5vl:7b',
+          type: 'llama-cpp',
+          modelPath: config.llamaCppModelPath,
+          contextSize: config.llamaCppContextSize || 4096,
+          gpuLayers: config.llamaCppGpuLayers ?? -1,
+          gpuAcceleration: config.llamaCppGpuAcceleration || 'auto',
+        } as any);
+      }
+    } else {
+      // 非本地模式: 根据配置选择 provider
+      if (config.aiProvider === 'llama-cpp' && config.llamaCppModelPath) {
+        coreConfig.ai.providers.push({
+          type: 'llama-cpp',
+          modelPath: config.llamaCppModelPath,
+          contextSize: config.llamaCppContextSize || 4096,
+          gpuLayers: config.llamaCppGpuLayers ?? -1,
+          gpuAcceleration: config.llamaCppGpuAcceleration || 'auto',
         } as any);
       }
       if (config.aiProvider === 'gemini' && config.geminiApiKey) {
@@ -64,13 +78,7 @@ export class HawkeyeService {
         } as any);
       }
       if (coreConfig.ai.providers.length === 0) {
-        // Default backup
-        coreConfig.ai.providers.push({
-          type: 'openai',
-          baseUrl: 'http://74.48.133.20:8045',
-          apiKey: 'sk-antigravity-pickfrom2026',
-          model: 'gemini-3-flash-preview',
-        } as any);
+        this.debugLog('No AI provider configured. Please configure one in Settings.');
       }
     }
 
@@ -88,7 +96,7 @@ export class HawkeyeService {
         const originalExecute = WebSearchTool.execute;
         WebSearchTool.execute = (input, context) => {
             return originalExecute(input, {
-                ...context,
+                ...(context as Record<string, unknown> || {}),
                 config: {
                     tavilyApiKey: config.tavilyApiKey,
                     // We rely on 'python3' being in PATH or detected env
@@ -145,17 +153,35 @@ export class HawkeyeService {
 
   async perceiveAndRecognize(): Promise<UserIntent[]> {
     if (!this.hawkeye) throw new Error('Hawkeye not initialized');
-    const intents = await this.hawkeye.perceiveAndRecognize();
-    this.safeSend('intents', intents);
-    return intents;
+
+    try {
+      this.emit('analyzing');
+      const intents = await this.hawkeye.perceiveAndRecognize();
+      this.safeSend('intents', intents);
+      this.emit('idle');
+      return intents;
+    } catch (error) {
+      this.emit('error', (error as Error).message);
+      throw error;
+    }
   }
 
   async generatePlan(intentId: string): Promise<ExecutionPlan> {
     if (!this.hawkeye) throw new Error('Hawkeye not initialized');
-    const intents = this.hawkeye.getCurrentIntents();
-    const intent = intents.find(i => i.id === intentId);
-    if (!intent) throw new Error('Intent not found');
-    return this.hawkeye.generatePlan(intent);
+
+    try {
+      const intents = this.hawkeye.getCurrentIntents();
+      const intent = intents.find(i => i.id === intentId);
+      if (!intent) throw new Error('Intent not found');
+
+      this.emit('executing', intent.summary || 'Generating plan...');
+      const plan = await this.hawkeye.generatePlan(intent);
+      this.emit('idle');
+      return plan;
+    } catch (error) {
+      this.emit('error', (error as Error).message);
+      throw error;
+    }
   }
 
   private setupEvents() {

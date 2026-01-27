@@ -3,7 +3,7 @@
  * 根据优化建议修改执行计划
  */
 
-import type { ExecutionPlan, PlanStep } from '../../../ai/types';
+import type { ExecutionPlan, PlanStep } from '../../ai/types';
 import type { OptimizationSuggestion } from './quality-metrics';
 
 export class SEPOEditor {

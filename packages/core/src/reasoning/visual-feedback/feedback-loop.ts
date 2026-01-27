@@ -10,7 +10,8 @@ import type {
   FeedbackConfig
 } from './evaluation-types';
 import type { PerceptionEngine } from '../../perception/engine';
-import type { ExecutionResult, PlanStep, ActionType } from '../../ai/types';
+import type { ExecutionResult } from '../../types';
+import type { PlanStep, ActionType } from '../../ai/types';
 
 export interface StepExecutor {
   executeSingleAction(step: PlanStep): Promise<ExecutionResult>;
@@ -43,8 +44,8 @@ export class FeedbackLoop {
     executor: StepExecutor
   ): Promise<ExecutionResult> {
     // 确保有 ID
-    const stepWithId = { ...step, id: step.id || `step_${Date.now()}` };
-    let currentStep = { ...stepWithId };
+    const stepWithId: PlanStep & { id: string } = { ...step, id: step.id || `step_${Date.now()}` };
+    let currentStep: PlanStep & { id: string } = { ...stepWithId };
     let attempt = 0;
     let lastEvaluation: ExecutionEvaluation | null = null;
 
@@ -96,7 +97,7 @@ export class FeedbackLoop {
 
         if (refinement) {
           console.log(`[FeedbackLoop] Applying refinement: ${refinement.type}`, refinement.reasoning);
-          currentStep = this.applyRefinement(currentStep, refinement);
+          currentStep = this.applyRefinement(currentStep, refinement) as PlanStep & { id: string };
 
           // 如果是等待建议，直接执行等待
           if (refinement.type === 'add_wait') {

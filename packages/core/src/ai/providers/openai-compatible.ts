@@ -10,6 +10,9 @@ import type {
   AIMessage,
   AIResponse,
   AIMessageContent,
+  ProviderCapabilities,
+  ProviderHealthStatus,
+  AIStreamCallback,
 } from '../types';
 
 export interface OpenAICompatibleConfig extends AIProviderConfig {
@@ -53,6 +56,16 @@ interface OpenAIChatResponse {
 
 export class OpenAICompatibleProvider extends EventEmitter implements IAIProvider {
   readonly name = 'openai' as const;
+  readonly capabilities: ProviderCapabilities = {
+    chat: true,
+    vision: true,
+    streaming: true,
+    functionCalling: true,
+    jsonOutput: true,
+    embeddings: false,
+    maxContextWindow: 128000, // GPT-4o default
+    supportedImageFormats: ['png', 'jpeg', 'webp', 'gif'],
+  };
   private config: Required<OpenAICompatibleConfig>;
   private _isAvailable: boolean = false;
 
@@ -218,6 +231,137 @@ export class OpenAICompatibleProvider extends EventEmitter implements IAIProvide
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`视觉聊天请求失败: ${message}`);
+    }
+  }
+
+  /**
+   * 流式对话
+   */
+  async chatStream(messages: AIMessage[], callback: AIStreamCallback): Promise<void> {
+    const openaiMessages = this.convertMessages(messages);
+
+    const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.config.model,
+        messages: openaiMessages,
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+        stream: true,
+      }),
+      signal: AbortSignal.timeout(this.config.timeout),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      callback({ type: 'error', error: `API ${response.status}: ${errorText}` });
+      return;
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      callback({ type: 'error', error: 'No response body' });
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    let accumulated = '';
+    let sseBuffer = '';
+    let doneEmitted = false;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        // Keep the last (potentially incomplete) line in the buffer
+        sseBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+          if (jsonStr === '[DONE]') {
+            if (!doneEmitted) {
+              doneEmitted = true;
+              callback({ type: 'done', accumulated });
+            }
+            continue;
+          }
+
+          try {
+            const data = JSON.parse(jsonStr);
+            const delta = data.choices?.[0]?.delta?.content || '';
+            const finishReason = data.choices?.[0]?.finish_reason;
+
+            if (delta) {
+              accumulated += delta;
+              callback({ type: 'token', token: delta, accumulated });
+            }
+
+            if (finishReason && !doneEmitted) {
+              doneEmitted = true;
+              callback({
+                type: 'done',
+                accumulated,
+                finishReason,
+                usage: data.usage ? {
+                  promptTokens: data.usage.prompt_tokens,
+                  completionTokens: data.usage.completion_tokens,
+                  totalTokens: data.usage.total_tokens,
+                } : undefined,
+              });
+            }
+          } catch {
+            // skip malformed JSON
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /**
+   * 健康检查
+   */
+  async healthCheck(): Promise<ProviderHealthStatus> {
+    const start = Date.now();
+    try {
+      const response = await fetch(`${this.config.baseUrl}/v1/models`, {
+        headers: { 'Authorization': `Bearer ${this.config.apiKey}` },
+        signal: AbortSignal.timeout(5000),
+      });
+      const latencyMs = Date.now() - start;
+
+      if (response.ok) {
+        return {
+          healthy: true,
+          latencyMs,
+          message: 'API is reachable',
+          checkedAt: Date.now(),
+          metrics: { modelVersion: this.config.model },
+        };
+      }
+      return {
+        healthy: false,
+        latencyMs,
+        message: `API returned ${response.status}`,
+        checkedAt: Date.now(),
+      };
+    } catch (e: any) {
+      return {
+        healthy: false,
+        latencyMs: Date.now() - start,
+        message: e.message,
+        checkedAt: Date.now(),
+      };
     }
   }
 

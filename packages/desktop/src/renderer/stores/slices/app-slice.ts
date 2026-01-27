@@ -21,6 +21,16 @@ export const createAppSlice: StateCreator<HawkeyeStore, [], [], AppSlice> = (set
   screenshotPreview: null,
   ocrTextPreview: null,
 
+  // Onboarding State
+  onboardingLoading: true,
+  selectedOnboardingModel: '',
+  onboardingError: null,
+  onboardingMode: 'choose',
+
+  // Model State
+  installedModels: [],
+  modelPullProgress: null,
+
   // Actions
   setShowSettings: (show) => set({ showSettings: show }),
   setShowModelSelector: (show) => set({ showModelSelector: show }),
@@ -35,4 +45,10 @@ export const createAppSlice: StateCreator<HawkeyeStore, [], [], AppSlice> = (set
   setSmartObserveWatching: (watching) => set({ smartObserveWatching: watching }),
   setScreenshotPreview: (preview) => set({ screenshotPreview: preview }),
   setOcrTextPreview: (text) => set({ ocrTextPreview: text }),
+  setOnboardingLoading: (loading) => set({ onboardingLoading: loading }),
+  setSelectedOnboardingModel: (model) => set({ selectedOnboardingModel: model }),
+  setOnboardingError: (error) => set({ onboardingError: error }),
+  setOnboardingMode: (mode) => set({ onboardingMode: mode }),
+  setInstalledModels: (models) => set({ installedModels: models }),
+  setModelPullProgress: (progress) => set({ modelPullProgress: progress }),
 });

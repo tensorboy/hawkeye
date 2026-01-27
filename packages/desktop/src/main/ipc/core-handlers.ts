@@ -46,7 +46,7 @@ export function registerCoreHandlers(hawkeyeService: HawkeyeService) {
     return hawkeyeService.getStatus();
   });
 
-  ipcMain.handle('switch-ai-provider', async (_event, provider: 'ollama' | 'gemini' | 'openai') => {
+  ipcMain.handle('switch-ai-provider', async (_event, provider: 'llama-cpp' | 'gemini' | 'openai') => {
     return hawkeyeService.getInstance()?.switchAIProvider(provider) ?? false;
   });
 

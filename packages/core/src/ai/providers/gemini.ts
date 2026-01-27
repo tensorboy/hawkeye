@@ -10,6 +10,9 @@ import type {
   AIProviderConfig,
   AIMessage,
   AIResponse,
+  ProviderCapabilities,
+  ProviderHealthStatus,
+  AIStreamCallback,
 } from '../types';
 
 export interface GeminiConfig extends AIProviderConfig {
@@ -48,6 +51,16 @@ interface GeminiResponse {
 
 export class GeminiProvider extends EventEmitter implements IAIProvider {
   readonly name = 'gemini' as const;
+  readonly capabilities: ProviderCapabilities = {
+    chat: true,
+    vision: true,
+    streaming: true,
+    functionCalling: true,
+    jsonOutput: true,
+    embeddings: false,
+    maxContextWindow: 1048576, // Gemini 2.0 Flash: 1M tokens
+    supportedImageFormats: ['png', 'jpeg', 'webp', 'gif'],
+  };
   private config: Required<GeminiConfig>;
   private _isAvailable: boolean = false;
   private baseUrl: string;
@@ -300,6 +313,129 @@ export class GeminiProvider extends EventEmitter implements IAIProvider {
     }
 
     return contents;
+  }
+
+  /**
+   * 流式对话
+   */
+  async chatStream(messages: AIMessage[], callback: AIStreamCallback): Promise<void> {
+    const contents = this.convertMessages(messages);
+
+    const response = await fetch(
+      `${this.baseUrl}/models/${this.config.model}:streamGenerateContent?alt=sse&key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            temperature: this.config.temperature,
+            maxOutputTokens: this.config.maxTokens,
+          },
+        }),
+        signal: AbortSignal.timeout(this.config.timeout),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      callback({ type: 'error', error: error.error?.message || response.statusText });
+      return;
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      callback({ type: 'error', error: 'No response body' });
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    let accumulated = '';
+    let sseBuffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        // Keep the last (potentially incomplete) line in the buffer
+        sseBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr || jsonStr === '[DONE]') continue;
+
+          try {
+            const data = JSON.parse(jsonStr);
+            const text = data.candidates?.[0]?.content?.parts
+              ?.map((p: any) => p.text || '')
+              .join('') || '';
+
+            if (text) {
+              accumulated += text;
+              callback({ type: 'token', token: text, accumulated });
+            }
+
+            if (data.candidates?.[0]?.finishReason) {
+              callback({
+                type: 'done',
+                accumulated,
+                finishReason: data.candidates[0].finishReason,
+                usage: data.usageMetadata ? {
+                  promptTokens: data.usageMetadata.promptTokenCount,
+                  completionTokens: data.usageMetadata.candidatesTokenCount,
+                  totalTokens: data.usageMetadata.totalTokenCount,
+                } : undefined,
+              });
+            }
+          } catch {
+            // skip malformed JSON lines
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /**
+   * 健康检查
+   */
+  async healthCheck(): Promise<ProviderHealthStatus> {
+    const start = Date.now();
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/models?key=${this.config.apiKey}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      const latencyMs = Date.now() - start;
+
+      if (response.ok) {
+        return {
+          healthy: true,
+          latencyMs,
+          message: 'Gemini API is reachable',
+          checkedAt: Date.now(),
+          metrics: { modelVersion: this.config.model },
+        };
+      }
+      return {
+        healthy: false,
+        latencyMs,
+        message: `API returned ${response.status}`,
+        checkedAt: Date.now(),
+      };
+    } catch (e: any) {
+      return {
+        healthy: false,
+        latencyMs: Date.now() - start,
+        message: e.message,
+        checkedAt: Date.now(),
+      };
+    }
   }
 
   async terminate(): Promise<void> {

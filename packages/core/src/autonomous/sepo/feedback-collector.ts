@@ -3,9 +3,9 @@
  * 收集执行反馈并存储到向量数据库，用于长期学习
  */
 
-import type { VectorStore } from '../../../storage/vector-store';
-import type { ExecutionPlan } from '../../../ai/types';
-import type { ExecutionResult } from '../../../types';
+import type { VectorStore } from '../../storage/vector-store';
+import type { ExecutionPlan } from '../../ai/types';
+import type { ExecutionResult } from '../../types';
 import type { ExecutionQuality } from './quality-metrics';
 
 export class FeedbackCollector {
@@ -30,19 +30,18 @@ Suggestions: ${quality.suggestions.map(s => s.reasoning).join('; ')}
     `.trim();
 
     // 存储到向量数据库
-    await this.vectorStore.addDocuments([
+    await this.vectorStore.add(
+      `sepo_feedback_${plan.id}_${Date.now()}`,
+      content,
       {
-        content,
-        metadata: {
-          type: 'sepo_feedback',
-          intentId: plan.intent.id,
-          planId: plan.id,
-          success: result.success,
-          score: quality.score,
-          timestamp: Date.now()
-        }
+        type: 'sepo_feedback',
+        intentId: plan.intent.id,
+        planId: plan.id,
+        success: result.success,
+        score: quality.score,
+        timestamp: Date.now()
       }
-    ]);
+    );
   }
 
   /**
@@ -51,10 +50,9 @@ Suggestions: ${quality.suggestions.map(s => s.reasoning).join('; ')}
   async retrieveRelevantFeedback(intentDescription: string): Promise<string[]> {
     const results = await this.vectorStore.search(
       `feedback for: ${intentDescription}`,
-      5,
-      { type: 'sepo_feedback' }
+      5
     );
 
-    return results.map(r => r.content);
+    return results.map((r: { document: { content: string } }) => r.document.content);
   }
 }

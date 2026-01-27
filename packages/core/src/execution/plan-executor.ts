@@ -435,14 +435,18 @@ export class PlanExecutor extends EventEmitter {
     const startTime = Date.now();
 
     // 1. 权限检查
-    const permResult = await this.permissionManager.checkPermission(actionType, { params });
+    const execContext = {
+      toolId: actionType,
+      category: this.getToolCategory(actionType),
+      action: 'execute',
+      parameters: params,
+      source: 'system' as const,
+      timestamp: Date.now(),
+    };
+    const permResult = await this.permissionManager.checkPermission(execContext);
     if (!permResult.allowed) {
-      this.auditLogger.log({
-        toolId: actionType,
-        action: 'execute',
-        params,
-        result: 'denied',
-        error: permResult.reason
+      this.auditLogger.log('permission_denied', 'execute', 'denied', execContext, {
+        reason: permResult.reason,
       });
       return {
         success: false,
@@ -775,24 +779,24 @@ export class PlanExecutor extends EventEmitter {
       }
 
       // 记录审计日志 (成功)
-      this.auditLogger.log({
-        toolId: actionType,
-        action: 'execute',
-        params,
-        result: result.success ? 'success' : 'failure',
-        error: result.error
-      });
+      this.auditLogger.log(
+        result.success ? 'permission_granted' : 'error',
+        'execute',
+        result.success ? 'allowed' : 'error',
+        execContext,
+        { error: result.error }
+      );
 
       return result;
     } catch (error) {
       // 记录审计日志 (异常)
-      this.auditLogger.log({
-        toolId: actionType,
-        action: 'execute',
-        params,
-        result: 'failure',
-        error: error instanceof Error ? error.message : String(error)
-      });
+      this.auditLogger.log(
+        'error',
+        'execute',
+        'error',
+        execContext,
+        { error: error instanceof Error ? error.message : String(error) }
+      );
 
       return {
         success: false,
@@ -800,6 +804,14 @@ export class PlanExecutor extends EventEmitter {
         duration: Date.now() - startTime,
       };
     }
+  }
+
+  private getToolCategory(actionType: ActionType): 'shell' | 'file' | 'browser' | 'network' | 'system' | 'ai' {
+    if (actionType === 'shell') return 'shell';
+    if (actionType.startsWith('file_') || actionType.startsWith('folder_')) return 'file';
+    if (actionType === 'browser_action') return 'browser';
+    if (actionType === 'url_open') return 'network';
+    return 'system';
   }
 
   private delay(ms: number): Promise<void> {

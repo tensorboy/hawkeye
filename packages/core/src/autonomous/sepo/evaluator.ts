@@ -3,8 +3,8 @@
  * 分析执行结果，识别问题并生成优化建议
  */
 
-import type { ExecutionPlan } from '../../../ai/types';
-import type { ExecutionResult } from '../../../types';
+import type { ExecutionPlan } from '../../ai/types';
+import type { ExecutionResult } from '../../types';
 import {
   type ExecutionQuality,
   type OptimizationSuggestion,

@@ -148,11 +148,9 @@ export interface ExtensionConfig {
   desktopPort: number;
 
   // Standalone mode (fallback when Desktop not available)
-  aiProvider: 'gemini' | 'ollama';
+  aiProvider: 'gemini' | 'openai';
   geminiApiKey?: string;
   geminiModel?: string;
-  ollamaHost?: string;
-  ollamaModel?: string;
 
   // UI preferences
   showFloatingButton: boolean;

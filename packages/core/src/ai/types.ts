@@ -5,7 +5,7 @@
 // ============ AI Provider 类型 ============
 
 export type AIProviderType =
-  | 'ollama'      // 本地 Ollama
+  | 'llama-cpp'   // 本地 LLM (node-llama-cpp)
   | 'gemini'      // Google Gemini
   | 'claude'      // Anthropic Claude
   | 'openai'      // OpenAI GPT
@@ -65,10 +65,19 @@ export interface IAIProvider {
   readonly name: AIProviderType;
   readonly isAvailable: boolean;
 
+  /** Provider 能力声明 (统一协议) */
+  readonly capabilities: ProviderCapabilities;
+
   initialize(): Promise<void>;
   chat(messages: AIMessage[]): Promise<AIResponse>;
   chatWithVision(messages: AIMessage[], images: string[]): Promise<AIResponse>;
   terminate(): Promise<void>;
+
+  /** 流式对话 (可选，根据 capabilities.streaming) */
+  chatStream?(messages: AIMessage[], callback: AIStreamCallback): Promise<void>;
+
+  /** 健康检查 (可选) */
+  healthCheck?(): Promise<ProviderHealthStatus>;
 }
 
 // ============ 意图类型 ============
@@ -255,4 +264,100 @@ export interface PlanImpact {
   fullyReversible: boolean;
   /** 预估耗时 (秒) */
   estimatedDuration: number;
+}
+
+// ============ Provider 统一协议 (参考 VibeMeter ProviderProtocol) ============
+
+/**
+ * Provider 能力声明
+ * 每个 Provider 声明自己支持的功能，Manager 据此路由请求
+ */
+export interface ProviderCapabilities {
+  /** 支持文本对话 */
+  chat: boolean;
+  /** 支持视觉（图像理解） */
+  vision: boolean;
+  /** 支持流式输出 */
+  streaming: boolean;
+  /** 支持函数/工具调用 */
+  functionCalling: boolean;
+  /** 支持 JSON 结构化输出 */
+  jsonOutput: boolean;
+  /** 支持嵌入生成 */
+  embeddings: boolean;
+  /** 最大上下文窗口 (tokens) */
+  maxContextWindow: number;
+  /** 支持的图像格式 */
+  supportedImageFormats?: string[];
+  /** 支持的语言 */
+  supportedLanguages?: string[];
+}
+
+/**
+ * Provider 健康检查结果
+ */
+export interface ProviderHealthStatus {
+  /** 是否健康可用 */
+  healthy: boolean;
+  /** 响应延迟 (ms) */
+  latencyMs: number;
+  /** 状态消息 */
+  message: string;
+  /** 检查时间 */
+  checkedAt: number;
+  /** 额外指标 */
+  metrics?: {
+    remainingQuota?: number;
+    rateLimitRemaining?: number;
+    modelVersion?: string;
+  };
+}
+
+/**
+ * 流式响应事件
+ */
+export interface AIStreamEvent {
+  type: 'token' | 'done' | 'error';
+  token?: string;
+  finishReason?: string;
+  accumulated?: string;
+  usage?: AIResponse['usage'];
+  error?: string;
+}
+
+/**
+ * 流式响应回调
+ */
+export type AIStreamCallback = (event: AIStreamEvent) => void;
+
+/**
+ * 默认 Provider 能力 (最小功能集)
+ */
+export const DEFAULT_PROVIDER_CAPABILITIES: ProviderCapabilities = {
+  chat: true,
+  vision: false,
+  streaming: false,
+  functionCalling: false,
+  jsonOutput: false,
+  embeddings: false,
+  maxContextWindow: 4096,
+};
+
+// ============ 重试策略类型 (参考 steipete/wacli) ============
+
+/**
+ * 指数退避重试配置
+ * 参考 wacli 的 ReconnectWithBackoff 模式
+ */
+export interface AIRetryConfig {
+  /** 最小延迟 (ms)，默认 100 */
+  minDelay?: number;
+  /** 最大延迟 (ms)，默认 30000 */
+  maxDelay?: number;
+  /** 退避乘数，默认 2 */
+  multiplier?: number;
+  /** 是否添加抖动 (防止雷群效应)，默认 true */
+  jitter?: boolean;
+  /** 最大重试次数，默认 3 */
+  maxRetries?: number;
 }
