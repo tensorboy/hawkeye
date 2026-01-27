@@ -22,39 +22,35 @@ import {
   createSelfReflection,
   type SelfReflectionConfig,
 } from './autonomous/self-reflection';
-
-// ...
-
-export class Hawkeye extends EventEmitter {
-  // ...
-  private selfReflection: SelfReflection | null = null;
-
-  constructor(config: HawkeyeConfig) {
-    super();
-    // ...
-    // 初始化核心模块（非 async 部分）
-    this.perception = new PerceptionEngine(config.perception);
-    // ...
-    this.database = new HawkeyeDatabase(config.storage?.database);
-    this.vectorStore = new VectorStore(config.storage?.vectorStore);
-
-    // 初始化 SelfReflection (含 SEPO)
-    this.selfReflection = createSelfReflection({}, this.vectorStore);
-
-    // ...
-  }
-}
+import {
+  AutonomousManager,
+  createAutonomousManager,
+  type AutonomousConfig,
+  type SuggestedAction,
+  type AutonomousAnalysisResult,
+} from './autonomous';
+import { PermissionManager, AuditLogger } from './security';
+import {
+  ToolRegistry,
+  getToolRegistry,
+  MCPServer,
+} from './mcp';
+import {
+  SkillManager,
+} from './skills';
+import { EventCollector } from './debug';
 import type {
   UserIntent,
   ExecutionPlan,
   AIMessage,
 } from './ai/types';
+import type { ExecutionResult } from './types';
 
 export interface HawkeyeConfig {
   /** AI Provider 配置 */
   ai: {
     providers: AIProviderConfig[];
-    preferredProvider?: 'ollama' | 'gemini';
+    preferredProvider?: 'ollama' | 'gemini' | 'openai';
     enableFailover?: boolean;
   };
 
@@ -147,13 +143,13 @@ export class Hawkeye extends EventEmitter {
   private dashboardManager: DashboardManager | null = null;
   private workflowManager: WorkflowManager | null = null;
   private pluginManager: PluginManager | null = null;
-  private toolRegistry: ToolRegistry;
-  private skillManager: SkillManager;
-  private mcpServer: MCPServer | null = null;
   private autonomousManager: AutonomousManager | null = null;
   private selfReflection: SelfReflection | null = null;
   private permissionManager: PermissionManager;
   private auditLogger: AuditLogger;
+  private toolRegistry: ToolRegistry;
+  private skillManager: SkillManager;
+  private mcpServer: MCPServer | null = null;
 
   // 调试事件收集器
   private eventCollector: EventCollector;
@@ -957,6 +953,11 @@ export class Hawkeye extends EventEmitter {
     // 停止自主能力
     if (this.autonomousManager) {
       this.autonomousManager.stop();
+    }
+
+    // 停止 MCP Server
+    if (this.mcpServer) {
+      await this.mcpServer.stop();
     }
 
     if (this.syncServer) {
