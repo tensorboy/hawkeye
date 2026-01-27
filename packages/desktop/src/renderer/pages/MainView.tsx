@@ -57,7 +57,14 @@ const createProgressCard = (plan: ExecutionPlan, execution: PlanExecution): A2UI
   type: 'progress',
   title: `执行中: ${plan.title}`,
   description: plan.steps[execution.currentStep - 1]?.description || '准备中...',
-  icon: 'progress',
+  icon: 'refresh',
+  currentStep: execution.currentStep,
+  totalSteps: plan.steps.length,
+  stepDescription: plan.steps[execution.currentStep - 1]?.description || '准备中...',
+  progress: (execution.currentStep / plan.steps.length) * 100,
+  pausable: true,
+  cancellable: true,
+  status: 'running',
   timestamp: Date.now(),
   metadata: {
     planId: execution.planId,
@@ -66,8 +73,8 @@ const createProgressCard = (plan: ExecutionPlan, execution: PlanExecution): A2UI
     totalSteps: plan.steps.length,
   },
   actions: [
-    { id: 'pause', label: '暂停', type: 'secondary', icon: '⏸️' },
-    { id: 'cancel', label: '取消', type: 'danger', icon: '⏹️' },
+    { id: 'pause', label: '暂停', type: 'secondary', icon: 'clock' },
+    { id: 'cancel', label: '取消', type: 'danger', icon: 'x' },
   ],
 });
 
@@ -97,6 +104,7 @@ export function MainView() {
       title: '发生错误',
       description: message,
       icon: 'error',
+      retryable: false,
       timestamp: Date.now(),
       actions: [{ id: 'dismiss', label: '关闭', type: 'dismiss' }],
     };
@@ -204,7 +212,9 @@ export function MainView() {
               type: 'info',
               title: t('app.historyEmpty', '暂无执行记录'),
               description: t('app.historyEmptyDesc', '执行任务后会在这里显示历史记录'),
-              icon: 'history',
+              icon: 'clock',
+              infoType: 'status',
+              dismissible: true,
               timestamp: Date.now(),
               actions: [{ id: 'dismiss', label: t('app.done'), type: 'dismiss' }],
             });
@@ -221,7 +231,9 @@ export function MainView() {
                 type: 'info' as const,
                 title: item.plan?.title || t('app.unknownTask', '未知任务'),
                 description: `${statusIcon} ${statusText}`,
-                icon: 'history',
+                icon: 'clock' as const,
+                infoType: 'status' as const,
+                dismissible: true,
                 timestamp: item.startedAt,
                 metadata: {
                   executionId: item.id,
@@ -237,7 +249,9 @@ export function MainView() {
               type: 'info',
               title: t('app.historyTitle', '执行历史'),
               description: t('app.historyCount', { count: historyItems.length, defaultValue: `共 ${historyItems.length} 条记录` }),
-              icon: 'history',
+              icon: 'clock',
+              infoType: 'status',
+              dismissible: true,
               timestamp: Date.now(),
               actions: [{ id: 'dismiss', label: t('app.done'), type: 'dismiss' }],
             });

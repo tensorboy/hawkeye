@@ -4,7 +4,9 @@
  */
 
 import React from 'react';
-import type { A2UIConfirmationCard, A2UIAction, A2UIInputConfig } from '@hawkeye/core';
+import type { A2UIConfirmationCard, A2UIAction } from '@hawkeye/core';
+
+type A2UIInputConfig = NonNullable<A2UIConfirmationCard['requiresInput']>;
 import { CardIcon } from './CardIcon';
 import { ActionButton } from './ActionButton';
 

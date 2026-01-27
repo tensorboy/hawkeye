@@ -53,6 +53,7 @@ export function SettingsPage() {
       title: '发生错误',
       description: message,
       icon: 'error',
+      retryable: false,
       timestamp: Date.now(),
       actions: [{ id: 'dismiss', label: '关闭', type: 'dismiss' }],
     };

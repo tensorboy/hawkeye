@@ -174,7 +174,7 @@ export class HawkeyeService extends EventEmitter {
       const intent = intents.find(i => i.id === intentId);
       if (!intent) throw new Error('Intent not found');
 
-      this.emit('executing', intent.summary || 'Generating plan...');
+      this.emit('executing', intent.description || 'Generating plan...');
       const plan = await this.hawkeye.generatePlan(intent);
       this.emit('idle');
       return plan;

@@ -197,14 +197,14 @@ const generateId = () => `card_${Date.now()}_${Math.random().toString(36).substr
 
 function getIntentIcon(type: string): string {
   const icons: Record<string, string> = {
-    file_organize: '📁',
-    code_assist: '💻',
-    search: '🔍',
-    communication: '💬',
-    automation: '⚡',
-    data_process: '📊',
+    file_organize: 'folder',
+    code_assist: 'terminal',
+    search: 'search',
+    communication: 'info',
+    automation: 'lightning',
+    data_process: 'clipboard',
   };
-  return icons[type] || '💡';
+  return icons[type] || 'magic';
 }
 
 function getIntentImpact(type: string): 'low' | 'medium' | 'high' {
@@ -220,8 +220,11 @@ const intentToSuggestionCard = (intent: UserIntent): A2UICard => ({
   type: 'suggestion',
   title: intent.description,
   description: intent.context?.reason,
-  icon: getIntentIcon(intent.type),
+  icon: getIntentIcon(intent.type) as A2UICard['icon'],
   confidence: intent.confidence,
+  suggestionType: (intent.type === 'file_organize' ? 'file_organize'
+    : intent.type === 'automation' ? 'automation'
+    : 'custom') as 'file_organize' | 'error_fix' | 'automation' | 'shortcut' | 'custom',
   timestamp: Date.now(),
   metadata: {
     intentId: intent.id,
@@ -229,7 +232,7 @@ const intentToSuggestionCard = (intent: UserIntent): A2UICard => ({
     impact: getIntentImpact(intent.type),
   },
   actions: [
-    { id: 'generate_plan', label: '生成计划', type: 'primary', icon: '📋', shortcut: '⏎' },
+    { id: 'generate_plan', label: '生成计划', type: 'primary', icon: 'clipboard', shortcut: '⏎' },
     { id: 'dismiss', label: '忽略', type: 'dismiss' },
   ],
 });
@@ -239,7 +242,16 @@ const planToPreviewCard = (plan: ExecutionPlan): A2UICard => ({
   type: 'preview',
   title: plan.title,
   description: plan.description,
-  icon: 'preview',
+  icon: 'eye',
+  previewType: 'plan',
+  content: {
+    steps: plan.steps.map((s) => ({
+      order: s.order,
+      description: s.description,
+      actionType: s.actionType,
+      riskLevel: (s.riskLevel || 'low') as 'low' | 'medium' | 'high',
+    })),
+  },
   timestamp: Date.now(),
   metadata: {
     planId: plan.id,
@@ -250,7 +262,7 @@ const planToPreviewCard = (plan: ExecutionPlan): A2UICard => ({
     reversible: plan.impact.fullyReversible,
   },
   actions: [
-    { id: 'execute', label: '执行计划', type: 'primary', icon: '▶️', shortcut: '⏎' },
+    { id: 'execute', label: '执行计划', type: 'primary', icon: 'arrow-right', shortcut: '⏎' },
     { id: 'reject', label: '放弃', type: 'secondary' },
   ],
 });
@@ -260,7 +272,14 @@ const createProgressCard = (plan: ExecutionPlan, execution: PlanExecution): A2UI
   type: 'progress',
   title: `执行中: ${plan.title}`,
   description: plan.steps[execution.currentStep - 1]?.description || '准备中...',
-  icon: 'progress',
+  icon: 'refresh',
+  currentStep: execution.currentStep,
+  totalSteps: plan.steps.length,
+  stepDescription: plan.steps[execution.currentStep - 1]?.description || '准备中...',
+  progress: (execution.currentStep / plan.steps.length) * 100,
+  pausable: true,
+  cancellable: true,
+  status: 'running',
   timestamp: Date.now(),
   metadata: {
     planId: execution.planId,
@@ -269,19 +288,30 @@ const createProgressCard = (plan: ExecutionPlan, execution: PlanExecution): A2UI
     totalSteps: plan.steps.length,
   },
   actions: [
-    { id: 'pause', label: '暂停', type: 'secondary', icon: '⏸️' },
-    { id: 'cancel', label: '取消', type: 'danger', icon: '⏹️' },
+    { id: 'pause', label: '暂停', type: 'secondary', icon: 'clock' },
+    { id: 'cancel', label: '取消', type: 'danger', icon: 'x' },
   ],
 });
 
 const createResultCard = (plan: ExecutionPlan, execution: PlanExecution): A2UICard => {
   const success = execution.status === 'completed';
+  const completedSteps = execution.results?.filter((r: any) => r.status === 'completed').length ?? 0;
+  const failedSteps = execution.results?.filter((r: any) => r.status === 'failed').length ?? 0;
   return {
     id: `result_${execution.planId}`,
     type: 'result',
     title: success ? '执行完成' : '执行失败',
     description: plan.title,
     icon: success ? 'success' : 'error',
+    status: success ? 'success' : 'failed',
+    summary: {
+      totalSteps: plan.steps.length,
+      completedSteps,
+      failedSteps,
+      duration: execution.completedAt
+        ? execution.completedAt - execution.startedAt
+        : 0,
+    },
     timestamp: Date.now(),
     metadata: {
       planId: execution.planId,
@@ -339,6 +369,7 @@ export default function App() {
           title: '发生错误',
           description: (err as Error).message,
           icon: 'error',
+          retryable: false,
           timestamp: Date.now(),
           actions: [{ id: 'dismiss', label: '关闭', type: 'dismiss' }],
         };
@@ -405,6 +436,7 @@ export default function App() {
         title: '发生错误',
         description: error,
         icon: 'error',
+        retryable: false,
         timestamp: Date.now(),
         actions: [{ id: 'dismiss', label: '关闭', type: 'dismiss' }],
       });

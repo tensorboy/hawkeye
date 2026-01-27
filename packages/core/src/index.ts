@@ -206,6 +206,7 @@ export {
   setSelfReflection,
   type AutonomousConfig,
   type SuggestedAction,
+  type SuggestionType,
   type ProactiveIntent,
   type RecordedAction,
   type BehaviorPattern,
