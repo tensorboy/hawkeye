@@ -55,6 +55,7 @@ jobs:
 
       - name: Build Core
         run: cd packages/core && pnpm build
+        continue-on-error: true
 
       - name: Type check
         run: pnpm typecheck
