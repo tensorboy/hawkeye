@@ -1,4 +1,5 @@
-import type { A2UICard } from '@hawkeye/core';
+import type { A2UICard, SafetyAnalysisResult, SafetyRiskLevel } from '@hawkeye/core';
+import type { SafetyAlert } from './slices/safety-slice';
 import type {
   UserIntent,
   ExecutionPlan,
@@ -129,4 +130,30 @@ export interface LifeTreeSlice {
   rebuildLifeTree: () => Promise<void>;
 }
 
-export type HawkeyeStore = AppSlice & ConfigSlice & IntentSlice & ExecutionSlice & LifeTreeSlice;
+export interface SafetySlice {
+  // State
+  safetyAlerts: SafetyAlert[];
+  safetyHistory: SafetyAlert[];
+  safetyEnabled: boolean;
+  autoCheckUrls: boolean;
+  autoCheckClipboard: boolean;
+  showSafetyPanel: boolean;
+  lastCheckResult: SafetyAnalysisResult | null;
+
+  // Actions
+  setSafetyEnabled: (enabled: boolean) => void;
+  setAutoCheckUrls: (enabled: boolean) => void;
+  setAutoCheckClipboard: (enabled: boolean) => void;
+  setShowSafetyPanel: (show: boolean) => void;
+  addSafetyAlert: (alert: SafetyAlert) => void;
+  removeSafetyAlert: (alertId: string) => void;
+  clearSafetyAlerts: () => void;
+  updateAlertAction: (alertId: string, action: SafetyAlert['userAction']) => void;
+  getAlertsByRiskLevel: (riskLevel: SafetyRiskLevel) => SafetyAlert[];
+  getRecentAlerts: (count: number) => SafetyAlert[];
+  getHighRiskAlerts: () => SafetyAlert[];
+  clearHistory: () => void;
+  setLastCheckResult: (result: SafetyAnalysisResult | null) => void;
+}
+
+export type HawkeyeStore = AppSlice & ConfigSlice & IntentSlice & ExecutionSlice & LifeTreeSlice & SafetySlice;

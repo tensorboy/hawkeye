@@ -9,6 +9,7 @@ export { PreviewCard } from './PreviewCard';
 export { ResultCard } from './ResultCard';
 export { ProgressCard } from './ProgressCard';
 export { ConfirmationCard } from './ConfirmationCard';
+export { SafetyAlertCard } from './SafetyAlertCard';
 
 // 基础组件
 export { CardIcon } from './CardIcon';

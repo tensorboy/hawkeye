@@ -6,6 +6,7 @@ import { createConfigSlice } from './slices/config-slice';
 import { createIntentSlice } from './slices/intent-slice';
 import { createExecutionSlice } from './slices/execution-slice';
 import { createLifeTreeSlice } from './slices/life-tree-slice';
+import { createSafetySlice } from './slices/safety-slice';
 
 export const useHawkeyeStore = create<HawkeyeStore>()(
   subscribeWithSelector((...a) => ({
@@ -14,7 +15,9 @@ export const useHawkeyeStore = create<HawkeyeStore>()(
     ...createIntentSlice(...a),
     ...createExecutionSlice(...a),
     ...createLifeTreeSlice(...a),
+    ...createSafetySlice(...a),
   }))
 );
 
 export * from './types';
+export type { SafetyAlert } from './slices/safety-slice';

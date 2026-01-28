@@ -401,6 +401,41 @@ export {
   type WebSearchConfig,
 } from './skills/builtin/web-search';
 
+export {
+  SafetyCheckTool,
+  QuickUrlCheckTool,
+  type SafetyCheckConfig,
+} from './skills/builtin/safety-check';
+
+// 安全助手模块 (Safety Assistant)
+export {
+  SafetyAnalyzer,
+  getSafetyAnalyzer,
+  setSafetyAnalyzer,
+  createSafetyAnalyzer,
+  getAllThreatPatterns,
+  getThreatPatternsByCategory,
+  getThreatPatternsByType,
+  THREAT_TYPE_DESCRIPTIONS,
+  RISK_LEVEL_DESCRIPTIONS,
+  URL_THREAT_PATTERNS,
+  TEXT_THREAT_PATTERNS,
+  EMAIL_THREAT_PATTERNS,
+  GENERAL_THREAT_PATTERNS,
+  type ThreatType,
+  type SafetyRiskLevel,
+  type ThreatIndicator,
+  type SafetyAnalysisResult,
+  type GroundingInfo,
+  type GroundingResult,
+  type SafetyCheckInput,
+  type SafetyAnalyzerConfig,
+  type ThreatPattern,
+  type A2UISafetyAlertCard,
+  type KnownScamEntry,
+  type SafetyHistoryEntry,
+} from './safety';
+
 // 人生树模块 (Life Tree)
 export {
   LifeTreeBuilder,
