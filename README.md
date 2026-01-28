@@ -26,10 +26,6 @@
 
 <br/>
 
-<p align="center">
-  <img src="./assets/demo.gif" alt="Hawkeye Demo" width="800"/>
-</p>
-
 ---
 
 ## 🎯 What is Hawkeye?
