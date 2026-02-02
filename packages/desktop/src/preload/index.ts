@@ -310,6 +310,15 @@ contextBridge.exposeInMainWorld('hawkeye', {
 
   whisperRequestMic: () => ipcRenderer.invoke('whisper-request-mic'),
 
+  // Reset whisper model (delete and prepare for re-download)
+  whisperResetModel: () => ipcRenderer.invoke('whisper-reset-model'),
+
+  // Download whisper model
+  whisperDownloadModel: () => ipcRenderer.invoke('whisper-download-model'),
+
+  // Get whisper model info
+  whisperModelInfo: () => ipcRenderer.invoke('whisper-model-info'),
+
   onWhisperSegment: (callback: (data: { text: string; timestamp: number }) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: { text: string; timestamp: number }) => callback(data);
     ipcRenderer.on('whisper-segment', handler);
@@ -395,6 +404,41 @@ contextBridge.exposeInMainWorld('hawkeye', {
     },
   },
 
+  // ============ Activity Summary API (10分钟活动总结) ============
+
+  activitySummary: {
+    // 获取最近的活动总结
+    getRecent: (limit?: number) => ipcRenderer.invoke('activity-summary:get-recent', limit),
+
+    // 获取时间范围内的总结
+    getRange: (startTime: number, endTime: number) =>
+      ipcRenderer.invoke('activity-summary:get-range', startTime, endTime),
+
+    // 立即生成一次总结
+    generateNow: () => ipcRenderer.invoke('activity-summary:generate-now'),
+
+    // 获取待更新生命树的总结
+    getPendingUpdates: () => ipcRenderer.invoke('activity-summary:get-pending-updates'),
+
+    // 标记总结已更新生命树
+    markUpdated: (summaryId: string) => ipcRenderer.invoke('activity-summary:mark-updated', summaryId),
+
+    // 检查是否正在运行
+    isRunning: () => ipcRenderer.invoke('activity-summary:is-running'),
+
+    // 启动总结器
+    start: () => ipcRenderer.invoke('activity-summary:start'),
+
+    // 停止总结器
+    stop: () => ipcRenderer.invoke('activity-summary:stop'),
+
+    // 获取配置
+    getConfig: () => ipcRenderer.invoke('activity-summary:get-config'),
+
+    // 更新配置
+    updateConfig: (config: any) => ipcRenderer.invoke('activity-summary:update-config', config),
+  },
+
   // ============ Menu Bar Panel API ============
 
   menuBarPanel: {
@@ -412,6 +456,133 @@ contextBridge.exposeInMainWorld('hawkeye', {
       const handler = (_event: Electron.IpcRendererEvent, state: any) => callback(state);
       ipcRenderer.on('menu-bar-panel:state', handler);
       return () => ipcRenderer.removeListener('menu-bar-panel:state', handler);
+    },
+  },
+
+  // ============ Gesture Control API ============
+
+  gestureControl: (event: {
+    action: string;
+    gesture: string;
+    confidence: number;
+    position?: { x: number; y: number };
+    handedness?: string;
+  }) => ipcRenderer.invoke('gesture-control', event),
+
+  gestureControlStatus: () => ipcRenderer.invoke('gesture-control:status'),
+
+  gestureControlSetEnabled: (enabled: boolean) =>
+    ipcRenderer.invoke('gesture-control:set-enabled', enabled),
+
+  gestureControlUpdateConfig: (config: {
+    cursorSensitivity?: number;
+    clickHoldTime?: number;
+    scrollSpeed?: number;
+  }) => ipcRenderer.invoke('gesture-control:update-config', config),
+
+  onGestureControlScreenshot: (callback: (data: { dataUrl: string; timestamp: number }) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: { dataUrl: string; timestamp: number }) => callback(data);
+    ipcRenderer.on('gesture-control:screenshot', handler);
+    return () => ipcRenderer.removeListener('gesture-control:screenshot', handler);
+  },
+
+  onGestureControlToggleRecording: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('gesture-control:toggle-recording', handler);
+    return () => ipcRenderer.removeListener('gesture-control:toggle-recording', handler);
+  },
+
+  onGestureControlPause: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('gesture-control:pause', handler);
+    return () => ipcRenderer.removeListener('gesture-control:pause', handler);
+  },
+
+  onGestureControlQuickMenu: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('gesture-control:quick-menu', handler);
+    return () => ipcRenderer.removeListener('gesture-control:quick-menu', handler);
+  },
+
+  // ============ Global Click API (WebGazer Calibration) ============
+
+  globalClick: {
+    // 启动全局点击监听
+    start: () => ipcRenderer.invoke('global-click:start'),
+
+    // 停止全局点击监听
+    stop: () => ipcRenderer.invoke('global-click:stop'),
+
+    // 获取全局点击状态
+    status: () => ipcRenderer.invoke('global-click:status'),
+
+    // 监听全局点击事件
+    onEvent: (callback: (event: {
+      x: number;
+      y: number;
+      button: number;
+      timestamp: number;
+      isInsideApp: boolean;
+    }) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: {
+        x: number;
+        y: number;
+        button: number;
+        timestamp: number;
+        isInsideApp: boolean;
+      }) => callback(data);
+      ipcRenderer.on('global-click:event', handler);
+      return () => ipcRenderer.removeListener('global-click:event', handler);
+    },
+  },
+
+  // ============ Audio Processor API (Core Audio VPIO / AEC) ============
+
+  audioProcessor: {
+    // 启动音频处理 (带 AEC)
+    start: () => ipcRenderer.invoke('audio-processor:start'),
+
+    // 停止音频处理
+    stop: () => ipcRenderer.invoke('audio-processor:stop'),
+
+    // 获取处理器状态
+    status: () => ipcRenderer.invoke('audio-processor:status'),
+
+    // 手动处理音频数据 (用于 fallback 模式)
+    process: (audioData: ArrayBuffer) => ipcRenderer.invoke('audio-processor:process', audioData),
+
+    // 监听处理器状态变化
+    onStatusChange: (callback: (status: {
+      isRunning: boolean;
+      aecEnabled: boolean;
+      sampleRate: number;
+      bufferSize: number;
+      processedFrames: number;
+    }) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, status: {
+        isRunning: boolean;
+        aecEnabled: boolean;
+        sampleRate: number;
+        bufferSize: number;
+        processedFrames: number;
+      }) => callback(status);
+      ipcRenderer.on('audio-processor-status', handler);
+      return () => ipcRenderer.removeListener('audio-processor-status', handler);
+    },
+
+    // 监听处理后的音频
+    onProcessed: (callback: (data: {
+      size: number;
+      energy: number;
+      timestamp: number;
+    }) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: {
+        size: number;
+        energy: number;
+        timestamp: number;
+      }) => callback(data);
+      ipcRenderer.on('audio-processed', handler);
+      return () => ipcRenderer.removeListener('audio-processed', handler);
     },
   },
 });

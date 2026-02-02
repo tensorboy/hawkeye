@@ -15,6 +15,9 @@ importers:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.30
+      electron:
+        specifier: ^40.1.0
+        version: 40.1.0
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
@@ -129,6 +132,12 @@ importers:
       '@hawkeye/core':
         specifier: workspace:*
         version: link:../core
+      '@jitsi/robotjs':
+        specifier: ^0.6.21
+        version: 0.6.21
+      '@mediapipe/tasks-vision':
+        specifier: ^0.10.32
+        version: 0.10.32
       '@tanstack/react-virtual':
         specifier: ^3.13.18
         version: 3.13.18(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -267,12 +276,18 @@ importers:
       tr46:
         specifier: 0.0.3
         version: 0.0.3
+      uiohook-napi:
+        specifier: ^1.5.4
+        version: 1.5.4
       uuid:
         specifier: 9.0.1
         version: 9.0.1
       web-streams-polyfill:
         specifier: 4.0.0-beta.3
         version: 4.0.0-beta.3
+      webgazer:
+        specifier: ^3.4.0
+        version: 3.4.0(@tensorflow/tfjs-converter@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13)))(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))(encoding@0.1.13)(seedrandom@3.0.5)
       webidl-conversions:
         specifier: 3.0.1
         version: 3.0.1
@@ -388,7 +403,7 @@ importers:
         version: 19.2.3(@types/react@19.2.9)
       '@vitejs/plugin-react':
         specifier: ^4.0.0
-        version: 4.7.0(vite@5.4.21(@types/node@20.19.30)(lightningcss@1.30.2)(terser@5.46.0))
+        version: 4.7.0(vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.46.0))
       autoprefixer:
         specifier: ^10.0.0
         version: 10.4.23(postcss@8.5.6)
@@ -406,7 +421,7 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^5.0.0
-        version: 5.4.21(@types/node@20.19.30)(lightningcss@1.30.2)(terser@5.46.0)
+        version: 5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.46.0)
 
   packages/vscode-extension:
     dependencies:
@@ -1238,6 +1253,9 @@ packages:
     resolution: {integrity: sha512-ZXRY4jNvVgSVQ8DL3LTcakaAtXwTVUxE81hslsyD2AtoXW/wVob10HkOJ1X/pAlcI7D+2YoZKg5do8G/w6RYgA==}
     engines: {node: '>=8'}
 
+  '@jitsi/robotjs@0.6.21':
+    resolution: {integrity: sha512-rIF1itj1syWbdv1vEK3Xd+QVp7yQVUwuKb2s7+PFiLyYG4c4bDPhXvXxHHAGHYcnkmFZMB7ArwI0W44OtN5Crw==}
+
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
 
@@ -1274,6 +1292,9 @@ packages:
   '@malept/flatpak-bundler@0.4.0':
     resolution: {integrity: sha512-9QOtNffcOF/c1seMCDnjckb3R9WHcG34tky+FHpNKKCW0wc/scYLwMtO+ptyGUfMW0/b/n4qRiALlaFHc9Oj7Q==}
     engines: {node: '>= 10.0.0'}
+
+  '@mediapipe/tasks-vision@0.10.32':
+    resolution: {integrity: sha512-3tiAZnmKloYnRXYoO3dKltTUGnqeCwzC4lV03uY0vCsE+aveJTyEVQyZHOlQGQNsjK+gRHzkf9q08C99Qm2K0Q==}
 
   '@node-llama-cpp/linux-arm64@3.15.1':
     resolution: {integrity: sha512-g7JC/WwDyyBSmkIjSvRF2XLW+YA0z2ZVBSAKSv106mIPO4CzC078woTuTaPsykWgIaKcQRyXuW5v5XQMcT1OOA==}
@@ -1899,6 +1920,54 @@ packages:
   '@tauri-apps/plugin-shell@2.3.4':
     resolution: {integrity: sha512-ktsRWf8wHLD17aZEyqE8c5x98eNAuTizR1FSX475zQ4TxaiJnhwksLygQz+AGwckJL5bfEP13nWrlTNQJUpKpA==}
 
+  '@tensorflow-models/blazeface@0.0.7':
+    resolution: {integrity: sha512-+hInPkvHJoubfiXlmNuF3SCucZvU6W1PMC25IV99NSAftJUpKvLokfF93iX8UkOFQCXkPFbnLKacGfGlbjgvMw==}
+    peerDependencies:
+      '@tensorflow/tfjs-converter': ^3.1.0
+      '@tensorflow/tfjs-core': ^3.1.0
+
+  '@tensorflow-models/face-landmarks-detection@0.0.3':
+    resolution: {integrity: sha512-WFzoknHev00yEVDFDk55eKBnRDEo9EAzfi7IxxIpm+31TJfj0TX6soQPiAE/qQGoHo9MnD6CkFH189ZZuwQblw==}
+    peerDependencies:
+      '@tensorflow/tfjs-converter': ^3.1.0
+      '@tensorflow/tfjs-core': ^3.1.0
+
+  '@tensorflow/tfjs-backend-cpu@3.21.0':
+    resolution: {integrity: sha512-88S21UAdzyK0CsLUrH17GPTD+26E85OP9CqmLZslaWjWUmBkeTQ5Zqyp6iK+gELnLxPx6q7JsNEeFuPv4254lQ==}
+    engines: {yarn: '>= 1.3.2'}
+    peerDependencies:
+      '@tensorflow/tfjs-core': 3.21.0
+
+  '@tensorflow/tfjs-backend-webgl@3.21.0':
+    resolution: {integrity: sha512-N4zitIAT9IX8B8oe489qM3f3VcESxGZIZvHmVP8varOQakTvTX859aaPo1s8hK1qCy4BjSGbweooZe4U8D4kTQ==}
+    engines: {yarn: '>= 1.3.2'}
+    peerDependencies:
+      '@tensorflow/tfjs-core': 3.21.0
+
+  '@tensorflow/tfjs-converter@3.21.0':
+    resolution: {integrity: sha512-12Y4zVDq3yW+wSjSDpSv4HnpL2sDZrNiGSg8XNiDE4HQBdjdA+a+Q3sZF/8NV9y2yoBhL5L7V4mMLDdbZBd9/Q==}
+    peerDependencies:
+      '@tensorflow/tfjs-core': 3.21.0
+
+  '@tensorflow/tfjs-core@3.21.0':
+    resolution: {integrity: sha512-YSfsswOqWfd+M4bXIhT3hwtAb+IV8+ODwIxwdFR/7jTAPZP1wMVnSlpKnXHAN64HFOiP+Tm3HmKusEZ0+09A0w==}
+    engines: {yarn: '>= 1.3.2'}
+
+  '@tensorflow/tfjs-data@3.21.0':
+    resolution: {integrity: sha512-eFLfw2wIcFNxnP2Iv/SnVlihehzKMumk1b5Prcx1ixk/SbkCo5u0Lt7OVOWaEOKVqvB2sT+dJcTjAh6lrCC/QA==}
+    peerDependencies:
+      '@tensorflow/tfjs-core': 3.21.0
+      seedrandom: ^3.0.5
+
+  '@tensorflow/tfjs-layers@3.21.0':
+    resolution: {integrity: sha512-CMVXsraakXgnXEnqD9QbtResA7nvV7Jz20pGmjFIodcQkClgmFFhdCG5N+zlVRHEz7VKG2OyfhltZ0dBq/OAhA==}
+    peerDependencies:
+      '@tensorflow/tfjs-core': 3.21.0
+
+  '@tensorflow/tfjs@3.21.0':
+    resolution: {integrity: sha512-khcARd3/872llL/oF4ouR40qlT71mylU66PGT8kHP/GJ5YKj44sv8lDRjU7lOVlJK7jsJFWEsNVHI3eMc/GWNQ==}
+    hasBin: true
+
   '@tinyhttp/content-disposition@2.2.3':
     resolution: {integrity: sha512-0nSvOgFHvq0a15+pZAdbAyHUk0+AGLX6oyo45b7fPdgWdPfHA19IfgUKRECYT0aw86ZP6ZDDLxGQ7FEA1fAVOg==}
     engines: {node: '>=12.17.0'}
@@ -1970,6 +2039,9 @@ packages:
   '@types/keyv@3.1.4':
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
 
+  '@types/long@4.0.2':
+    resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
+
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
@@ -1981,6 +2053,12 @@ packages:
 
   '@types/node@20.19.30':
     resolution: {integrity: sha512-WJtwWJu7UdlvzEAUm484QNg5eAoq5QR08KDNx7g45Usrs2NtOPiX8ugDqmKdXkyL03rBqU5dYNYVQetEpBHq2g==}
+
+  '@types/node@24.10.9':
+    resolution: {integrity: sha512-ne4A0IpG3+2ETuREInjPNhUGis1SFjv1d5asp8MzEAGtOZeTeHVDOYqOgqfhvseqg/iXty2hjBf1zAOb7RNiNw==}
+
+  '@types/offscreencanvas@2019.3.0':
+    resolution: {integrity: sha512-esIJx9bQg+QYF0ra8GnvfianIY8qWB0GBx54PK5Eps6m+xTj86KLavHv6qDhzKcu5UUOgNfJ2pWaIIV7TRUd9Q==}
 
   '@types/plist@3.0.5':
     resolution: {integrity: sha512-E6OCaRmAe4WDmWNsL/9RMqdkkzDCY1etutkflWk4c+AcjDU07Pcz1fQwTX0TQz+Pxqn9i4L1TU3UFpjnrcDgxA==}
@@ -2002,11 +2080,20 @@ packages:
   '@types/responselike@1.0.3':
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
 
+  '@types/seedrandom@2.4.34':
+    resolution: {integrity: sha512-ytDiArvrn/3Xk6/vtylys5tlY6eo7Ane0hvcx++TKo6RxQXuVfW0AF/oeWqAj9dN29SyhtawuXstgmPlwNcv/A==}
+
   '@types/verror@1.10.11':
     resolution: {integrity: sha512-RlDm9K7+o5stv0Co8i8ZRGxDbrTxhJtgjqjFyVh/tXQyl/rYtTKlnTvZ88oSTeYREWurwx20Js4kTuKCsFkUtg==}
 
   '@types/vscode@1.108.1':
     resolution: {integrity: sha512-DerV0BbSzt87TbrqmZ7lRDIYaMiqvP8tmJTzW2p49ZBVtGUnGAu2RGQd1Wv4XMzEVUpaHbsemVM5nfuQJj7H6w==}
+
+  '@types/webgl-ext@0.0.30':
+    resolution: {integrity: sha512-LKVgNmBxN0BbljJrVUwkxwRYqzsAEPcZOe6S2T6ZaBDIrFp0qu4FNlpc5sM1tGbXUYFgdVQIoeLk1Y1UoblyEg==}
+
+  '@types/webgl2@0.0.6':
+    resolution: {integrity: sha512-50GQhDVTq/herLMiqSQkdtRu+d5q/cWHn4VvKJtrj4DJAjo1MNkWYa2MA41BaBO1q1HgsUjuQvEOk0QHvlnAaQ==}
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -2166,6 +2253,9 @@ packages:
   '@webcomponents/custom-elements@1.6.0':
     resolution: {integrity: sha512-CqTpxOlUCPWRNUPZDxT5v2NnHXA4oox612iUGnmTUGQFhZ1Gkj8kirtl/2wcF6MqX7+PqqicZzOCBKKfIn0dww==}
 
+  '@webgpu/types@0.1.16':
+    resolution: {integrity: sha512-9E61voMP4+Rze02jlTXud++Htpjyyk8vw5Hyw9FGRrmhHQg2GqbuOfwf5Klrb8vTxc2XWI3EfO7RUHMpxTj26A==}
+
   '@xmldom/xmldom@0.8.11':
     resolution: {integrity: sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==}
     engines: {node: '>=10.0.0'}
@@ -2296,6 +2386,9 @@ packages:
 
   arg@5.0.2:
     resolution: {integrity: sha512-PYjyFOLKQ9y57JvQ6QLo8dAgNqswh8M1RMJYdQduT6xbWSgK36P/Z/v+p888pM69jMMfS8Xd8F6I1kQ/I9HUGg==}
+
+  argparse@1.0.10:
+    resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
 
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
@@ -2573,6 +2666,9 @@ packages:
     resolution: {integrity: sha512-n8fOixwDD6b/ObinzTrp1ZKFzbgvKZvuz/TvejnLn1aQfC6r52XEx85FmuC+3HI+JM7coBRXUvNqEU2PHVrHpg==}
     engines: {node: '>=8'}
 
+  cliui@7.0.4:
+    resolution: {integrity: sha512-OcRE68cOsVMXp1Yvonl/fzkQOyjLSu/8bhPDfQt0e0/Eb283TKP20Fs2MqoPsr9SwA595rRCA+QMzYc9nBP+JQ==}
+
   cliui@8.0.1:
     resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
     engines: {node: '>=12'}
@@ -2663,6 +2759,9 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  core-js@3.48.0:
+    resolution: {integrity: sha512-zpEHTy1fjTMZCKLHUZoVeylt9XrzaIN2rbPXEt0k+q7JE5CkCZdo6bNq55bn24a69CH7ErAVLKijxJja4fw+UQ==}
 
   core-util-is@1.0.2:
     resolution: {integrity: sha512-3lqz5YjWTYnW6dlDa5TLaTCcShfar1e40rmcJVwCBJC6mWlFuj0eCHIElmG1g5kyuJ/GD+8Wn4FFCcz4gJPfaQ==}
@@ -2881,6 +2980,11 @@ packages:
 
   electron@28.3.3:
     resolution: {integrity: sha512-ObKMLSPNhomtCOBAxFS8P2DW/4umkh72ouZUlUKzXGtYuPzgr1SYhskhFWgzAsPtUzhL2CzyV2sfbHcEW4CXqw==}
+    engines: {node: '>= 12.20.55'}
+    hasBin: true
+
+  electron@40.1.0:
+    resolution: {integrity: sha512-2j/kvw7uF0H1PnzYBzw2k2Q6q16J8ToKrtQzZfsAoXbbMY0l5gQi2DLOauIZLzwp4O01n8Wt/74JhSRwG0yj9A==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -3375,6 +3479,9 @@ packages:
     resolution: {integrity: sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg==}
     engines: {node: '>= 4'}
 
+  immediate@3.0.6:
+    resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
+
   imurmurhash@0.1.4:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
     engines: {node: '>=0.8.19'}
@@ -3610,6 +3717,9 @@ packages:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
     engines: {node: '>=6'}
 
+  lie@3.1.1:
+    resolution: {integrity: sha512-RiNhHysUjhrDQntfYSfY4MU24coXXdEOgw9WGcKHNeEwffDYbF//u87M1EWaMGzuFoSbqW0C9C6lEEhDOAswfw==}
+
   lifecycle-utils@2.1.0:
     resolution: {integrity: sha512-AnrXnE2/OF9PHCyFg0RSqsnQTzV991XaZA/buhFDoc58xU7rhSCDgCz/09Lqpsn4MpoPHt7TRAXV1kWZypFVsA==}
 
@@ -3708,6 +3818,9 @@ packages:
     resolution: {integrity: sha512-xXqpXoINfFhgua9xiqD8fPFHgkoq1mmmpE92WlDbm9rNRd/EbRb+Gqf908T2DMfuHjjJlksiK2RbHVOdD/MqSw==}
     engines: {node: '>=8.9.0'}
 
+  localforage@1.7.3:
+    resolution: {integrity: sha512-1TulyYfc4udS7ECSBT2vwJksWbkwwTX8BzeUIiq8Y07Riy7bDAAnxDaPU/tWyOVmQAcWJIEIFP9lPfBGqVoPgQ==}
+
   lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
 
@@ -3768,6 +3881,9 @@ packages:
   log-symbols@7.0.1:
     resolution: {integrity: sha512-ja1E3yCr9i/0hmBVaM0bfwDjnGy8I/s6PP4DFp+yP+a+mrHO4Rm7DtmnqROTUkHIkqffC84YY7AeqX6oFk0WFg==}
     engines: {node: '>=18'}
+
+  long@4.0.0:
+    resolution: {integrity: sha512-XsP+KhQif4bjX1kbuSiySJFNAehNxgLb6hPRGJ9QsUr8ajHkuXGdrHmFUTUUXhDwVX2R5bY4JNZEwbUiMhV+MA==}
 
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
@@ -4027,6 +4143,15 @@ packages:
     engines: {node: '>=10.5.0'}
     deprecated: Use your platform's native DOMException instead
 
+  node-fetch@2.6.13:
+    resolution: {integrity: sha512-StxNAxh15zr77QvvkmveSQ8uCQ4+v5FkvNTj0OESmiHu+VRi/gXArXtkWMElOsOUNLtUEvI4yS+rdtOHZTwlQA==}
+    engines: {node: 4.x || >=6.0.0}
+    peerDependencies:
+      encoding: ^0.1.0
+    peerDependenciesMeta:
+      encoding:
+        optional: true
+
   node-fetch@2.7.0:
     resolution: {integrity: sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==}
     engines: {node: 4.x || >=6.0.0}
@@ -4035,6 +4160,10 @@ packages:
     peerDependenciesMeta:
       encoding:
         optional: true
+
+  node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
 
   node-gyp@11.5.0:
     resolution: {integrity: sha512-ra7Kvlhxn5V9Slyus0ygMa2h+UqExPqUIkfk7Pc8QTLT956JLSy51uWFwHtIYy0vI8cB4BDhc/S03+880My/LQ==}
@@ -4465,6 +4594,12 @@ packages:
     resolution: {integrity: sha512-YTUo+Flmw4ZXiWfQKGcwwc11KnoRAYgzAE2E7mXKCjSviTKShtxBsN6YUUBB2gtaBzKzeKunxhUwNHQuRryhWA==}
     engines: {node: '>= 4'}
 
+  regenerator-runtime@0.13.11:
+    resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
+
+  regression@2.0.1:
+    resolution: {integrity: sha512-A4XYsc37dsBaNOgEjkJKzfJlE394IMmUPlI/p3TTI9u3T+2a+eox5Pr/CPUqF0eszeWZJPAc6QkroAhuUpWDJQ==}
+
   remotion@4.0.409:
     resolution: {integrity: sha512-+NFkLJQcbxOKwosTuyvrQbxWOK+HpP+og3omznDB0S9hsX4BUGL0peanN/6uk4HtVXMHuFs7meUulKviyQ1Egw==}
     peerDependencies:
@@ -4516,6 +4651,11 @@ packages:
 
   rimraf@2.6.3:
     resolution: {integrity: sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==}
+    deprecated: Rimraf versions prior to v4 are no longer supported
+    hasBin: true
+
+  rimraf@3.0.2:
+    resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
     deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
 
@@ -4572,6 +4712,9 @@ packages:
 
   screenshot-desktop@1.15.3:
     resolution: {integrity: sha512-bHztitCmaa+A+ssxRa3LDNepQzCHEEAkz1FaJjoZx2yDMkHIkHLKKcc5xMgkGNas97wSGboSB2BoO0c4RnjlJw==}
+
+  seedrandom@3.0.5:
+    resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
 
   semver-compare@1.0.0:
     resolution: {integrity: sha512-YM3/ITh2MJ5MtzaM429anh+x2jiLVjqILF4m4oyQB18W7Ggea7BfqdH/wGMK7dDiMghv/6WG7znWMwUDzJiXow==}
@@ -4707,6 +4850,9 @@ packages:
   sourcemap-codec@1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
     deprecated: Please use @jridgewell/sourcemap-codec instead
+
+  sprintf-js@1.0.3:
+    resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
 
   sprintf-js@1.1.3:
     resolution: {integrity: sha512-Oo+0REFV59/rz3gfJNKQiBlwfHaSESl1pcGyABQsnnIfWOFt6JNj5gCog2U6MLZ//IGYD+nA8nI+mTShREReaA==}
@@ -5007,6 +5153,10 @@ packages:
   ufo@1.6.3:
     resolution: {integrity: sha512-yDJTmhydvl5lJzBmy/hyOAA0d+aqCBuwl818haVdYCRrWV84o7YyeVm4QlVHStqNrrJSTb6jKuFAVqAFsr+K3Q==}
 
+  uiohook-napi@1.5.4:
+    resolution: {integrity: sha512-7vPVDNwgb6MwTgviA/dnF2MrW0X5xm76fAqaOAC3cEKkswqAZOPw1USu14Sr6383s5qhXegcJaR63CpJOPCNAg==}
+    engines: {node: '>= 16'}
+
   underscore@1.13.7:
     resolution: {integrity: sha512-GMXzWtsc57XAtguZgaQViUOzs0KTkk8ojr3/xAxXLITqf/3EMwxC0inyETfDFjH/Krbhuep0HNbbjI9i/q3F3g==}
 
@@ -5015,6 +5165,9 @@ packages:
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
   undici@7.19.0:
     resolution: {integrity: sha512-Heho1hJD81YChi+uS2RkSjcVO+EQLmLSyUlHyp7Y/wFbxQaGb4WXVKD073JytrjXJVkSZVzoE2MCSOKugFGtOQ==}
@@ -5161,6 +5314,9 @@ packages:
     resolution: {integrity: sha512-QW95TCTaHmsYfHDybGMwO5IJIM93I/6vTRk+daHTWFPhwh+C8Cg7j7XyKrwrj8Ib6vYXe0ocYNrmzY4xAAN6ug==}
     engines: {node: '>= 14'}
 
+  webgazer@3.4.0:
+    resolution: {integrity: sha512-Il+fX5+WgZ40N/NgAXfUOX2ma353ZYcVbpCAKsagAGXek8io2yz0pwPbEpziEHR5tYWDiy1WTlR8v/q/RWqMug==}
+
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
@@ -5279,9 +5435,17 @@ packages:
     resolution: {integrity: sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==}
     engines: {node: '>=18'}
 
+  yargs-parser@20.2.9:
+    resolution: {integrity: sha512-y11nGElTIV+CT3Zv9t7VKl+Q3hTQoT9a1Qzezhhl6Rp21gJ/IVTW7Z3y9EWXhuUBC2Shnf+DX0antecpAwSP8w==}
+    engines: {node: '>=10'}
+
   yargs-parser@21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
     engines: {node: '>=12'}
+
+  yargs@16.2.0:
+    resolution: {integrity: sha512-D1mvvtDG0L5ft/jGWkLpG1+m0eQxOfaBvTNELraWj22wSVUMWxZUvYgJYcKh6jGGIkJFhH4IZPQhR4TKpc8mBw==}
+    engines: {node: '>=10'}
 
   yargs@17.7.2:
     resolution: {integrity: sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==}
@@ -5974,6 +6138,11 @@ snapshots:
 
   '@istanbuljs/schema@0.1.3': {}
 
+  '@jitsi/robotjs@0.6.21':
+    dependencies:
+      node-addon-api: 8.5.0
+      node-gyp-build: 4.8.4
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -6022,6 +6191,8 @@ snapshots:
       tmp-promise: 3.0.3
     transitivePeerDependencies:
       - supports-color
+
+  '@mediapipe/tasks-vision@0.10.32': {}
 
   '@node-llama-cpp/linux-arm64@3.15.1':
     optional: true
@@ -6649,6 +6820,82 @@ snapshots:
     dependencies:
       '@tauri-apps/api': 2.9.1
 
+  '@tensorflow-models/blazeface@0.0.7(@tensorflow/tfjs-converter@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13)))(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))':
+    dependencies:
+      '@tensorflow/tfjs-converter': 3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      '@tensorflow/tfjs-core': 3.21.0(encoding@0.1.13)
+
+  '@tensorflow-models/face-landmarks-detection@0.0.3(@tensorflow/tfjs-converter@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13)))(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))':
+    dependencies:
+      '@tensorflow-models/blazeface': 0.0.7(@tensorflow/tfjs-converter@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13)))(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      '@tensorflow/tfjs-converter': 3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      '@tensorflow/tfjs-core': 3.21.0(encoding@0.1.13)
+      rimraf: 3.0.2
+
+  '@tensorflow/tfjs-backend-cpu@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))':
+    dependencies:
+      '@tensorflow/tfjs-core': 3.21.0(encoding@0.1.13)
+      '@types/seedrandom': 2.4.34
+      seedrandom: 3.0.5
+
+  '@tensorflow/tfjs-backend-webgl@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))':
+    dependencies:
+      '@tensorflow/tfjs-backend-cpu': 3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      '@tensorflow/tfjs-core': 3.21.0(encoding@0.1.13)
+      '@types/offscreencanvas': 2019.3.0
+      '@types/seedrandom': 2.4.34
+      '@types/webgl-ext': 0.0.30
+      '@types/webgl2': 0.0.6
+      seedrandom: 3.0.5
+
+  '@tensorflow/tfjs-converter@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))':
+    dependencies:
+      '@tensorflow/tfjs-core': 3.21.0(encoding@0.1.13)
+
+  '@tensorflow/tfjs-core@3.21.0(encoding@0.1.13)':
+    dependencies:
+      '@types/long': 4.0.2
+      '@types/offscreencanvas': 2019.3.0
+      '@types/seedrandom': 2.4.34
+      '@types/webgl-ext': 0.0.30
+      '@webgpu/types': 0.1.16
+      long: 4.0.0
+      node-fetch: 2.6.13(encoding@0.1.13)
+      seedrandom: 3.0.5
+    transitivePeerDependencies:
+      - encoding
+
+  '@tensorflow/tfjs-data@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))(encoding@0.1.13)(seedrandom@3.0.5)':
+    dependencies:
+      '@tensorflow/tfjs-core': 3.21.0(encoding@0.1.13)
+      '@types/node-fetch': 2.6.13
+      node-fetch: 2.6.13(encoding@0.1.13)
+      seedrandom: 3.0.5
+      string_decoder: 1.3.0
+    transitivePeerDependencies:
+      - encoding
+
+  '@tensorflow/tfjs-layers@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))':
+    dependencies:
+      '@tensorflow/tfjs-core': 3.21.0(encoding@0.1.13)
+
+  '@tensorflow/tfjs@3.21.0(encoding@0.1.13)(seedrandom@3.0.5)':
+    dependencies:
+      '@tensorflow/tfjs-backend-cpu': 3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      '@tensorflow/tfjs-backend-webgl': 3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      '@tensorflow/tfjs-converter': 3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      '@tensorflow/tfjs-core': 3.21.0(encoding@0.1.13)
+      '@tensorflow/tfjs-data': 3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))(encoding@0.1.13)(seedrandom@3.0.5)
+      '@tensorflow/tfjs-layers': 3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      argparse: 1.0.10
+      chalk: 4.1.2
+      core-js: 3.48.0
+      regenerator-runtime: 0.13.11
+      yargs: 16.2.0
+    transitivePeerDependencies:
+      - encoding
+      - seedrandom
+
   '@tinyhttp/content-disposition@2.2.3': {}
 
   '@tootallnate/once@2.0.0': {}
@@ -6734,6 +6981,8 @@ snapshots:
     dependencies:
       '@types/node': 20.19.30
 
+  '@types/long@4.0.2': {}
+
   '@types/ms@2.1.0': {}
 
   '@types/node-fetch@2.6.13':
@@ -6748,6 +6997,12 @@ snapshots:
   '@types/node@20.19.30':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/node@24.10.9':
+    dependencies:
+      undici-types: 7.16.0
+
+  '@types/offscreencanvas@2019.3.0': {}
 
   '@types/plist@3.0.5':
     dependencies:
@@ -6774,10 +7029,16 @@ snapshots:
     dependencies:
       '@types/node': 20.19.30
 
+  '@types/seedrandom@2.4.34': {}
+
   '@types/verror@1.10.11':
     optional: true
 
   '@types/vscode@1.108.1': {}
+
+  '@types/webgl-ext@0.0.30': {}
+
+  '@types/webgl2@0.0.6': {}
 
   '@types/ws@8.18.1':
     dependencies:
@@ -6805,6 +7066,18 @@ snapshots:
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
       vite: 5.4.21(@types/node@20.19.30)(lightningcss@1.30.2)(terser@5.46.0)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.46.0))':
+    dependencies:
+      '@babel/core': 7.28.6
+      '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.6)
+      '@babel/plugin-transform-react-jsx-source': 7.27.1(@babel/core@7.28.6)
+      '@rolldown/pluginutils': 1.0.0-beta.27
+      '@types/babel__core': 7.20.5
+      react-refresh: 0.17.0
+      vite: 5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.46.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -7016,6 +7289,8 @@ snapshots:
 
   '@webcomponents/custom-elements@1.6.0': {}
 
+  '@webgpu/types@0.1.16': {}
+
   '@xmldom/xmldom@0.8.11': {}
 
   '@xtuc/ieee754@1.2.0': {}
@@ -7185,6 +7460,10 @@ snapshots:
       readable-stream: 3.6.2
 
   arg@5.0.2: {}
+
+  argparse@1.0.10:
+    dependencies:
+      sprintf-js: 1.0.3
 
   argparse@2.0.1: {}
 
@@ -7511,6 +7790,12 @@ snapshots:
       string-width: 4.2.3
     optional: true
 
+  cliui@7.0.4:
+    dependencies:
+      string-width: 4.2.3
+      strip-ansi: 6.0.1
+      wrap-ansi: 7.0.0
+
   cliui@8.0.1:
     dependencies:
       string-width: 4.2.3
@@ -7602,6 +7887,8 @@ snapshots:
   console-control-strings@1.1.0: {}
 
   convert-source-map@2.0.0: {}
+
+  core-js@3.48.0: {}
 
   core-util-is@1.0.2:
     optional: true
@@ -7876,6 +8163,14 @@ snapshots:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 18.19.130
+      extract-zip: 2.0.1
+    transitivePeerDependencies:
+      - supports-color
+
+  electron@40.1.0:
+    dependencies:
+      '@electron/get': 2.0.3
+      '@types/node': 24.10.9
       extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color
@@ -8469,6 +8764,8 @@ snapshots:
 
   ignore@7.0.5: {}
 
+  immediate@3.0.6: {}
+
   imurmurhash@0.1.4: {}
 
   inflight@1.0.6:
@@ -8695,6 +8992,10 @@ snapshots:
 
   leven@3.1.0: {}
 
+  lie@3.1.1:
+    dependencies:
+      immediate: 3.0.6
+
   lifecycle-utils@2.1.0: {}
 
   lifecycle-utils@3.0.1: {}
@@ -8767,6 +9068,10 @@ snapshots:
       emojis-list: 3.0.0
       json5: 2.2.3
 
+  localforage@1.7.3:
+    dependencies:
+      lie: 3.1.1
+
   lodash.debounce@4.0.8: {}
 
   lodash.defaults@4.2.0: {}
@@ -8813,6 +9118,8 @@ snapshots:
     dependencies:
       is-unicode-supported: 2.1.0
       yoctocolors: 2.1.2
+
+  long@4.0.0: {}
 
   loose-envify@1.4.0:
     dependencies:
@@ -9059,11 +9366,19 @@ snapshots:
 
   node-domexception@1.0.0: {}
 
+  node-fetch@2.6.13(encoding@0.1.13):
+    dependencies:
+      whatwg-url: 5.0.0
+    optionalDependencies:
+      encoding: 0.1.13
+
   node-fetch@2.7.0(encoding@0.1.13):
     dependencies:
       whatwg-url: 5.0.0
     optionalDependencies:
       encoding: 0.1.13
+
+  node-gyp-build@4.8.4: {}
 
   node-gyp@11.5.0:
     dependencies:
@@ -9544,6 +9859,10 @@ snapshots:
       tiny-invariant: 1.3.3
       tslib: 2.8.1
 
+  regenerator-runtime@0.13.11: {}
+
+  regression@2.0.1: {}
+
   remotion@4.0.409(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
@@ -9584,6 +9903,10 @@ snapshots:
   reusify@1.1.0: {}
 
   rimraf@2.6.3:
+    dependencies:
+      glob: 7.2.3
+
+  rimraf@3.0.2:
     dependencies:
       glob: 7.2.3
 
@@ -9672,6 +9995,8 @@ snapshots:
   screenshot-desktop@1.15.3:
     dependencies:
       temp: 0.9.4
+
+  seedrandom@3.0.5: {}
 
   semver-compare@1.0.0:
     optional: true
@@ -9810,6 +10135,8 @@ snapshots:
       whatwg-url: 7.1.0
 
   sourcemap-codec@1.4.8: {}
+
+  sprintf-js@1.0.3: {}
 
   sprintf-js@1.1.3:
     optional: true
@@ -10134,11 +10461,17 @@ snapshots:
 
   ufo@1.6.3: {}
 
+  uiohook-napi@1.5.4:
+    dependencies:
+      node-gyp-build: 4.8.4
+
   underscore@1.13.7: {}
 
   undici-types@5.26.5: {}
 
   undici-types@6.21.0: {}
+
+  undici-types@7.16.0: {}
 
   undici@7.19.0: {}
 
@@ -10220,6 +10553,17 @@ snapshots:
       lightningcss: 1.30.2
       terser: 5.46.0
 
+  vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.46.0):
+    dependencies:
+      esbuild: 0.21.5
+      postcss: 8.5.6
+      rollup: 4.55.3
+    optionalDependencies:
+      '@types/node': 24.10.9
+      fsevents: 2.3.3
+      lightningcss: 1.30.2
+      terser: 5.46.0
+
   vitest@2.1.9(@types/node@20.19.30)(lightningcss@1.30.2)(terser@5.46.0):
     dependencies:
       '@vitest/expect': 2.1.9
@@ -10269,6 +10613,18 @@ snapshots:
   web-streams-polyfill@3.3.3: {}
 
   web-streams-polyfill@4.0.0-beta.3: {}
+
+  webgazer@3.4.0(@tensorflow/tfjs-converter@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13)))(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))(encoding@0.1.13)(seedrandom@3.0.5):
+    dependencies:
+      '@tensorflow-models/face-landmarks-detection': 0.0.3(@tensorflow/tfjs-converter@3.21.0(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13)))(@tensorflow/tfjs-core@3.21.0(encoding@0.1.13))
+      '@tensorflow/tfjs': 3.21.0(encoding@0.1.13)(seedrandom@3.0.5)
+      localforage: 1.7.3
+      regression: 2.0.1
+    transitivePeerDependencies:
+      - '@tensorflow/tfjs-converter'
+      - '@tensorflow/tfjs-core'
+      - encoding
+      - seedrandom
 
   webidl-conversions@3.0.1: {}
 
@@ -10379,7 +10735,19 @@ snapshots:
 
   yallist@5.0.0: {}
 
+  yargs-parser@20.2.9: {}
+
   yargs-parser@21.1.1: {}
+
+  yargs@16.2.0:
+    dependencies:
+      cliui: 7.0.4
+      escalade: 3.2.0
+      get-caller-file: 2.0.5
+      require-directory: 2.1.1
+      string-width: 4.2.3
+      y18n: 5.0.8
+      yargs-parser: 20.2.9
 
   yargs@17.7.2:
     dependencies:

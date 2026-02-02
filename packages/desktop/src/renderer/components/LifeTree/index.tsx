@@ -4,6 +4,33 @@ import { computeTreeLayout } from './useTreeLayout';
 import { LifeTreeNode } from './LifeTreeNode';
 import { LifeTreeEdge } from './LifeTreeEdge';
 
+// CSS for animations
+const LIFE_TREE_STYLES = `
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes treeGrow {
+    from { stroke-dashoffset: 1000; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  .life-tree-panel {
+    animation: fadeInUp 0.4s ease-out;
+  }
+
+  .life-tree-svg path {
+    stroke-dasharray: 1000;
+    animation: treeGrow 1.5s ease-out forwards;
+  }
+`;
+
 export const LifeTreePanel: React.FC = () => {
   const {
     lifeTree,
@@ -64,16 +91,20 @@ export const LifeTreePanel: React.FC = () => {
   if (!showLifeTree) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        background: 'rgba(15, 23, 42, 0.95)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <>
+      <style>{LIFE_TREE_STYLES}</style>
+      <div
+        className="life-tree-panel"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 50,
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -158,6 +189,7 @@ export const LifeTreePanel: React.FC = () => {
         {layout && (
           <svg
             ref={svgRef}
+            className="life-tree-svg"
             width="100%"
             height="100%"
             onWheel={handleWheel}
@@ -172,6 +204,50 @@ export const LifeTreePanel: React.FC = () => {
                 <stop offset="0%" stopColor="#fbbf24" />
                 <stop offset="100%" stopColor="#f59e0b" />
               </radialGradient>
+              {/* Stage gradients */}
+              <radialGradient id="careerGradient">
+                <stop offset="0%" stopColor="#60a5fa" />
+                <stop offset="100%" stopColor="#3b82f6" />
+              </radialGradient>
+              <radialGradient id="learningGradient">
+                <stop offset="0%" stopColor="#a78bfa" />
+                <stop offset="100%" stopColor="#8b5cf6" />
+              </radialGradient>
+              <radialGradient id="healthGradient">
+                <stop offset="0%" stopColor="#34d399" />
+                <stop offset="100%" stopColor="#10b981" />
+              </radialGradient>
+              <radialGradient id="relationshipsGradient">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#f59e0b" />
+              </radialGradient>
+              <radialGradient id="creativityGradient">
+                <stop offset="0%" stopColor="#f472b6" />
+                <stop offset="100%" stopColor="#ec4899" />
+              </radialGradient>
+              <radialGradient id="financeGradient">
+                <stop offset="0%" stopColor="#22d3ee" />
+                <stop offset="100%" stopColor="#06b6d4" />
+              </radialGradient>
+              <radialGradient id="safetyGradient">
+                <stop offset="0%" stopColor="#f87171" />
+                <stop offset="100%" stopColor="#ef4444" />
+              </radialGradient>
+              {/* Glow filters */}
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+              <filter id="glowStrong" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
             </defs>
 
             <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
@@ -268,6 +344,7 @@ export const LifeTreePanel: React.FC = () => {
           </div>
         );
       })()}
-    </div>
+      </div>
+    </>
   );
 };

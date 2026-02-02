@@ -5,9 +5,11 @@ import * as http from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// large-v3-turbo-q5_0 model is ~547MB, best quality with optimized speed
+// Available models: tiny, base, small, medium, large-v3, large-v3-turbo
 export const WHISPER_MODEL_URL =
-  'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin';
-export const WHISPER_MODEL_FILENAME = 'ggml-base.bin';
+  'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin';
+export const WHISPER_MODEL_FILENAME = 'ggml-large-v3-turbo-q5_0.bin';
 
 export interface WhisperStatus {
   initialized: boolean;
@@ -133,6 +135,33 @@ export class WhisperService extends EventEmitter {
     }
   }
 
+  /**
+   * Reset the whisper model - delete existing model and prepare for re-download
+   */
+  async resetModel(): Promise<void> {
+    // Shutdown if initialized
+    await this.shutdown();
+
+    const modelDir = this.getModelDirectory();
+    if (fs.existsSync(modelDir)) {
+      // Delete all model files in the directory
+      const files = fs.readdirSync(modelDir);
+      for (const file of files) {
+        if (file.endsWith('.bin') || file.endsWith('.download')) {
+          const filePath = path.join(modelDir, file);
+          try {
+            fs.unlinkSync(filePath);
+            this.debugLog(`[Whisper] Deleted: ${file}`);
+          } catch (error) {
+            this.debugLog(`[Whisper] Failed to delete ${file}: ${error}`);
+          }
+        }
+      }
+    }
+
+    this.debugLog('[Whisper] Model reset complete');
+  }
+
   private httpDownload(url: string, destPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const doRequest = (requestUrl: string, redirectCount = 0) => {
@@ -235,6 +264,56 @@ export class WhisperService extends EventEmitter {
     return float32;
   }
 
+  /**
+   * Calculate RMS energy of audio to detect silence
+   * Returns a value between 0 and 1
+   */
+  private calculateEnergy(pcmFloat32: Float32Array): number {
+    if (pcmFloat32.length === 0) return 0;
+    let sum = 0;
+    for (let i = 0; i < pcmFloat32.length; i++) {
+      sum += pcmFloat32[i] * pcmFloat32[i];
+    }
+    return Math.sqrt(sum / pcmFloat32.length);
+  }
+
+  /**
+   * Filter out common Whisper hallucination patterns
+   */
+  private isHallucination(text: string): boolean {
+    const trimmed = text.trim().toLowerCase();
+
+    // Common hallucination patterns when Whisper hears silence/noise
+    const hallucinationPatterns = [
+      /^[\s\.,。，、！!？\?]+$/,                    // Only punctuation
+      /^(thanks?|thank you)\.?$/i,                // "Thanks" on silence
+      /^(bye|goodbye|see you)\.?$/i,              // "Bye" on silence
+      /^(okay|ok)\.?$/i,                          // "OK" on silence
+      /^(um+|uh+|ah+|eh+|oh+)\.?$/i,             // Filler sounds
+      /^(hmm+|hm+)\.?$/i,                         // Thinking sounds
+      /^\.{2,}$/,                                  // Just dots
+      /^[\u4e00-\u9fa5]{1,2}$/,                   // 1-2 Chinese characters only
+      /^(the|a|an|is|are|was|were)\.?$/i,        // Single articles
+      /^(you|i|we|he|she|it|they)\.?$/i,         // Single pronouns
+      /^\[.*\]$/,                                  // [Music], [Applause], etc.
+      /^♪+$/,                                      // Music notes
+      /^(\s*\.\s*)+$/,                            // Repeated dots with spaces
+    ];
+
+    for (const pattern of hallucinationPatterns) {
+      if (pattern.test(trimmed)) {
+        return true;
+      }
+    }
+
+    // Very short text (< 3 chars after trimming) is often noise
+    if (trimmed.length < 3) {
+      return true;
+    }
+
+    return false;
+  }
+
   async transcribe(audioBuffer: Buffer): Promise<string> {
     if (!this.whisper) throw new Error('Whisper not initialized');
 
@@ -243,13 +322,33 @@ export class WhisperService extends EventEmitter {
       // smart-whisper expects Float32Array (mono 16kHz, range -1..1)
       const pcmFloat32 = this.bufferToFloat32(audioBuffer);
 
+      // VAD: Check if audio has enough energy (not silence)
+      const energy = this.calculateEnergy(pcmFloat32);
+      const SILENCE_THRESHOLD = 0.01; // Adjust based on testing
+
+      if (energy < SILENCE_THRESHOLD) {
+        this.debugLog(`[Whisper] Skipping silent audio (energy: ${energy.toFixed(4)})`);
+        this.isTranscribing = false;
+        return '';
+      }
+
+      this.debugLog(`[Whisper] Audio energy: ${energy.toFixed(4)}, proceeding with transcription`);
+
       const task = await this.whisper.transcribe(pcmFloat32, {
         language: this.config.language || 'auto',
       });
 
       task.on('transcribed', (result: any) => {
+        const text = result.text || result;
+
+        // Filter out hallucinations
+        if (this.isHallucination(text)) {
+          this.debugLog(`[Whisper] Filtered hallucination: "${text}"`);
+          return;
+        }
+
         this.safeSend('whisper-segment', {
-          text: result.text || result,
+          text,
           timestamp: Date.now(),
         });
         this.emit('segment', result);
@@ -257,11 +356,17 @@ export class WhisperService extends EventEmitter {
 
       const result = await task.result;
       this.isTranscribing = false;
+
       // result is an array of segments
       if (Array.isArray(result)) {
-        return result.map((r: any) => r.text || '').join(' ').trim();
+        const validSegments = result
+          .map((r: any) => r.text || '')
+          .filter((text: string) => !this.isHallucination(text));
+        return validSegments.join(' ').trim();
       }
-      return typeof result === 'string' ? result : result?.text || '';
+
+      const text = typeof result === 'string' ? result : result?.text || '';
+      return this.isHallucination(text) ? '' : text;
     } catch (error) {
       this.isTranscribing = false;
       throw error;

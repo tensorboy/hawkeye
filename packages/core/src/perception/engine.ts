@@ -59,6 +59,13 @@ export interface ExtendedPerceptionContext extends PerceptionContext {
   url?: string;
   /** 最近使用的应用列表 */
   recentApps?: string[];
+
+  // ============ ASR 语音转录 ============
+
+  /** 最近的语音转录文字 */
+  speechText?: string;
+  /** 语音转录语言 */
+  speechLanguage?: string;
 }
 
 // ============ 感知引擎 ============

@@ -156,6 +156,64 @@ interface HawkeyeAPI {
     export: () => Promise<string>;
     updateConfig: (config: any) => Promise<void>;
   };
+
+  // Life Tree API
+  lifeTree: {
+    getTree: () => Promise<any>;
+    rebuild: () => Promise<any>;
+    proposeExperiment: (nodeId: string, phase?: string) => Promise<any>;
+    startExperiment: (nodeId: string, proposal: any, phase: string) => Promise<any>;
+    concludeExperiment: (experimentNodeId: string, status: string) => Promise<any>;
+    getUnlockedPhase: () => Promise<any>;
+    getExperiments: () => Promise<any>;
+    onTreeUpdated: (callback: (data: { updatedNodeIds: string[] }) => void) => (() => void);
+  };
+
+  // Activity Summary API (10分钟活动总结)
+  activitySummary: {
+    getRecent: (limit?: number) => Promise<any[]>;
+    getRange: (startTime: number, endTime: number) => Promise<any[]>;
+    generateNow: () => Promise<any>;
+    getPendingUpdates: () => Promise<any[]>;
+    markUpdated: (summaryId: string) => Promise<void>;
+    isRunning: () => Promise<boolean>;
+    start: () => Promise<void>;
+    stop: () => Promise<void>;
+    getConfig: () => Promise<any>;
+    updateConfig: (config: any) => Promise<void>;
+  };
+
+  // Menu Bar Panel API
+  menuBarPanel: {
+    getState: () => Promise<any>;
+    executeAction: (actionId: string) => Promise<any>;
+    clearActivities: () => Promise<void>;
+    onStateUpdate: (callback: (state: any) => void) => (() => void);
+  };
+
+  // Gesture Control API
+  gestureControl: (event: {
+    action: string;
+    gesture: string;
+    confidence: number;
+    position?: { x: number; y: number };
+    handedness?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  gestureControlStatus: () => Promise<{
+    enabled: boolean;
+    robotAvailable: boolean;
+    screenBounds?: { width: number; height: number };
+  }>;
+  gestureControlSetEnabled: (enabled: boolean) => Promise<{ enabled: boolean }>;
+  gestureControlUpdateConfig: (config: {
+    cursorSensitivity?: number;
+    clickHoldTime?: number;
+    scrollSpeed?: number;
+  }) => Promise<any>;
+  onGestureControlScreenshot?: (callback: (data: { dataUrl: string; timestamp: number }) => void) => (() => void);
+  onGestureControlToggleRecording?: (callback: () => void) => (() => void);
+  onGestureControlPause?: (callback: () => void) => (() => void);
+  onGestureControlQuickMenu?: (callback: () => void) => (() => void);
 }
 
 declare global {

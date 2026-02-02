@@ -16,11 +16,15 @@ export function useHawkeye() {
 
   // Expose observe function via IPC
   const observe = useCallback(async () => {
+    if (!window.hawkeye) return;
     // @ts-ignore - window.hawkeye is injected via preload
     await window.hawkeye.observe();
   }, []);
 
   useEffect(() => {
+    // Guard: window.hawkeye only exists in Electron
+    if (!window.hawkeye) return;
+
     // Listen for events from main process
     // @ts-ignore
     const cleanup = window.hawkeye.onHawkeyeReady((s: any) => {

@@ -172,14 +172,22 @@
 /* Main content */
 .timeline-content {
   flex: 1;
+  min-height: 0; /* Critical for flexbox + virtualization */
   display: flex;
   overflow: hidden;
 }
 
 .event-list {
   flex: 1;
+  min-height: 0; /* Critical for flexbox */
   overflow-y: auto;
   padding: 8px;
+}
+
+.event-list-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 /* Empty state */
@@ -587,15 +595,16 @@
 /* OCR Visualization styles */
 .detail-ocr-visualization {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
   margin-top: 8px;
 }
 
 .ocr-image-container {
   position: relative;
   display: inline-block;
-  max-width: 100%;
+  max-width: 120px;
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid #333;
@@ -603,8 +612,10 @@
 
 .ocr-source-image {
   display: block;
-  max-width: 100%;
-  height: auto;
+  max-width: 120px;
+  max-height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
 }
 
 .ocr-regions-overlay {
@@ -628,6 +639,107 @@
 }
 
 .ocr-regions-count {
-  font-size: 11px;
+  display: none; /* Hidden since we hide OCR overlay on thumbnail */
+}
+
+/* Speech segment (ASR) styles */
+.detail-segments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.segment-item {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  border-left: 2px solid #ec4899;
+}
+
+.segment-time {
+  font-family: 'SF Mono', Menlo, Monaco, monospace;
+  font-size: 10px;
   color: #888;
+  min-width: 100px;
+}
+
+.segment-text {
+  font-size: 12px;
+  color: #e0e0e0;
+}
+
+/* Clickable image hint */
+.click-hint {
+  font-size: 10px;
+  color: #666;
+  font-weight: normal;
+}
+
+.ocr-image-container.clickable {
+  cursor: zoom-in;
+  transition: all 0.2s;
+}
+
+.ocr-image-container.clickable:hover {
+  opacity: 0.85;
+  transform: scale(1.05);
+}
+
+/* Hide OCR overlay on small thumbnail */
+.ocr-image-container .ocr-regions-overlay {
+  display: none;
+}
+
+/* Image zoom overlay */
+.image-zoom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  cursor: zoom-out;
+}
+
+.image-zoom-container {
+  position: relative;
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+.zoomed-image {
+  max-width: 100%;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.zoom-close-btn {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.zoom-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }

@@ -16,6 +16,11 @@ export function useIntent() {
   const setShowChatDialog = useHawkeyeStore((s) => s.setShowChatDialog);
 
   useEffect(() => {
+    // Guard: window.hawkeye only exists in Electron (via preload script)
+    if (!window.hawkeye) {
+      return;
+    }
+
     // @ts-ignore
     const cleanupIntents = window.hawkeye.onIntents((intents) => {
       // Logic to convert intents to cards would go here or in a transformer
@@ -35,6 +40,10 @@ export function useIntent() {
 
   const sendChat = async (message: string) => {
     if (!message.trim()) return;
+    if (!window.hawkeye) {
+      console.warn('[useIntent] sendChat: window.hawkeye not available');
+      return;
+    }
 
     setChatLoading(true);
     addChatMessage({

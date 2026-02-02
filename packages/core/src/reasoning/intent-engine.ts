@@ -301,7 +301,9 @@ export class IntentEngine extends EventEmitter {
     const messages: AIMessage[] = [
       {
         role: 'system',
-        content: `你是 Hawkeye 意图识别引擎。根据用户的当前上下文，识别用户可能的意图。
+        content: `你是 Hawkeye 意图识别引擎。根据用户的当前上下文（包括屏幕内容、剪贴板、文件操作、以及用户的语音指令），识别用户可能的意图。
+
+特别注意：如果用户有语音输入，这通常是最重要的意图信号，应该优先考虑用户说的话。
 
 输出格式（JSON）:
 {
@@ -324,6 +326,7 @@ export class IntentEngine extends EventEmitter {
 - communication: 沟通/写作
 - data_process: 数据处理
 - system_config: 系统配置
+- voice_command: 语音指令 (当用户通过语音下达明确指令时)
 
 只返回 JSON，不要其他内容。`,
       },
@@ -432,6 +435,15 @@ ${contextDesc}
       parts.push(`屏幕文字: ${preview}`);
     }
 
+    // ASR 语音转录
+    if (context.speechText) {
+      const preview = context.speechText.length > 200
+        ? context.speechText.slice(0, 200) + '...'
+        : context.speechText;
+      const langInfo = context.speechLanguage ? ` (${context.speechLanguage})` : '';
+      parts.push(`用户语音${langInfo}: ${preview}`);
+    }
+
     if (context.fileEvents && context.fileEvents.length > 0) {
       const recent = context.fileEvents.slice(-5);
       const fileDesc = recent.map(e => `${e.type}: ${e.path}`).join(', ');
@@ -446,6 +458,7 @@ ${contextDesc}
       context.activeWindow?.appName,
       context.activeWindow?.title,
       context.clipboard?.slice(0, 50),
+      context.speechText?.slice(0, 50), // Include ASR in cache key
     ].join('|');
 
     // 简单的哈希

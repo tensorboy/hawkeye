@@ -94,7 +94,14 @@
     "notRunning": "未运行",
     "save": "保存",
     "cancel": "取消",
-    "optional": "可选"
+    "optional": "可选",
+    "micPermission": "麦克风权限",
+    "micPermissionDesc": "用于语音识别 (Whisper ASR)",
+    "micGranted": "已授权",
+    "micDenied": "已拒绝",
+    "micDeniedHint": "请在系统偏好设置 → 安全性与隐私 → 麦克风 中授权",
+    "requestMic": "授权麦克风",
+    "requesting": "请求中..."
   },
   "tray": {
     "observeScreen": "观察屏幕",

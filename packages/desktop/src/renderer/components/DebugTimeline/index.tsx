@@ -19,7 +19,8 @@ interface DebugTimelineProps {
 const ALL_EVENT_TYPES: DebugEventType[] = [
   'screenshot', 'ocr', 'clipboard', 'window', 'file',
   'llm_input', 'llm_output', 'intent', 'plan',
-  'execution_start', 'execution_step', 'execution_complete', 'error'
+  'execution_start', 'execution_step', 'execution_complete', 'error',
+  'speech_segment'
 ];
 
 // Virtualized event list for performance
@@ -101,6 +102,7 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
 
   // Fetch events
   const fetchEvents = useCallback(async () => {
+    if (!window.hawkeye?.debug) return;
     try {
       const filter: { types?: string[]; search?: string } = {};
       if (selectedTypes.size < ALL_EVENT_TYPES.length) {
@@ -126,6 +128,7 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
 
   // Fetch status
   const fetchStatus = useCallback(async () => {
+    if (!window.hawkeye?.debug) return;
     try {
       const newStatus = await window.hawkeye.debug.getStatus();
       setStatus(newStatus);
@@ -136,6 +139,7 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
 
   // Poll for new events
   const pollNewEvents = useCallback(async () => {
+    if (!window.hawkeye?.debug) return;
     if (status.paused) return;
 
     try {
@@ -197,8 +201,16 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
     }
   }, [selectedTypes, searchText, fetchEvents]);
 
+  // Auto-scroll to bottom when new events arrive
+  useEffect(() => {
+    if (autoScroll && events.length > 0 && eventListRef.current) {
+      eventListRef.current.scrollTop = eventListRef.current.scrollHeight;
+    }
+  }, [events.length, autoScroll]);
+
   // Handle clear events
   const handleClear = async () => {
+    if (!window.hawkeye?.debug) return;
     await window.hawkeye.debug.clearEvents();
     setEvents([]);
     lastTimestampRef.current = 0;
@@ -207,28 +219,13 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
 
   // Handle pause/resume
   const handlePauseResume = async () => {
+    if (!window.hawkeye?.debug) return;
     if (status.paused) {
       await window.hawkeye.debug.resume();
     } else {
       await window.hawkeye.debug.pause();
     }
     await fetchStatus();
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    const json = await window.hawkeye.debug.export();
-    if (json) {
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `hawkeye-debug-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
   };
 
   // Toggle event type filter
@@ -267,9 +264,6 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
             title={status.paused ? '恢复' : '暂停'}
           >
             {status.paused ? '▶️ 恢复' : '⏸️ 暂停'}
-          </button>
-          <button className="action-btn" onClick={handleExport} title="导出">
-            📤 导出
           </button>
           {onClose && (
             <button className="action-btn close-btn" onClick={onClose} title="关闭">
@@ -330,7 +324,7 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
 
       {/* Main content */}
       <div className="timeline-content">
-        {/* Event list with virtual scrolling */}
+        {/* Event list - simple scrolling for reliability */}
         <div className="event-list" ref={eventListRef}>
           {events.length === 0 ? (
             <motion.div
@@ -344,13 +338,22 @@ export const DebugTimeline: React.FC<DebugTimelineProps> = ({ onClose }) => {
               <span className="empty-hint">操作应用后事件将在此显示</span>
             </motion.div>
           ) : (
-            <VirtualizedEventList
-              events={events}
-              selectedEvent={selectedEvent}
-              onSelect={setSelectedEvent}
-              autoScroll={autoScroll}
-              parentRef={eventListRef}
-            />
+            <div className="event-list-inner">
+              {events.map((event, index) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.15, delay: Math.min(index * 0.02, 0.5) }}
+                >
+                  <TimelineEvent
+                    event={event}
+                    onSelect={setSelectedEvent}
+                    isSelected={selectedEvent?.id === event.id}
+                  />
+                </motion.div>
+              ))}
+            </div>
           )}
         </div>
 

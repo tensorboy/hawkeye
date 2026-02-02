@@ -108,6 +108,7 @@ export type IntentType =
   | 'communication'       // 沟通/写作
   | 'data_process'        // 数据处理
   | 'system_config'       // 系统配置
+  | 'voice_command'       // 语音指令
   | 'unknown';            // 未知
 
 export interface IntentEntity {

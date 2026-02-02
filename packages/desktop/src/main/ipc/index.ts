@@ -9,9 +9,15 @@ import { registerConfigHandlers } from './config-handlers';
 import { registerModelHandlers } from './model-handlers';
 import { registerDebugHandlers } from './debug-handlers';
 import { registerSmartObserveHandlers } from './smart-observe-handlers';
-import { registerWhisperHandlers } from './whisper-handlers';
+import { registerWhisperHandlers, setConfigServiceRef } from './whisper-handlers';
 import { registerLifeTreeHandlers } from './life-tree-handlers';
+import { registerActivitySummaryHandlers } from './activity-summary-handlers';
+import { registerAudioProcessorHandlers } from './audio-processor-handlers';
+import { registerGestureControlHandlers } from './gesture-control-handlers';
+import { registerGlobalClickHandlers } from './global-click-handlers';
 import type { LifeTreeService } from '../services/life-tree-service';
+import type { ActivitySummarizerService } from '../services/activity-summarizer-service';
+import type { AudioProcessorService } from '../services/audio-processor-service';
 
 export interface HandlerContext {
   configService: ConfigService;
@@ -20,7 +26,10 @@ export interface HandlerContext {
   envCheckService: EnvCheckService;
   whisperService: WhisperService;
   lifeTreeService?: LifeTreeService;
+  activitySummarizerService?: ActivitySummarizerService;
+  audioProcessorService?: AudioProcessorService;
   mainWindowGetter: () => BrowserWindow | null;
+  debugLog?: (msg: string) => void;
 }
 
 export function registerAllHandlers(context: HandlerContext) {
@@ -29,10 +38,23 @@ export function registerAllHandlers(context: HandlerContext) {
   registerModelHandlers(context.modelManagerService);
   registerDebugHandlers(context.hawkeyeService);
   registerSmartObserveHandlers(context.hawkeyeService, context.configService, context.mainWindowGetter);
-  registerWhisperHandlers(context.whisperService);
+  setConfigServiceRef(context.configService);
+  registerWhisperHandlers(context.whisperService, context.hawkeyeService, context.debugLog);
   if (context.lifeTreeService) {
     registerLifeTreeHandlers(context.lifeTreeService);
   }
+  if (context.activitySummarizerService) {
+    registerActivitySummaryHandlers(context.activitySummarizerService);
+  }
+  if (context.audioProcessorService && context.debugLog) {
+    registerAudioProcessorHandlers(context.audioProcessorService, context.debugLog);
+  }
+
+  // Register gesture control handlers
+  registerGestureControlHandlers(context.mainWindowGetter, context.debugLog);
+
+  // Register global click handlers for WebGazer calibration
+  registerGlobalClickHandlers(context.mainWindowGetter, context.debugLog);
 
   // Register EnvCheck handlers inline for now or create a new file if it grows
   const { ipcMain } = require('electron');

@@ -1,0 +1,972 @@
+/**
+ * Camera Preview Styles with MediaPipe Support
+ */
+
+.camera-preview {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.camera-preview.minimized {
+  width: 160px;
+}
+
+.camera-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.camera-preview-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.btn-icon-small {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.btn-icon-small:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: scale(1.05);
+}
+
+.btn-icon-small.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.btn-close-small {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.btn-close-small:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.camera-video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  overflow: hidden;
+}
+
+.camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* Mirror the camera */
+}
+
+.camera-video.paused {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+/* Canvas overlay for MediaPipe drawings */
+.camera-overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform: scaleX(-1); /* Mirror to match video */
+}
+
+.camera-paused-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Loading overlay */
+.camera-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  gap: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.camera-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(59, 130, 246, 0.3);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mode badge */
+.camera-mode-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 20px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.camera-fps {
+  color: #34d399;
+  font-weight: 600;
+  padding-left: 6px;
+  border-left: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* Gesture Action Badge */
+.camera-gesture-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 18px;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 2px solid;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: gesturePopIn 0.2s ease-out;
+}
+
+.camera-gesture-badge .gesture-icon {
+  font-size: 28px;
+}
+
+.camera-gesture-badge .gesture-action {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+@keyframes gesturePopIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Action Feedback - appears when gesture action is triggered */
+.camera-action-feedback {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(22, 163, 74, 0.9));
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+  animation: actionFeedbackIn 0.3s ease-out, actionFeedbackOut 0.3s ease-in 0.7s forwards;
+  z-index: 100;
+}
+
+@keyframes actionFeedbackIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes actionFeedbackOut {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.9);
+  }
+}
+
+/* Gesture Help Overlay */
+.camera-gesture-help {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.camera-gesture-help:hover {
+  opacity: 1;
+}
+
+.gesture-help-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.1);
+  white-space: nowrap;
+}
+
+.gesture-help-item:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: white;
+}
+
+/* Gesture Control Indicator in Mode Badge */
+.gesture-control-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 2px 6px;
+  margin-left: 4px;
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 10px;
+  animation: indicatorPulse 2s ease-in-out infinite;
+}
+
+@keyframes indicatorPulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.camera-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  gap: 10px;
+  min-height: 120px;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.camera-error span {
+  font-size: 28px;
+}
+
+.camera-error p {
+  font-size: 12px;
+  margin: 0;
+  max-width: 200px;
+  color: #fca5a5;
+}
+
+.camera-error .btn {
+  margin-top: 8px;
+  padding: 6px 16px;
+  font-size: 12px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.camera-error .btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+/* Floating camera preview (draggable) */
+.camera-preview-floating {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 720px;
+  z-index: 900;
+  cursor: default;
+  transition: box-shadow 0.2s, transform 0.2s, width 0.3s ease;
+}
+
+/* Split view mode - wider preview */
+.camera-preview-floating.split-view-mode {
+  width: 1100px;
+  right: 10px;
+}
+
+.camera-preview-floating:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .camera-preview-floating {
+    width: 280px;
+    bottom: 70px;
+    right: 10px;
+  }
+
+  .camera-mode-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+}
+
+@media (max-width: 400px) {
+  .camera-preview-floating {
+    width: 200px;
+  }
+}
+
+/* ============ Gaze Direction Tracking Styles ============ */
+
+.camera-gaze-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 20px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  border: 2px solid rgba(0, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+.camera-gaze-badge .gaze-icon {
+  font-size: 18px;
+  animation: gazeIconPulse 0.5s ease-out;
+}
+
+.camera-gaze-badge .gaze-label {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.camera-gaze-badge .gaze-ratio {
+  font-size: 10px;
+  opacity: 0.7;
+  padding-left: 8px;
+  border-left: 1px solid rgba(148, 163, 184, 0.3);
+  font-family: monospace;
+}
+
+/* Gaze direction colors */
+.camera-gaze-badge.gaze-center {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.75), rgba(34, 197, 94, 0.2));
+}
+
+.camera-gaze-badge.gaze-left {
+  border-color: rgba(59, 130, 246, 0.6);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.75), rgba(59, 130, 246, 0.25));
+}
+
+.camera-gaze-badge.gaze-right {
+  border-color: rgba(249, 115, 22, 0.6);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.75), rgba(249, 115, 22, 0.25));
+}
+
+.camera-gaze-badge.gaze-up {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.75), rgba(168, 85, 247, 0.25));
+}
+
+.camera-gaze-badge.gaze-down {
+  border-color: rgba(236, 72, 153, 0.6);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.75), rgba(236, 72, 153, 0.25));
+}
+
+@keyframes gazeIconPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Gaze visualization overlay */
+.gaze-overlay-line {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Responsive gaze badge */
+@media (max-width: 600px) {
+  .camera-gaze-badge {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .camera-gaze-badge .gaze-icon {
+    font-size: 14px;
+  }
+
+  .camera-gaze-badge .gaze-ratio {
+    display: none;
+  }
+}
+
+/* ============ Calibration Badge ============ */
+
+.camera-calibration-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(34, 197, 94, 0.8);
+  border-radius: 20px;
+  font-size: 11px;
+  color: white;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ============ Calibration Overlay ============ */
+
+.calibration-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 10000;
+  cursor: none;
+}
+
+.calibration-instructions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+  z-index: 10001;
+  pointer-events: auto;
+}
+
+.calibration-instructions h2 {
+  font-size: 28px;
+  margin-bottom: 12px;
+  color: #22c55e;
+}
+
+.calibration-instructions p {
+  font-size: 16px;
+  margin: 8px 0;
+  opacity: 0.8;
+}
+
+.calibration-cancel-btn {
+  margin-top: 20px;
+  padding: 10px 24px;
+  font-size: 14px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calibration-cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.4);
+  border-color: rgba(239, 68, 68, 0.8);
+}
+
+.calibration-point {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.calibration-point-inner {
+  width: 20px;
+  height: 20px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+  transition: all 0.3s ease;
+}
+
+.calibration-point.active .calibration-point-inner {
+  width: 28px;
+  height: 28px;
+  background: #22c55e;
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.8);
+}
+
+.calibration-point.completed .calibration-point-inner {
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  opacity: 0.6;
+}
+
+/* Collecting state - gaze is aligned with target */
+.calibration-point.collecting .calibration-point-inner {
+  width: 32px;
+  height: 32px;
+  background: #22c55e;
+  box-shadow: 0 0 40px rgba(34, 197, 94, 1), 0 0 80px rgba(34, 197, 94, 0.5);
+  animation: collectingPulse 0.3s ease-in-out infinite alternate;
+}
+
+.calibration-point.collecting .calibration-point-ring {
+  width: 60px;
+  height: 60px;
+  border-color: #22c55e;
+  border-width: 4px;
+}
+
+.calibration-point.collecting .calibration-point-label {
+  color: #22c55e;
+  font-size: 14px;
+}
+
+@keyframes collectingPulse {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
+.calibration-point-ring {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.calibration-point.active .calibration-point-ring {
+  width: 50px;
+  height: 50px;
+  border-color: rgba(34, 197, 94, 0.6);
+  animation: ringPulse 1s ease-in-out infinite;
+}
+
+.calibration-point-pulse {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(34, 197, 94, 0.8);
+  border-radius: 50%;
+  animation: calibrationPulse 1s ease-out infinite;
+}
+
+.calibration-point-label {
+  position: absolute;
+  bottom: -24px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+
+.calibration-point.active .calibration-point-label {
+  color: #22c55e;
+}
+
+@keyframes calibrationPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes ringPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+/* Calibration Samples Counter */
+.calibration-samples {
+  font-size: 14px;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+/* Real-time Gaze Indicator during Calibration */
+.calibration-gaze-indicator {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+  /* No transition for instant response to eye movement */
+  pointer-events: none;
+}
+
+.calibration-gaze-dot {
+  width: 24px;
+  height: 24px;
+  background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 60%, transparent 70%);
+  border-radius: 50%;
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.9), 0 0 50px rgba(59, 130, 246, 0.5);
+  z-index: 2;
+}
+
+.calibration-gaze-ring {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(59, 130, 246, 0.7);
+  border-radius: 50%;
+  animation: calibrationGazePulse 0.8s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes calibrationGazePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+    border-color: rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+    border-color: rgba(59, 130, 246, 1);
+  }
+}
+
+.calibration-gaze-label {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+  color: #3b82f6;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+/* ============ Screen Gaze Point Overlay ============ */
+
+.screen-gaze-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.screen-gaze-point {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.05s linear, top 0.05s linear;
+}
+
+.gaze-point-core {
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, #ff00ff 0%, #ff00ff 50%, transparent 70%);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.8), 0 0 40px rgba(255, 0, 255, 0.4);
+  z-index: 3;
+}
+
+.gaze-point-ring {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 0, 255, 0.6);
+  border-radius: 50%;
+  animation: gazeRingPulse 1.5s ease-in-out infinite;
+  z-index: 2;
+}
+
+.gaze-point-trail {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(255, 0, 255, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.screen-gaze-coords {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 0, 255, 0.4);
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: monospace;
+  color: #ff00ff;
+  backdrop-filter: blur(4px);
+}
+
+@keyframes gazeRingPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* ============ Split View (Camera + Screen) ============ */
+
+.camera-split-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.camera-split-container.split-enabled {
+  flex-direction: row;
+  gap: 2px;
+}
+
+.camera-split-container.split-enabled .split-camera {
+  width: 35%;
+  flex-shrink: 0;
+}
+
+.screen-capture-container {
+  position: relative;
+  flex: 1;
+  background: #000;
+  overflow: hidden;
+  border-left: 2px solid rgba(148, 163, 184, 0.3);
+}
+
+.screen-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #111;
+}
+
+.screen-waiting-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+/* Split View Labels */
+.split-view-label {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* Gaze Indicator on Screen Capture */
+.screen-gaze-indicator {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: left 0.08s ease-out, top 0.08s ease-out;
+}
+
+.screen-gaze-dot {
+  width: 16px;
+  height: 16px;
+  background: radial-gradient(circle, #ff00ff 0%, #ff00ff 60%, transparent 70%);
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.9), 0 0 30px rgba(255, 0, 255, 0.5);
+  z-index: 2;
+}
+
+.screen-gaze-ring {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(255, 0, 255, 0.7);
+  border-radius: 50%;
+  animation: screenGazePulse 1.2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes screenGazePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* Split view responsive - make it wider */
+.camera-preview-floating.split-enabled-preview {
+  width: 1000px;
+}
+
+/* Adjust floating preview when split view is enabled */
+.camera-split-container.split-enabled ~ .camera-preview-floating {
+  width: 1000px;
+}
+
+@media (max-width: 1100px) {
+  .camera-split-container.split-enabled {
+    flex-direction: column;
+  }
+
+  .camera-split-container.split-enabled .split-camera {
+    width: 100%;
+  }
+
+  .screen-capture-container {
+    border-left: none;
+    border-top: 2px solid rgba(148, 163, 184, 0.3);
+    min-height: 200px;
+  }
+}

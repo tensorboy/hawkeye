@@ -14,12 +14,15 @@ export function useConfig() {
   const setModelTesting = useHawkeyeStore((s) => s.setModelTesting);
 
   const saveConfig = useCallback(async () => {
+    if (!window.hawkeye) return;
     // @ts-ignore
     const newConfig = await window.hawkeye.saveConfig(tempConfig);
     setConfig(newConfig);
   }, [tempConfig, setConfig]);
 
   useEffect(() => {
+    // Guard: window.hawkeye only exists in Electron
+    if (!window.hawkeye) return;
     // Initial load
     // @ts-ignore
     window.hawkeye.getConfig().then(setConfig);

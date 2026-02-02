@@ -18,6 +18,9 @@ import type {
 import { OnboardingPage } from './pages/OnboardingPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { MainView } from './pages/MainView';
+import { HistoryPage } from './pages/HistoryPage';
+import { AutoRecorder } from './components/AutoRecorder';
+import { WebGazerGaze } from './components/WebGazerGaze';
 
 // ============ Global Type Declarations ============
 
@@ -153,6 +156,19 @@ declare global {
       }>;
       onScreenshotPreview: (callback: (data: { dataUrl: string; timestamp: number }) => void) => (() => void);
 
+      // Whisper API
+      whisperTranscribe: (audioBuffer: Buffer) => Promise<string>;
+      whisperStatus: () => Promise<{
+        initialized: boolean;
+        modelPath: string | null;
+        language: string;
+        isTranscribing: boolean;
+        isDownloading: boolean;
+        downloadProgress: number;
+      }>;
+      whisperCheckMic: () => Promise<string>;
+      whisperRequestMic: () => Promise<boolean>;
+
       // Local model management API
       modelGetDirectory: () => Promise<string>;
       modelList: () => Promise<Array<{
@@ -187,6 +203,64 @@ declare global {
         status: 'downloading' | 'completed' | 'error' | 'cancelled';
         error?: string;
       }) => void) => (() => void);
+
+      // Life Tree API
+      lifeTree: {
+        getTree: () => Promise<any>;
+        rebuild: () => Promise<any>;
+        proposeExperiment: (nodeId: string, phase?: string) => Promise<any>;
+        startExperiment: (nodeId: string, proposal: any, phase: string) => Promise<any>;
+        concludeExperiment: (experimentNodeId: string, status: string) => Promise<any>;
+        getUnlockedPhase: () => Promise<any>;
+        getExperiments: () => Promise<any>;
+        onTreeUpdated: (callback: (data: { updatedNodeIds: string[] }) => void) => (() => void);
+      };
+
+      // Activity Summary API (10分钟活动总结)
+      activitySummary: {
+        getRecent: (limit?: number) => Promise<any[]>;
+        getRange: (startTime: number, endTime: number) => Promise<any[]>;
+        generateNow: () => Promise<any>;
+        getPendingUpdates: () => Promise<any[]>;
+        markUpdated: (summaryId: string) => Promise<void>;
+        isRunning: () => Promise<boolean>;
+        start: () => Promise<void>;
+        stop: () => Promise<void>;
+        getConfig: () => Promise<any>;
+        updateConfig: (config: any) => Promise<void>;
+      };
+
+      // Menu Bar Panel API
+      menuBarPanel: {
+        getState: () => Promise<any>;
+        executeAction: (actionId: string) => Promise<any>;
+        clearActivities: () => Promise<void>;
+        onStateUpdate: (callback: (state: any) => void) => (() => void);
+      };
+
+      // Gesture Control API
+      gestureControl: (event: {
+        action: string;
+        gesture: string;
+        confidence: number;
+        position?: { x: number; y: number };
+        handedness?: string;
+      }) => Promise<{ success: boolean; error?: string }>;
+      gestureControlStatus: () => Promise<{
+        enabled: boolean;
+        robotAvailable: boolean;
+        screenBounds?: { width: number; height: number };
+      }>;
+      gestureControlSetEnabled: (enabled: boolean) => Promise<{ enabled: boolean }>;
+      gestureControlUpdateConfig: (config: {
+        cursorSensitivity?: number;
+        clickHoldTime?: number;
+        scrollSpeed?: number;
+      }) => Promise<any>;
+      onGestureControlScreenshot?: (callback: (data: { dataUrl: string; timestamp: number }) => void) => (() => void);
+      onGestureControlToggleRecording?: (callback: () => void) => (() => void);
+      onGestureControlPause?: (callback: () => void) => (() => void);
+      onGestureControlQuickMenu?: (callback: () => void) => (() => void);
     };
   }
 }
@@ -336,6 +410,7 @@ export default function App() {
   const {
     showOnboarding, setShowOnboarding,
     showSettings,
+    showHistory,
     setConfig, setTempConfig, setStatus,
     setOnboardingMode, setOnboardingLoading,
     setSmartObserveWatching,
@@ -346,6 +421,13 @@ export default function App() {
 
   // Initialize app and set up event listeners
   useEffect(() => {
+    // Guard: window.hawkeye only exists in Electron (via preload script)
+    if (!window.hawkeye) {
+      console.warn('[App] Running outside Electron - window.hawkeye not available');
+      setOnboardingLoading(false);
+      return;
+    }
+
     const initializeApp = async () => {
       try {
         const [configData, statusData] = await Promise.all([
@@ -463,8 +545,26 @@ export default function App() {
     };
   }, []);
 
-  // Route to the appropriate page
-  if (showOnboarding) return <OnboardingPage />;
-  if (showSettings) return <SettingsPage />;
-  return <MainView />;
+  // Determine which page to show
+  const CurrentPage = showOnboarding
+    ? OnboardingPage
+    : showHistory
+      ? HistoryPage
+      : showSettings
+        ? SettingsPage
+        : MainView;
+
+  return (
+    <>
+      {/* Auto-record audio for Whisper transcription */}
+      <AutoRecorder enabled={true} />
+      {/* WebGazer.js 隐式校准 - 后台收集点击数据训练注视预测模型 */}
+      <WebGazerGaze
+        enabled={true}
+        showIndicator={true}  // 显示注视点指示器
+        showDebug={true}      // 显示调试面板
+      />
+      <CurrentPage />
+    </>
+  );
 }

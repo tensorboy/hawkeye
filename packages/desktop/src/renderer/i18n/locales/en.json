@@ -94,7 +94,14 @@
     "notRunning": "Not Running",
     "save": "Save",
     "cancel": "Cancel",
-    "optional": "Optional"
+    "optional": "Optional",
+    "micPermission": "Microphone Permission",
+    "micPermissionDesc": "Required for speech recognition (Whisper ASR)",
+    "micGranted": "Granted",
+    "micDenied": "Denied",
+    "micDeniedHint": "Please grant permission in System Preferences → Security & Privacy → Microphone",
+    "requestMic": "Grant Microphone Access",
+    "requesting": "Requesting..."
   },
   "tray": {
     "observeScreen": "Observe Screen",

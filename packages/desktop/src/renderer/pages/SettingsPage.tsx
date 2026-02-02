@@ -2,7 +2,7 @@
  * Settings Page - AI provider config, language, and system status
  */
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { languages } from '../i18n';
@@ -36,6 +36,13 @@ const smoothTransition = {
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
+  const [micStatus, setMicStatus] = useState<'unknown' | 'granted' | 'denied' | 'not-determined'>('unknown');
+  const [isRequestingMic, setIsRequestingMic] = useState(false);
+  const [whisperStatus, setWhisperStatus] = useState<any>(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [isResettingModel, setIsResettingModel] = useState(false);
+  const [modelResetStatus, setModelResetStatus] = useState<string | null>(null);
 
   const {
     config, setConfig,
@@ -45,6 +52,141 @@ export function SettingsPage() {
     setShowSettings,
     addCard,
   } = useHawkeyeStore();
+
+  // Check microphone permission status on mount
+  const checkMicPermission = useCallback(async () => {
+    try {
+      const result = await (window as any).hawkeye.whisperCheckMic();
+      setMicStatus(result as 'granted' | 'denied' | 'not-determined');
+    } catch (error) {
+      console.error('Failed to check mic permission:', error);
+      setMicStatus('unknown');
+    }
+  }, []);
+
+  useEffect(() => {
+    checkMicPermission();
+    // Also check whisper status
+    (window as any).hawkeye.whisperStatus?.().then((status: any) => {
+      setWhisperStatus(status);
+      console.log('[Settings] Whisper status:', status);
+    }).catch((e: any) => console.error('[Settings] Failed to get whisper status:', e));
+
+    // Listen for download progress
+    const unsubscribe = (window as any).hawkeye.onWhisperDownloadProgress?.((data: any) => {
+      if (data.status === 'downloading') {
+        setModelResetStatus(`⬇️ 下载中: ${data.progress}% (${(data.downloadedBytes / 1024 / 1024).toFixed(1)}MB / ${(data.totalBytes / 1024 / 1024).toFixed(1)}MB)`);
+      }
+    });
+
+    return () => unsubscribe?.();
+  }, [checkMicPermission]);
+
+  const handleTestMic = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      console.log('[Settings] Starting mic test...');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { sampleRate: 16000, channelCount: 1 }
+      });
+      console.log('[Settings] Got audio stream, recording 3 seconds...');
+
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      const chunks: Float32Array[] = [];
+
+      processor.onaudioprocess = (e) => {
+        chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      // Record for 3 seconds
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      processor.disconnect();
+      source.disconnect();
+      stream.getTracks().forEach(t => t.stop());
+      await audioContext.close();
+
+      // Combine chunks
+      const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
+      const combined = new Float32Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        combined.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      console.log('[Settings] Recorded', totalLength, 'samples, sending to Whisper...');
+
+      // Convert to Int16
+      const int16 = new Int16Array(combined.length);
+      for (let i = 0; i < combined.length; i++) {
+        const s = Math.max(-1, Math.min(1, combined[i]));
+        int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      }
+
+      // Use Uint8Array instead of Buffer (renderer doesn't have Node.js Buffer)
+      const buffer = new Uint8Array(int16.buffer);
+      const result = await (window as any).hawkeye.whisperTranscribe(buffer);
+      console.log('[Settings] Whisper result:', result);
+      setTestResult(result || '(无识别结果)');
+    } catch (error) {
+      console.error('[Settings] Mic test failed:', error);
+      setTestResult(`错误: ${error}`);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const handleRequestMic = async () => {
+    setIsRequestingMic(true);
+    try {
+      const granted = await (window as any).hawkeye.whisperRequestMic();
+      if (granted) {
+        setMicStatus('granted');
+      } else {
+        setMicStatus('denied');
+      }
+    } catch (error) {
+      console.error('Failed to request mic permission:', error);
+    } finally {
+      setIsRequestingMic(false);
+    }
+  };
+
+  const handleResetWhisperModel = async () => {
+    setIsResettingModel(true);
+    setModelResetStatus('正在重置模型...');
+    try {
+      // Reset model (delete old files)
+      const resetResult = await (window as any).hawkeye.whisperResetModel();
+      if (!resetResult.success) {
+        throw new Error(resetResult.error || '重置失败');
+      }
+      setModelResetStatus('正在下载 large-v3-turbo-q5_0 模型 (~547MB)...');
+
+      // Download new model
+      const downloadResult = await (window as any).hawkeye.whisperDownloadModel();
+      if (!downloadResult.success) {
+        throw new Error(downloadResult.error || '下载失败');
+      }
+
+      setModelResetStatus('✅ 模型切换成功！');
+      // Refresh whisper status
+      const newStatus = await (window as any).hawkeye.whisperStatus();
+      setWhisperStatus(newStatus);
+    } catch (error) {
+      console.error('Failed to reset whisper model:', error);
+      setModelResetStatus(`❌ 错误: ${error}`);
+    } finally {
+      setIsResettingModel(false);
+    }
+  };
 
   const addErrorCard = (message: string) => {
     const card: A2UICard = {
@@ -375,6 +517,115 @@ export function SettingsPage() {
             <span>{t('settings.autoUpdate')}</span>
           </label>
           <small className="form-hint">{t('settings.autoUpdateDesc')}</small>
+        </div>
+
+        {/* Microphone Permission */}
+        <div className="form-group permission-group">
+          <div className="permission-header">
+            <span className="permission-icon">🎤</span>
+            <div className="permission-info">
+              <label>{t('settings.micPermission', '麦克风权限')}</label>
+              <small className="form-hint">
+                {t('settings.micPermissionDesc', '用于语音识别 (Whisper ASR)')}
+              </small>
+            </div>
+          </div>
+          <div className="permission-status">
+            {micStatus === 'granted' && (
+              <span className="permission-badge granted">
+                ✅ {t('settings.micGranted', '已授权')}
+              </span>
+            )}
+            {micStatus === 'denied' && (
+              <div className="permission-denied">
+                <span className="permission-badge denied">
+                  ❌ {t('settings.micDenied', '已拒绝')}
+                </span>
+                <small className="permission-hint">
+                  {t('settings.micDeniedHint', '请在系统偏好设置 → 安全性与隐私 → 麦克风 中授权')}
+                </small>
+              </div>
+            )}
+            {(micStatus === 'not-determined' || micStatus === 'unknown') && (
+              <motion.button
+                className="btn btn-secondary mic-request-btn"
+                onClick={handleRequestMic}
+                disabled={isRequestingMic}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {isRequestingMic ? (
+                  <span>⏳ {t('settings.requesting', '请求中...')}</span>
+                ) : (
+                  <span>🎤 {t('settings.requestMic', '授权麦克风')}</span>
+                )}
+              </motion.button>
+            )}
+            {micStatus === 'granted' && (
+              <motion.button
+                className="btn btn-secondary mic-request-btn"
+                onClick={handleTestMic}
+                disabled={isTesting}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{ marginLeft: '8px' }}
+              >
+                {isTesting ? (
+                  <span>🎙️ 录音中 (3秒)...</span>
+                ) : (
+                  <span>🧪 测试语音识别</span>
+                )}
+              </motion.button>
+            )}
+          </div>
+          {testResult && (
+            <div className="test-result" style={{
+              marginTop: '12px',
+              padding: '12px',
+              background: 'var(--bg-secondary)',
+              borderRadius: '8px',
+              fontSize: '13px'
+            }}>
+              <strong>识别结果:</strong> {testResult}
+            </div>
+          )}
+          {whisperStatus && (
+            <div className="whisper-status" style={{
+              marginTop: '8px',
+              fontSize: '12px',
+              color: 'var(--text-secondary)'
+            }}>
+              <div style={{ marginBottom: '8px' }}>
+                Whisper: {whisperStatus.initialized ? '✅ 已初始化' : '❌ 未初始化'}
+                {whisperStatus.modelPath && ` | 模型: ${whisperStatus.modelPath.split('/').pop()}`}
+              </div>
+              {/* Model switch button - show if not using large-v3-turbo */}
+              {(!whisperStatus.initialized || (whisperStatus.modelPath && !whisperStatus.modelPath.includes('large-v3-turbo'))) && (
+                <motion.button
+                  className="btn btn-secondary"
+                  onClick={handleResetWhisperModel}
+                  disabled={isResettingModel}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ marginTop: '8px', fontSize: '12px' }}
+                >
+                  {isResettingModel ? '⏳ 处理中...' : '🔄 切换到 Large-v3-Turbo 模型 (最高质量)'}
+                </motion.button>
+              )}
+              {modelResetStatus && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '8px',
+                  background: modelResetStatus.includes('✅') ? 'var(--success-bg)' :
+                             modelResetStatus.includes('❌') ? 'var(--error-bg)' : 'var(--bg-secondary)',
+                  borderRadius: '6px',
+                  fontSize: '12px'
+                }}>
+                  {modelResetStatus}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Status */}

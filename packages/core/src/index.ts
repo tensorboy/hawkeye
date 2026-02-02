@@ -476,4 +476,5 @@ export {
   type ContextRecord,
   type DatabaseConfig,
   type HawkeyeDatabase,
+  type ActivitySummaryRecord,
 } from './storage/database';

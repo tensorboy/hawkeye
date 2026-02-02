@@ -28,7 +28,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   localOnly: false,
   hasGemini: false,
   smartObserve: true,
-  smartObserveInterval: 3000,
+  smartObserveInterval: 20000,
   smartObserveThreshold: 0.05,
   onboardingCompleted: false,
   whisperEnabled: false,

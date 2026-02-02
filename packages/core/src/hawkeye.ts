@@ -434,13 +434,17 @@ export class Hawkeye extends EventEmitter {
 
     this.emit('perceiving');
 
+    // Generate context ID once to ensure foreign key consistency
+    const now = Date.now();
+    const contextId = `ctx_${now}`;
+
     // 1. 感知当前上下文
     const context = await this.perception.perceive();
 
     // 2. 保存上下文到数据库
     this.database.saveContext({
-      id: `ctx_${Date.now()}`,
-      timestamp: Date.now(),
+      id: contextId,
+      timestamp: now,
       appName: context.activeWindow?.appName,
       windowTitle: context.activeWindow?.title,
       clipboard: context.clipboard,
@@ -458,8 +462,8 @@ export class Hawkeye extends EventEmitter {
         type: intent.type,
         description: intent.description,
         confidence: intent.confidence,
-        contextId: `ctx_${Date.now()}`,
-        createdAt: Date.now(),
+        contextId: contextId,
+        createdAt: now,
       });
     }
 
@@ -473,7 +477,7 @@ export class Hawkeye extends EventEmitter {
           confidence: i.confidence,
           entities: i.entities,
         })),
-        contextId: `ctx_${Date.now()}`,
+        contextId: contextId,
       });
     }
 
@@ -941,6 +945,13 @@ export class Hawkeye extends EventEmitter {
    */
   getDatabaseStats() {
     return this.database.getStats();
+  }
+
+  /**
+   * 获取数据库实例
+   */
+  getDatabase(): HawkeyeDatabase {
+    return this.database;
   }
 
   /**

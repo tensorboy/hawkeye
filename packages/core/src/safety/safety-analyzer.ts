@@ -512,12 +512,13 @@ export class SafetyAnalyzer {
 
       // 解析搜索结果
       const content = searchResult.content[0];
-      if (content.type !== 'text') {
+      if (content.type !== 'text' || !content.text) {
         return undefined;
       }
 
       // 检查是否找到已知威胁报告
-      const resultText = content.text.toLowerCase();
+      const textContent = content.text;
+      const resultText = textContent.toLowerCase();
       const scamKeywords = [
         'scam',
         'fraud',
@@ -538,7 +539,7 @@ export class SafetyAnalyzer {
 
       return {
         query,
-        results: this.parseSearchResults(content.text),
+        results: this.parseSearchResults(textContent),
         knownThreatReported,
         reportSummary: knownThreatReported
           ? '网络搜索发现相关的诈骗或安全警告报告。'
@@ -572,7 +573,11 @@ export class SafetyAnalyzer {
         };
       } else if (line.startsWith('URL:')) {
         currentResult.url = line.replace('URL:', '').trim();
-        currentResult.source = new URL(currentResult.url).hostname;
+        try {
+          currentResult.source = new URL(currentResult.url).hostname;
+        } catch {
+          currentResult.source = currentResult.url;
+        }
       } else if (line.startsWith('Content:')) {
         currentResult.content = line.replace('Content:', '').trim();
       }

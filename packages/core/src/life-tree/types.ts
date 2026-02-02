@@ -22,6 +22,7 @@ export const LIFE_STAGES = [
   'relationships',
   'creativity',
   'finance',
+  'safety',
 ] as const;
 
 export type LifeStage = typeof LIFE_STAGES[number];
@@ -33,6 +34,7 @@ export const LIFE_STAGE_LABELS: Record<LifeStage, string> = {
   relationships: 'Relationships',
   creativity: 'Creativity',
   finance: 'Finance',
+  safety: 'Safety',
 };
 
 // ============ Core Data Model ============
@@ -261,4 +263,15 @@ export const APP_STAGE_HEURISTICS: Record<string, LifeStage> = {
   'coinbase': 'finance',
   'excel': 'finance',
   'numbers': 'finance',
+  // Safety
+  '1password': 'safety',
+  'lastpass': 'safety',
+  'bitwarden': 'safety',
+  'keychain': 'safety',
+  'vpn': 'safety',
+  'nordvpn': 'safety',
+  'expressvpn': 'safety',
+  'little snitch': 'safety',
+  'malwarebytes': 'safety',
+  'cleanmymac': 'safety',
 };

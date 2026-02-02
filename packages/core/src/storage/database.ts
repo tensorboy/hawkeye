@@ -79,6 +79,23 @@ export interface ExecutionRecord {
   completedAt?: number;
 }
 
+/**
+ * 活动摘要记录 (10分钟活动总结)
+ */
+export interface ActivitySummaryRecord {
+  id: string;
+  startTime: number;
+  endTime: number;
+  summaryText: string;
+  appDistribution?: string;  // JSON: { appName: percentage }
+  eventCounts?: string;      // JSON: { eventType: count }
+  dominantStage?: string;    // career/health/learning 等
+  confidence: number;
+  keywords?: string;         // JSON array
+  lifeTreeUpdated: boolean;
+  createdAt: number;
+}
+
 export class HawkeyeDatabase {
   private db: Database | null = null;
   private config: DatabaseConfig;
@@ -380,6 +397,25 @@ export class HawkeyeDatabase {
       CREATE INDEX IF NOT EXISTS idx_life_tree_snapshots_version ON life_tree_snapshots(version);
       CREATE INDEX IF NOT EXISTS idx_life_tree_experiments_node ON life_tree_experiments(node_id);
       CREATE INDEX IF NOT EXISTS idx_life_tree_experiments_status ON life_tree_experiments(status);
+
+      -- 活动摘要表 (10分钟活动总结)
+      CREATE TABLE IF NOT EXISTS activity_summaries (
+        id TEXT PRIMARY KEY,
+        start_time INTEGER NOT NULL,
+        end_time INTEGER NOT NULL,
+        summary_text TEXT NOT NULL,
+        app_distribution TEXT,
+        event_counts TEXT,
+        dominant_stage TEXT,
+        confidence REAL DEFAULT 0.5,
+        keywords TEXT,
+        life_tree_updated INTEGER DEFAULT 0,
+        created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000)
+      );
+
+      -- 活动摘要索引
+      CREATE INDEX IF NOT EXISTS idx_activity_summaries_time ON activity_summaries(start_time, end_time);
+      CREATE INDEX IF NOT EXISTS idx_activity_summaries_stage ON activity_summaries(dominant_stage);
     `);
 
     // FTS5 全文搜索 (参考 steipete/wacli)
@@ -1839,6 +1875,164 @@ export class HawkeyeDatabase {
     } else {
       this.db.prepare('UPDATE life_tree_experiments SET status = ? WHERE id = ?').run(status, id);
     }
+  }
+
+  // ============ 活动摘要 CRUD ============
+
+  /**
+   * 保存活动摘要
+   */
+  saveActivitySummary(summary: ActivitySummaryRecord): void {
+    if (!this.db) return;
+
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO activity_summaries (
+        id, start_time, end_time, summary_text, app_distribution, event_counts,
+        dominant_stage, confidence, keywords, life_tree_updated, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      summary.id,
+      summary.startTime,
+      summary.endTime,
+      summary.summaryText,
+      summary.appDistribution,
+      summary.eventCounts,
+      summary.dominantStage,
+      summary.confidence,
+      summary.keywords,
+      summary.lifeTreeUpdated ? 1 : 0,
+      summary.createdAt
+    );
+  }
+
+  /**
+   * 获取最近的活动摘要
+   */
+  getActivitySummaries(limit: number = 50): ActivitySummaryRecord[] {
+    if (!this.db) return [];
+
+    const stmt = this.db.prepare(`
+      SELECT * FROM activity_summaries
+      ORDER BY start_time DESC
+      LIMIT ?
+    `);
+
+    const rows = stmt.all(limit) as Array<Record<string, unknown>>;
+
+    return rows.map(row => ({
+      id: row.id as string,
+      startTime: row.start_time as number,
+      endTime: row.end_time as number,
+      summaryText: row.summary_text as string,
+      appDistribution: row.app_distribution as string | undefined,
+      eventCounts: row.event_counts as string | undefined,
+      dominantStage: row.dominant_stage as string | undefined,
+      confidence: row.confidence as number,
+      keywords: row.keywords as string | undefined,
+      lifeTreeUpdated: (row.life_tree_updated as number) === 1,
+      createdAt: row.created_at as number,
+    }));
+  }
+
+  /**
+   * 获取时间范围内的活动摘要
+   */
+  getActivitySummariesInRange(startTime: number, endTime: number): ActivitySummaryRecord[] {
+    if (!this.db) return [];
+
+    const stmt = this.db.prepare(`
+      SELECT * FROM activity_summaries
+      WHERE start_time >= ? AND end_time <= ?
+      ORDER BY start_time ASC
+    `);
+
+    const rows = stmt.all(startTime, endTime) as Array<Record<string, unknown>>;
+
+    return rows.map(row => ({
+      id: row.id as string,
+      startTime: row.start_time as number,
+      endTime: row.end_time as number,
+      summaryText: row.summary_text as string,
+      appDistribution: row.app_distribution as string | undefined,
+      eventCounts: row.event_counts as string | undefined,
+      dominantStage: row.dominant_stage as string | undefined,
+      confidence: row.confidence as number,
+      keywords: row.keywords as string | undefined,
+      lifeTreeUpdated: (row.life_tree_updated as number) === 1,
+      createdAt: row.created_at as number,
+    }));
+  }
+
+  /**
+   * 获取最近一条活动摘要
+   */
+  getLatestActivitySummary(): ActivitySummaryRecord | null {
+    if (!this.db) return null;
+
+    const stmt = this.db.prepare(`
+      SELECT * FROM activity_summaries
+      ORDER BY end_time DESC
+      LIMIT 1
+    `);
+
+    const row = stmt.get() as Record<string, unknown> | undefined;
+
+    if (!row) return null;
+
+    return {
+      id: row.id as string,
+      startTime: row.start_time as number,
+      endTime: row.end_time as number,
+      summaryText: row.summary_text as string,
+      appDistribution: row.app_distribution as string | undefined,
+      eventCounts: row.event_counts as string | undefined,
+      dominantStage: row.dominant_stage as string | undefined,
+      confidence: row.confidence as number,
+      keywords: row.keywords as string | undefined,
+      lifeTreeUpdated: (row.life_tree_updated as number) === 1,
+      createdAt: row.created_at as number,
+    };
+  }
+
+  /**
+   * 标记活动摘要已更新生命树
+   */
+  markActivitySummaryLifeTreeUpdated(id: string): void {
+    if (!this.db) return;
+
+    const stmt = this.db.prepare('UPDATE activity_summaries SET life_tree_updated = 1 WHERE id = ?');
+    stmt.run(id);
+  }
+
+  /**
+   * 获取未更新生命树的活动摘要
+   */
+  getPendingLifeTreeUpdates(): ActivitySummaryRecord[] {
+    if (!this.db) return [];
+
+    const stmt = this.db.prepare(`
+      SELECT * FROM activity_summaries
+      WHERE life_tree_updated = 0
+      ORDER BY start_time ASC
+    `);
+
+    const rows = stmt.all() as Array<Record<string, unknown>>;
+
+    return rows.map(row => ({
+      id: row.id as string,
+      startTime: row.start_time as number,
+      endTime: row.end_time as number,
+      summaryText: row.summary_text as string,
+      appDistribution: row.app_distribution as string | undefined,
+      eventCounts: row.event_counts as string | undefined,
+      dominantStage: row.dominant_stage as string | undefined,
+      confidence: row.confidence as number,
+      keywords: row.keywords as string | undefined,
+      lifeTreeUpdated: false,
+      createdAt: row.created_at as number,
+    }));
   }
 
   /**

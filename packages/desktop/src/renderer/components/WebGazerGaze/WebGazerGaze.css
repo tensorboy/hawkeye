@@ -1,0 +1,271 @@
+/* WebGazerGaze 组件样式 */
+
+/* 加载状态 */
+.webgazer-loading {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+}
+
+.webgazer-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: webgazer-spin 1s linear infinite;
+}
+
+@keyframes webgazer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 错误状态 */
+.webgazer-error {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  padding: 12px 20px;
+  background: rgba(239, 68, 68, 0.9);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+}
+
+/* 注视点指示器 */
+.webgazer-indicator {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.webgazer-indicator-inner {
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+}
+
+.webgazer-indicator-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(59, 130, 246, 0.6);
+  border-radius: 50%;
+  animation: webgazer-pulse 2s ease-in-out infinite;
+}
+
+@keyframes webgazer-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.3;
+  }
+}
+
+/* 调试面板 */
+.webgazer-debug {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 240px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 12px;
+  color: white;
+  font-size: 12px;
+  z-index: 10001;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.webgazer-debug-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #3b82f6;
+}
+
+.webgazer-debug-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.webgazer-debug-row span:first-child {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.webgazer-debug-value {
+  font-family: 'SF Mono', Monaco, monospace;
+  color: #22c55e;
+}
+
+.webgazer-debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.webgazer-debug-actions button {
+  flex: 1;
+  min-width: calc(50% - 3px);
+  padding: 6px 10px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 6px;
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.webgazer-debug-actions button:hover {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+.webgazer-debug-actions button.active {
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.webgazer-debug-value.active {
+  color: #22c55e;
+}
+
+.webgazer-debug-tip {
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+/* 校准样本可视化 */
+.webgazer-samples {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.webgazer-samples-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #22c55e;
+  margin-bottom: 10px;
+}
+
+.webgazer-samples-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.webgazer-sample-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s;
+}
+
+.webgazer-sample-item:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.02);
+}
+
+.webgazer-sample-item.global {
+  border-color: rgba(234, 179, 8, 0.5);
+}
+
+.webgazer-sample-face {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.webgazer-sample-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.webgazer-sample-no-face {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.webgazer-sample-info {
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.webgazer-sample-coords {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 10px;
+  color: #3b82f6;
+}
+
+.webgazer-sample-global-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  border-radius: 4px;
+  font-size: 9px;
+  color: #eab308;
+  width: fit-content;
+}
+
+/* 滚动条样式 */
+.webgazer-samples-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.webgazer-samples-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+}
+
+.webgazer-samples-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.webgazer-samples-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

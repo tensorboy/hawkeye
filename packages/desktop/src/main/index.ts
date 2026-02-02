@@ -15,6 +15,9 @@ import { ModelManagerService } from './services/model-manager-service';
 import { EnvCheckService } from './services/env-check-service';
 import { WhisperService } from './services/whisper-service';
 import { TrayStatusService } from './services/tray-status-service';
+import { ActivitySummarizerService } from './services/activity-summarizer-service';
+import { LifeTreeService } from './services/life-tree-service';
+import { AudioProcessorService } from './services/audio-processor-service';
 import { registerAllHandlers } from './ipc';
 import { initI18n, t } from './i18n';
 
@@ -42,6 +45,9 @@ const modelManagerService = new ModelManagerService(() => mainWindow, debugLog);
 const envCheckService = new EnvCheckService(debugLog);
 const whisperService = new WhisperService(() => mainWindow, debugLog);
 const trayStatusService = new TrayStatusService(() => mainWindow, debugLog);
+const activitySummarizerService = new ActivitySummarizerService(debugLog);
+const lifeTreeService = new LifeTreeService(debugLog);
+const audioProcessorService = new AudioProcessorService(() => mainWindow, debugLog);
 
 // Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -59,15 +65,7 @@ if (!gotTheLock) {
   });
 }
 
-// Register IPC
-registerAllHandlers({
-  configService,
-  hawkeyeService,
-  modelManagerService,
-  envCheckService,
-  whisperService,
-  mainWindowGetter: () => mainWindow,
-});
+// IPC handlers will be registered after app is ready
 
 async function checkScreenRecordingPermission(): Promise<boolean> {
   if (process.platform !== 'darwin') return true;
@@ -229,6 +227,20 @@ app.on('window-all-closed', (e) => {
 
 app.whenReady().then(async () => {
   try {
+    // Register IPC handlers after app is ready
+    registerAllHandlers({
+      configService,
+      hawkeyeService,
+      modelManagerService,
+      envCheckService,
+      whisperService,
+      activitySummarizerService,
+      lifeTreeService,
+      audioProcessorService,
+      mainWindowGetter: () => mainWindow,
+      debugLog,
+    });
+
     initI18n();
     await checkScreenRecordingPermission();
     createWindow();
@@ -247,10 +259,19 @@ app.whenReady().then(async () => {
 
     // Init Hawkeye
     await hawkeyeService.initialize(configService.getConfig());
+    console.log('[Main] Hawkeye initialized, starting Whisper init...');
+
+    // Initialize Life Tree Service
+    const lifeTreeDb = hawkeyeService.getDatabase();
+    if (lifeTreeDb) {
+      lifeTreeService.initialize(lifeTreeDb);
+      debugLog('[LifeTree] Service initialized');
+    }
 
     // Init Whisper (auto-download model if not present)
     const appConfig = configService.getConfig();
     let whisperModelPath = appConfig.whisperModelPath;
+    console.log(`[Whisper] Config whisperEnabled: ${appConfig.whisperEnabled}, modelPath: ${whisperModelPath || '(not set)'}`);
 
     if (!whisperModelPath || !fs.existsSync(whisperModelPath)) {
       // Check if default model already exists
@@ -280,10 +301,14 @@ app.whenReady().then(async () => {
     }
 
     if (whisperModelPath) {
+      console.log(`[Whisper] Calling initialize with path: ${whisperModelPath}`);
       await whisperService.initialize({
         modelPath: whisperModelPath,
         language: appConfig.whisperLanguage,
       });
+      console.log(`[Whisper] Initialize completed`);
+    } else {
+      console.log(`[Whisper] Skipping init - no model path`);
     }
 
     // Check Python Environment
@@ -308,6 +333,44 @@ app.whenReady().then(async () => {
       if (global.startSmartObserve) global.startSmartObserve();
     }
 
+    // Initialize Activity Summarizer (10-minute summaries)
+    const db = hawkeyeService.getDatabase();
+    if (db) {
+      activitySummarizerService.initialize(db, {
+        intervalMs: 10 * 60 * 1000, // 10 minutes
+        minEventCount: 3,
+        enabled: true,
+      });
+      activitySummarizerService.start();
+      debugLog('[ActivitySummarizer] Started with 10-minute interval');
+    }
+
+    // Connect AudioProcessor to WhisperService for real-time transcription
+    audioProcessorService.on('audio-buffer', async (buffer: Buffer) => {
+      try {
+        const status = whisperService.getStatus();
+        if (status.initialized && !status.isTranscribing) {
+          const text = await whisperService.transcribe(buffer);
+          if (text.trim()) {
+            debugLog(`[AudioProcessor→Whisper] Transcribed: ${text}`);
+          }
+        }
+      } catch (error) {
+        debugLog(`[AudioProcessor→Whisper] Error: ${error}`);
+      }
+    });
+
+    // Auto-start audio processor if whisper is enabled
+    const audioConfig = configService.getConfig();
+    if (audioConfig.whisperEnabled && audioConfig.aecEnabled !== false) {
+      try {
+        await audioProcessorService.start();
+        debugLog('[AudioProcessor] Started with AEC');
+      } catch (error) {
+        debugLog(`[AudioProcessor] Failed to start: ${error}`);
+      }
+    }
+
   } catch (error) {
     debugLog(`Init error: ${error}`);
   }
@@ -321,7 +384,9 @@ app.on('will-quit', async () => {
   globalShortcut.unregisterAll();
   // @ts-ignore
   if (global.stopSmartObserve) global.stopSmartObserve();
+  audioProcessorService.stop();
   trayStatusService.destroy();
+  lifeTreeService.destroy();
   await whisperService.shutdown();
   await hawkeyeService.shutdown();
 });

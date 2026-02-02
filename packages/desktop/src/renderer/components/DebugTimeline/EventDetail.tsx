@@ -2,7 +2,7 @@
  * EventDetail - Event detail popup/panel
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DebugEvent, EVENT_TYPE_CONFIG } from './types';
 
 interface EventDetailProps {
@@ -26,6 +26,8 @@ const toStr = (val: unknown): string => {
 };
 
 export const EventDetail: React.FC<EventDetailProps> = ({ event, onClose }) => {
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
   if (!event) return null;
 
   const config = EVENT_TYPE_CONFIG[event.type];
@@ -88,8 +90,11 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, onClose }) => {
             {/* Screenshot thumbnail with OCR visualization */}
             {hasScreenshot && (
               <div className="detail-ocr-visualization">
-                <span className="detail-label">原图 {screenshotWidth && screenshotHeight ? `(${screenshotWidth}×${screenshotHeight})` : ''}:</span>
-                <div className="ocr-image-container">
+                <span className="detail-label">原图 {screenshotWidth && screenshotHeight ? `(${screenshotWidth}×${screenshotHeight})` : ''} <span className="click-hint">(点击放大)</span>:</span>
+                <div
+                  className="ocr-image-container clickable"
+                  onClick={() => setZoomedImage(data.thumbnail as string)}
+                >
                   <img
                     src={data.thumbnail as string}
                     alt="OCR source screenshot"
@@ -401,6 +406,45 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, onClose }) => {
           </div>
         );
 
+      case 'speech_segment':
+        return (
+          <div className="detail-content">
+            {data.language && (
+              <div className="detail-row">
+                <span className="detail-label">语言:</span>
+                <span className="detail-value">{toStr(data.language)}</span>
+              </div>
+            )}
+            {data.duration && (
+              <div className="detail-row">
+                <span className="detail-label">音频时长:</span>
+                <span className="detail-value">{formatDuration(data.duration as number)}</span>
+              </div>
+            )}
+            {data.confidence && (
+              <div className="detail-row">
+                <span className="detail-label">置信度:</span>
+                <span className="detail-value">{((data.confidence as number) * 100).toFixed(1)}%</span>
+              </div>
+            )}
+            <div className="detail-text">
+              <span className="detail-label">转录文本:</span>
+              <pre>{toStr(data.text)}</pre>
+            </div>
+            {data.segments && Array.isArray(data.segments) && (
+              <div className="detail-segments">
+                <span className="detail-label">分段详情:</span>
+                {(data.segments as Array<{ start: number; end: number; text: string }>).map((seg, idx) => (
+                  <div key={idx} className="segment-item">
+                    <span className="segment-time">[{(seg.start / 1000).toFixed(2)}s - {(seg.end / 1000).toFixed(2)}s]</span>
+                    <span className="segment-text">{seg.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
       case 'error':
         return (
           <div className="detail-content">
@@ -439,20 +483,32 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, onClose }) => {
   };
 
   return (
-    <div className="event-detail-panel">
-      <div className="detail-header">
-        <span className="detail-icon" style={{ color: config.color }}>{config.icon}</span>
-        <span className="detail-type">{config.label}</span>
-        <span className="detail-timestamp">{formatTimestamp(event.timestamp)}</span>
-        <button className="detail-close" onClick={onClose}>×</button>
+    <>
+      <div className="event-detail-panel">
+        <div className="detail-header">
+          <span className="detail-icon" style={{ color: config.color }}>{config.icon}</span>
+          <span className="detail-type">{config.label}</span>
+          <span className="detail-timestamp">{formatTimestamp(event.timestamp)}</span>
+          <button className="detail-close" onClick={onClose}>×</button>
+        </div>
+        <div className="detail-body">
+          {renderContent()}
+        </div>
+        <div className="detail-footer">
+          <span className="detail-id">ID: {event.id}</span>
+          {event.parentId && <span className="detail-parent">Parent: {event.parentId}</span>}
+        </div>
       </div>
-      <div className="detail-body">
-        {renderContent()}
-      </div>
-      <div className="detail-footer">
-        <span className="detail-id">ID: {event.id}</span>
-        {event.parentId && <span className="detail-parent">Parent: {event.parentId}</span>}
-      </div>
-    </div>
+
+      {/* Image zoom modal */}
+      {zoomedImage && (
+        <div className="image-zoom-overlay" onClick={() => setZoomedImage(null)}>
+          <div className="image-zoom-container">
+            <img src={zoomedImage} alt="Zoomed preview" className="zoomed-image" />
+            <button className="zoom-close-btn" onClick={() => setZoomedImage(null)}>✕</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

@@ -33,6 +33,9 @@ export interface AppSlice {
   showDebugTimeline: boolean;
   showOnboarding: boolean;
   showScreenshotPreview: boolean;
+  showHistory: boolean;
+  showTimelineTree: boolean;
+  showCameraPreview: boolean;
   isLoading: boolean;
   modelTesting: boolean;
   chatLoading: boolean;
@@ -62,6 +65,9 @@ export interface AppSlice {
   setShowDebugTimeline: (show: boolean) => void;
   setShowOnboarding: (show: boolean) => void;
   setShowScreenshotPreview: (show: boolean) => void;
+  setShowHistory: (show: boolean) => void;
+  setShowTimelineTree: (show: boolean) => void;
+  setShowCameraPreview: (show: boolean) => void;
   setScreenshotZoomed: (zoomed: boolean) => void;
   setModelTesting: (testing: boolean) => void;
   setChatLoading: (loading: boolean) => void;

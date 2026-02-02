@@ -2,14 +2,16 @@
  * Main A2UI View - Card-based interaction interface
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { A2UICard } from '@hawkeye/core';
-import { CardList, QuickActions, defaultQuickActions } from '../components/A2UI';
-import type { QuickAction } from '../components/A2UI';
+import { CardList } from '../components/A2UI';
 import { DebugTimeline } from '../components/DebugTimeline';
 import { SettingsModal } from '../components/SettingsModal';
+import { LifeTreePanel } from '../components/LifeTree';
+import { TimelineTreePanel } from '../components/TimelineTree';
+import { CameraPreview } from '../components/CameraPreview';
 import { useHawkeyeStore } from '../stores';
 import type { ExecutionPlan, PlanExecution, ChatMessage } from '../stores/types';
 import logoIcon from '../assets/icon.png';
@@ -90,12 +92,71 @@ export function MainView() {
     showChatDialog, setShowChatDialog,
     showDebugTimeline, setShowDebugTimeline,
     showScreenshotPreview, setShowScreenshotPreview,
+    setShowHistory,
     chatLoading, setChatLoading,
     screenshotZoomed, setScreenshotZoomed,
     smartObserveWatching,
     screenshotPreview, setScreenshotPreview,
     ocrTextPreview, setOcrTextPreview,
+    showLifeTree, setShowLifeTree,
+    showTimelineTree, setShowTimelineTree,
+    showCameraPreview, setShowCameraPreview,
   } = useHawkeyeStore();
+
+  // Gesture control state
+  const [gestureScreenshot, setGestureScreenshot] = useState<string | null>(null);
+  const [showGestureScreenshot, setShowGestureScreenshot] = useState(false);
+
+  // Set up gesture control event listeners
+  useEffect(() => {
+    // Guard: window.hawkeye only exists in Electron
+    if (!window.hawkeye) return;
+
+    // Screenshot captured via gesture
+    const unsubScreenshot = window.hawkeye.onGestureControlScreenshot?.((data) => {
+      setGestureScreenshot(data.dataUrl);
+      setShowGestureScreenshot(true);
+      // Auto-hide after 3 seconds
+      setTimeout(() => setShowGestureScreenshot(false), 3000);
+    });
+
+    // Toggle recording via gesture (toggle smart observe)
+    const unsubRecording = window.hawkeye.onGestureControlToggleRecording?.(() => {
+      window.hawkeye.toggleSmartObserve?.();
+    });
+
+    // Pause via gesture (stop smart observe)
+    const unsubPause = window.hawkeye.onGestureControlPause?.(() => {
+      if (smartObserveWatching) {
+        window.hawkeye.stopSmartObserve?.();
+      }
+    });
+
+    // Quick menu via gesture (show settings)
+    const unsubQuickMenu = window.hawkeye.onGestureControlQuickMenu?.(() => {
+      setShowSettings(true);
+    });
+
+    return () => {
+      unsubScreenshot?.();
+      unsubRecording?.();
+      unsubPause?.();
+      unsubQuickMenu?.();
+    };
+  }, [smartObserveWatching, setShowSettings]);
+
+  // Handle gesture actions from CameraPreview
+  const handleGestureAction = useCallback((event: {
+    action: string;
+    gesture: string;
+    confidence: number;
+    position?: { x: number; y: number };
+    handedness?: string;
+  }) => {
+    console.log('[MainView] Gesture action:', event);
+    // Most actions are handled via IPC events above
+    // This callback can be used for additional UI feedback
+  }, []);
 
   const addErrorCard = useCallback((message: string) => {
     const card: A2UICard = {
@@ -204,62 +265,7 @@ export function MainView() {
         await window.hawkeye.observe();
         break;
       case 'history':
-        try {
-          const historyItems = await window.hawkeye.getExecutionHistory(10);
-          if (historyItems.length === 0) {
-            addCard({
-              id: generateId(),
-              type: 'info',
-              title: t('app.historyEmpty', '暂无执行记录'),
-              description: t('app.historyEmptyDesc', '执行任务后会在这里显示历史记录'),
-              icon: 'clock',
-              infoType: 'status',
-              dismissible: true,
-              timestamp: Date.now(),
-              actions: [{ id: 'dismiss', label: t('app.done'), type: 'dismiss' }],
-            });
-          } else {
-            const historyCards: A2UICard[] = historyItems.map((item) => {
-              const statusIcon = item.status === 'completed' ? '✅' :
-                item.status === 'failed' ? '❌' :
-                item.status === 'cancelled' ? '⏹️' : '⏳';
-              const statusText = item.status === 'completed' ? t('app.executionCompleted') :
-                item.status === 'failed' ? t('app.executionFailed') :
-                item.status === 'cancelled' ? t('app.cancel') : item.status;
-              return {
-                id: `history_${item.id}`,
-                type: 'info' as const,
-                title: item.plan?.title || t('app.unknownTask', '未知任务'),
-                description: `${statusIcon} ${statusText}`,
-                icon: 'clock' as const,
-                infoType: 'status' as const,
-                dismissible: true,
-                timestamp: item.startedAt,
-                metadata: {
-                  executionId: item.id,
-                  planId: item.planId,
-                  status: item.status,
-                  duration: item.completedAt ? item.completedAt - item.startedAt : undefined,
-                },
-                actions: [{ id: 'dismiss', label: t('app.done'), type: 'dismiss' }],
-              };
-            });
-            addCard({
-              id: generateId(),
-              type: 'info',
-              title: t('app.historyTitle', '执行历史'),
-              description: t('app.historyCount', { count: historyItems.length, defaultValue: `共 ${historyItems.length} 条记录` }),
-              icon: 'clock',
-              infoType: 'status',
-              dismissible: true,
-              timestamp: Date.now(),
-              actions: [{ id: 'dismiss', label: t('app.done'), type: 'dismiss' }],
-            });
-            historyCards.forEach((card) => addCard(card));
-          }
-        } catch (err) {
-          addErrorCard((err as Error).message);
-        }
+        setShowHistory(true);
         break;
       case 'settings':
         setShowSettings(true);
@@ -330,18 +336,12 @@ export function MainView() {
     setScreenshotZoomed(false);
   };
 
-  const quickActions: QuickAction[] = defaultQuickActions.map((action) => ({
-    ...action,
-    disabled: !status?.aiReady && action.id !== 'settings',
-  }));
-
   return (
     <div className="container a2ui-container">
       {/* Header */}
       <header className="header">
-        <div className="header-brand" onClick={() => setShowChatDialog(true)} style={{ cursor: 'pointer' }}>
+        <div className="header-brand">
           <img src={logoIcon} alt="Hawkeye" className="brand-icon" />
-          <h1>Hawkeye</h1>
         </div>
         <div className="header-actions">
           <button
@@ -359,11 +359,32 @@ export function MainView() {
             🖼️
           </button>
           <button
-            className={`btn-smart-observe ${smartObserveWatching ? 'watching' : ''}`}
-            onClick={async () => { await window.hawkeye.toggleSmartObserve(); }}
-            title={smartObserveWatching ? t('app.smartObserveOn', '智能观察中') : t('app.smartObserveOff', '智能观察已关闭')}
+            className={`btn-icon ${showLifeTree ? 'active' : ''}`}
+            onClick={() => setShowLifeTree(!showLifeTree)}
+            title={t('app.lifeTree', '生命树')}
           >
-            {smartObserveWatching ? '👁️' : '👁️‍🗨️'}
+            🌳
+          </button>
+          <button
+            className={`btn-icon ${showTimelineTree ? 'active' : ''}`}
+            onClick={() => setShowTimelineTree(!showTimelineTree)}
+            title={t('app.timelineTree', '活动时间线')}
+          >
+            📊
+          </button>
+          <button
+            className={`btn-icon ${showCameraPreview ? 'active' : ''}`}
+            onClick={() => setShowCameraPreview(!showCameraPreview)}
+            title={t('app.cameraPreview', '摄像头')}
+          >
+            📷
+          </button>
+          <button
+            className="btn-icon"
+            onClick={() => handleQuickAction('history')}
+            title={t('app.history', '历史记录')}
+          >
+            📜
           </button>
           <div className="a2ui-status-indicator">
             <span
@@ -440,6 +461,26 @@ export function MainView() {
         )}
       </AnimatePresence>
 
+      {/* Gesture screenshot preview (floating) */}
+      <AnimatePresence>
+        {showGestureScreenshot && gestureScreenshot && (
+          <motion.div
+            className="gesture-screenshot-toast"
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={springTransition}
+            onClick={() => setShowGestureScreenshot(false)}
+          >
+            <div className="gesture-screenshot-header">
+              <span>✌️ {t('gesture.screenshotCaptured', '截图已保存')}</span>
+              <button className="btn-close-small" onClick={() => setShowGestureScreenshot(false)}>×</button>
+            </div>
+            <img src={gestureScreenshot} alt="Gesture Screenshot" className="gesture-screenshot-thumb" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Card list */}
       <div className="content a2ui-content">
         <CardList
@@ -450,8 +491,34 @@ export function MainView() {
         />
       </div>
 
-      {/* Quick actions */}
-      <QuickActions actions={quickActions} onAction={handleQuickAction} />
+      {/* Chat input at bottom */}
+      <div className="chat-bottom-bar">
+        <div className="chat-input-area">
+          <input
+            type="text"
+            autoFocus
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+              }
+            }}
+            placeholder={t('app.typeMessage', '输入消息...')}
+            disabled={chatLoading}
+          />
+          <motion.button
+            className="btn btn-primary"
+            onClick={sendChatMessage}
+            disabled={!chatInput.trim() || chatLoading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {chatLoading ? '...' : t('app.send', '发送')}
+          </motion.button>
+        </div>
+      </div>
 
       {/* Settings modal */}
       <AnimatePresence>
@@ -470,6 +537,38 @@ export function MainView() {
             transition={springTransition}
           >
             <DebugTimeline onClose={() => setShowDebugTimeline(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Life Tree */}
+      <AnimatePresence>
+        {showLifeTree && (
+          <motion.div
+            className="life-tree-overlay"
+            variants={panelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={springTransition}
+          >
+            <LifeTreePanel />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Timeline Tree */}
+      <AnimatePresence>
+        {showTimelineTree && (
+          <motion.div
+            className="timeline-tree-overlay"
+            variants={panelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={springTransition}
+          >
+            <TimelineTreePanel onClose={() => setShowTimelineTree(false)} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -559,6 +658,24 @@ export function MainView() {
                 </motion.button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Camera Preview */}
+      <AnimatePresence>
+        {showCameraPreview && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={springTransition}
+          >
+            <CameraPreview
+              onClose={() => setShowCameraPreview(false)}
+              gestureControlEnabled={true}
+              onGestureAction={handleGestureAction}
+            />
           </motion.div>
         )}
       </AnimatePresence>

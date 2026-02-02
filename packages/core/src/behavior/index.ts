@@ -43,3 +43,14 @@ export {
   BehaviorTrackerOptions,
   createBehaviorTracker,
 } from './behavior-tracker';
+
+// 活动总结器 (10分钟自动总结)
+export {
+  ActivitySummarizer,
+  ActivitySummarizerConfig,
+  ActivitySummary,
+  AppDistribution,
+  EventCounts,
+  createActivitySummarizer,
+  DEFAULT_SUMMARIZER_CONFIG,
+} from './activity-summarizer';

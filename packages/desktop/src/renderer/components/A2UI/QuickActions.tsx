@@ -49,18 +49,6 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
 // 预定义的常用快捷操作（设置按钮已移至右上角）
 export const defaultQuickActions: QuickAction[] = [
   {
-    id: 'refresh',
-    label: '刷新建议',
-    icon: '🔄',
-    tooltip: '重新分析当前环境',
-  },
-  {
-    id: 'clipboard',
-    label: '剪贴板',
-    icon: '📋',
-    tooltip: '分析剪贴板内容',
-  },
-  {
     id: 'history',
     label: '历史记录',
     icon: '📜',

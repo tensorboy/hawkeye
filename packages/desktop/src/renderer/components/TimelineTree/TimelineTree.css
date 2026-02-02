@@ -1,0 +1,314 @@
+/**
+ * Timeline Tree Styles - Modern Card-based Design
+ */
+
+.timeline-tree-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(20px);
+}
+
+.timeline-tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.timeline-tree-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.timeline-tree-title h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timeline-tree-title h2::before {
+  content: '📊';
+  font-size: 24px;
+}
+
+.timeline-tree-stats {
+  font-size: 13px;
+  color: rgba(148, 163, 184, 0.6);
+  padding: 4px 12px;
+  background: rgba(148, 163, 184, 0.1);
+  border-radius: 20px;
+}
+
+.timeline-tree-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.timeline-range-selector {
+  display: flex;
+  gap: 2px;
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 8px;
+  padding: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.range-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.range-btn:hover {
+  color: white;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.range-btn.active {
+  color: white;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.6), rgba(139, 92, 246, 0.6));
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.timeline-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.timeline-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.timeline-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.timeline-tree-canvas {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+}
+
+.timeline-tree-error {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+.timeline-tree-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(148, 163, 184, 0.5);
+  gap: 16px;
+}
+
+.timeline-tree-empty-icon {
+  font-size: 64px;
+  opacity: 0.4;
+  filter: grayscale(0.5);
+}
+
+.timeline-tree-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 14px;
+}
+
+.timeline-tree-loading::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  margin-right: 12px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.timeline-tree-svg {
+  cursor: grab;
+}
+
+.timeline-tree-svg.dragging {
+  cursor: grabbing;
+}
+
+/* Node detail panel */
+.timeline-node-detail {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  backdrop-filter: blur(10px);
+}
+
+.timeline-node-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.timeline-node-stage {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.timeline-node-time {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.timeline-node-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.timeline-node-apps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.timeline-app-chip {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.15);
+  color: rgba(147, 197, 253, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.timeline-node-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.timeline-keyword {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.1);
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.timeline-node-confidence {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.5);
+  margin-top: 8px;
+}
+
+/* Animations */
+@keyframes nodeGrow {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+/* Time axis */
+.timeline-axis {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.9));
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 100px;
+}
+
+.timeline-axis-label {
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.5);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-axis-label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.3);
+}

@@ -120,6 +120,8 @@ export interface AppConfig {
   whisperEnabled?: boolean;
   whisperModelPath?: string;
   whisperLanguage?: string;
+  // Audio processing config
+  aecEnabled?: boolean;  // Acoustic Echo Cancellation
   // Skill configs
   tavilyApiKey?: string;
 }

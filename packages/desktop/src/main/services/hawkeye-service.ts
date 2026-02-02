@@ -7,6 +7,7 @@ import {
   type HawkeyeStatus,
   type UserIntent,
   type ExecutionPlan,
+  type HawkeyeDatabase,
   WebSearchTool,
 } from '@hawkeye/core';
 import { type AppConfig, LOCAL_ONLY_CONFIG } from './config-service';
@@ -130,6 +131,10 @@ export class HawkeyeService extends EventEmitter {
 
   getInstance(): Hawkeye | null {
     return this.hawkeye;
+  }
+
+  getDatabase(): HawkeyeDatabase | null {
+    return this.hawkeye?.getDatabase() || null;
   }
 
   getStatus(): HawkeyeStatus {
