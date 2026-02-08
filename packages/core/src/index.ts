@@ -84,6 +84,24 @@ export {
   type BrowserAction,
 } from './execution';
 
+// Browser Agent (状态机浏览器自动化)
+export {
+  type AgentState as BrowserAgentState,
+  type StateMachineDefinition,
+  type ObstacleDefinition,
+  type BrowserAgentConfig,
+  DEFAULT_BROWSER_AGENT_CONFIG,
+  SiteRouter,
+  StateMachineExecutor,
+  ChangeObserver,
+  ObstacleDetector,
+  RuleEngine,
+  AMAZON_MACHINE,
+  YOUTUBE_MACHINE,
+  GOOGLE_SEARCH_MACHINE,
+  TAOBAO_MACHINE,
+} from './execution/browser-agent';
+
 // 存储模块
 export * from './storage';
 
@@ -478,3 +496,144 @@ export {
   type HawkeyeDatabase,
   type ActivitySummaryRecord,
 } from './storage/database';
+
+// 调度器模块 (基于 nanobot 设计模式)
+export {
+  // CronService
+  CronService,
+  createCronService,
+  // HeartbeatService
+  HeartbeatService,
+  createHeartbeatService,
+  // Builtin handlers
+  registerBuiltinHandlers,
+  BuiltinHandlerNames,
+  // Cron utilities
+  parseCronExpression,
+  getNextCronTime,
+  computeNextRunTime,
+  validateCronExpression,
+  describeCronExpression,
+  generateJobId,
+  // Constants
+  DEFAULT_CRON_SERVICE_CONFIG,
+  DEFAULT_HEARTBEAT_CONFIG,
+  // Types
+  type ScheduleKind,
+  type CronSchedule,
+  type CronPayloadKind,
+  type CronPayload,
+  type JobStatus,
+  type CronJobState,
+  type CronJob,
+  type CreateJobInput,
+  type UpdateJobInput,
+  type CronServiceConfig,
+  type HeartbeatConfig,
+  type HeartbeatResult,
+  type CronServiceEvents,
+  type HeartbeatServiceEvents,
+  type JobHandler,
+  type JobExecutionContext,
+  type LifeTreeGoal,
+} from './scheduler';
+
+// DailyNotes from memory (基于 nanobot 设计模式)
+export {
+  DailyNotesManager,
+  createDailyNotesManager,
+  DEFAULT_DAILY_NOTES_CONFIG,
+  DEFAULT_DAILY_NOTE_TEMPLATE,
+  type DailyNote,
+  type DailyNoteMetadata,
+  type DailyNoteSections,
+  type DailyNotesConfig,
+  type DailyNotesEvents,
+  type DailyNotesSearchOptions,
+  type DailyNotesSearchResult,
+  type DailyNoteSectionId,
+  type TemplateVariables,
+} from './memory';
+
+// Life Template (Dynamic Personal Development System)
+export {
+  LifeTemplateManager,
+  getLifeTemplateManager,
+  setLifeTemplateManager,
+  createLifeTemplateManager,
+  DEFAULT_LIFE_TEMPLATE_CONFIG,
+  ERIKSON_STAGES,
+  WHEEL_CATEGORIES,
+  type LifeTemplate,
+  type LifeTemplateConfig,
+  type LifeTemplateEvents,
+  type CreateTemplateInput,
+  type UpdateTemplateInput,
+  type TemplateSummary,
+  type TemplateSnapshot,
+  type DailyActivitySummary,
+  type BigFivePersonality,
+  type PsychodynamicProfile,
+  type DefenseMechanism,
+  type WheelOfLife,
+  type WheelOfLifeCategory,
+  type WheelCategoryMeta,
+  type Ikigai,
+  type IkigaiIntersection,
+  type IkigaiIntersectionType,
+  type EriksonStage,
+  type EriksonStageNumber,
+  type EriksonProgress,
+  type LifeNarrative,
+  type LifeChapter,
+  type TurningPoint,
+  type NarrativeTheme,
+  type SelfDefiningMemory,
+  type AppUsageEntry,
+  type AppCategory,
+  type CompletedGoal,
+  type MoodEntry,
+} from './memory';
+
+// Knowledge Graph Memory (three-layer architecture)
+export {
+  KnowledgeGraphStore,
+  ExtractionPipeline,
+  StalenessQueue,
+  ContextAssembler,
+  SelfImprovementManager,
+  calculateCost,
+  estimateTokens,
+  formatCost,
+  LLM_PRICING,
+  DEFAULT_STALENESS_CONFIG,
+  DEFAULT_CONTEXT_BUDGET,
+  DEFAULT_EXTRACTION_CONFIG,
+  DEFAULT_ASSEMBLER_CONFIG,
+  DEFAULT_SELF_IMPROVEMENT_CONFIG,
+  type KGEntity,
+  type KGEntityType,
+  type KGEdge,
+  type KGRelationType,
+  type KGFact,
+  type KGFactType,
+  type HierarchicalSummary,
+  type SummaryNodeType,
+  type StalenessConfig,
+  type ContextBudget,
+  type AssembledContext,
+  type ExtractionEvent,
+  type ExtractionResult,
+  type ExtractedTopic,
+  type ExtractionConfig,
+  type LearningRecord,
+  type LearningType,
+  type CostEntry,
+  type CostSource,
+  type CostReport,
+  type KnowledgeGraphStoreConfig,
+  type ContextAssemblerConfig,
+  type SelfImprovementConfig,
+  type LLMCallFunction,
+  type SummaryRefreshFunction,
+} from './memory';

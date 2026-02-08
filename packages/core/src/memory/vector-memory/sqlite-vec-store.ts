@@ -8,7 +8,21 @@ import * as os from 'os';
 import * as fs from 'fs';
 import type BetterSqlite3 from 'better-sqlite3';
 type Database = InstanceType<typeof BetterSqlite3>;
-import type { MemoryChunk, FileMetadata, EmbeddingCacheEntry, SearchResult, SearchOptions } from './types';
+import type {
+  MemoryChunk,
+  FileMetadata,
+  EmbeddingCacheEntry,
+  SearchResult,
+  SearchOptions,
+  RankedSearchResult,
+  DetailedSearchResult,
+  AdvancedSearchOptions,
+} from './types';
+import {
+  fuseVectorAndFTS,
+  type RRFConfig,
+  DEFAULT_RRF_CONFIG,
+} from './rrf-fusion';
 
 export interface SQLiteVecStoreConfig {
   dbPath?: string;
@@ -61,7 +75,7 @@ export class SQLiteVecStore {
     } catch (error) {
       console.warn('[VectorMemory] SQLite initialization failed:', (error as Error).message);
       this.db = null;
-      this.isInitialized = true; // Mark as initialized to prevent retries
+      this.isInitialized = false;
     }
   }
 
@@ -376,6 +390,8 @@ export class SQLiteVecStore {
 
     const { limit = 10, minScore = 0, source, pathPrefix } = options;
 
+    // Cap brute-force scan to avoid loading entire table into memory
+    const bruteForceLimit = Math.min(limit * 100, 10000);
     let sql = 'SELECT * FROM chunks WHERE embedding IS NOT NULL';
     const params: unknown[] = [];
 
@@ -389,7 +405,12 @@ export class SQLiteVecStore {
       params.push(`${pathPrefix}%`);
     }
 
+    sql += ` LIMIT ${bruteForceLimit}`;
+
     const rows = this.db.prepare(sql).all(...params) as Array<Record<string, unknown>>;
+    if (rows.length >= bruteForceLimit) {
+      console.warn(`[VectorMemory] Brute-force search hit limit (${bruteForceLimit}). Results may be incomplete. Consider fixing sqlite-vec index.`);
+    }
     const results: Array<{ chunk: MemoryChunk; score: number }> = [];
 
     for (const row of rows) {
@@ -501,6 +522,112 @@ export class SQLiteVecStore {
     combined.sort((a, b) => b.score - a.score);
 
     return combined.slice(0, limit);
+  }
+
+  // ============ Rank-Aware Search Operations (for RRF) ============
+
+  /**
+   * Vector search with rank information
+   * Returns results with their position in the ranking
+   */
+  searchVectorWithRank(
+    queryEmbedding: number[],
+    options: SearchOptions = {}
+  ): RankedSearchResult[] {
+    const results = this.searchVector(queryEmbedding, options);
+    return results.map((result, index) => ({
+      ...result,
+      rank: index,
+    }));
+  }
+
+  /**
+   * FTS search with rank information
+   * Returns results with their position in the ranking
+   */
+  searchFTSWithRank(query: string, options: SearchOptions = {}): RankedSearchResult[] {
+    const results = this.searchFTS(query, options);
+    return results.map((result, index) => ({
+      ...result,
+      rank: index,
+    }));
+  }
+
+  /**
+   * Hybrid search using Reciprocal Rank Fusion (RRF)
+   * Provides better fusion than simple weighted average
+   *
+   * @param query - Text query for FTS
+   * @param queryEmbedding - Vector embedding for similarity search
+   * @param options - Search options including RRF parameters
+   * @returns Detailed search results with RRF scores and rankings
+   */
+  searchHybridRRF(
+    query: string,
+    queryEmbedding: number[],
+    options: AdvancedSearchOptions = {}
+  ): DetailedSearchResult[] {
+    const {
+      limit = 10,
+      vectorWeight = 1.0,
+      ftsWeight = 1.0,
+      rrfK = DEFAULT_RRF_CONFIG.k,
+      topRankBonus = DEFAULT_RRF_CONFIG.topRankBonus,
+      secondaryRankBonus = DEFAULT_RRF_CONFIG.secondaryRankBonus,
+    } = options;
+
+    // Get ranked results from both searches (fetch more to improve fusion quality)
+    const fetchLimit = Math.max(limit * 3, 30);
+    const vectorResults = this.searchVectorWithRank(queryEmbedding, {
+      ...options,
+      limit: fetchLimit,
+    });
+    const ftsResults = this.searchFTSWithRank(query, {
+      ...options,
+      limit: fetchLimit,
+    });
+
+    // Convert to RRF-compatible format
+    const vectorItems = vectorResults.map((r) => ({
+      id: r.chunk.id,
+      chunk: r.chunk,
+      originalScore: r.score,
+    }));
+    const ftsItems = ftsResults.map((r) => ({
+      id: r.chunk.id,
+      chunk: r.chunk,
+      originalScore: r.score,
+    }));
+
+    // Create rank maps for detailed results
+    const vectorRankMap = new Map<string, number>();
+    const ftsRankMap = new Map<string, number>();
+    vectorResults.forEach((r, idx) => vectorRankMap.set(r.chunk.id, idx));
+    ftsResults.forEach((r, idx) => ftsRankMap.set(r.chunk.id, idx));
+
+    // Apply RRF fusion
+    const rrfConfig: Partial<RRFConfig> = {
+      k: rrfK,
+      vectorWeight,
+      ftsWeight,
+      topRankBonus,
+      secondaryRankBonus,
+    };
+    const fusedResults = fuseVectorAndFTS(vectorItems, ftsItems, rrfConfig);
+
+    // Convert to DetailedSearchResult
+    const detailedResults: DetailedSearchResult[] = fusedResults
+      .slice(0, limit)
+      .map((result) => ({
+        chunk: result.item.chunk,
+        score: result.rrfScore,
+        source: 'hybrid' as const,
+        rrfScore: result.rrfScore,
+        vectorRank: vectorRankMap.get(result.item.id),
+        ftsRank: ftsRankMap.get(result.item.id),
+      }));
+
+    return detailedResults;
   }
 
   private cosineSimilarity(a: number[], b: number[]): number {

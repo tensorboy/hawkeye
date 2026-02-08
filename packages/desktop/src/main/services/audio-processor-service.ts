@@ -39,6 +39,8 @@ export class AudioProcessorService extends EventEmitter {
   private readonly sampleRate = 16000;
   private readonly bufferDurationMs = 100; // Flush every 100ms
   private readonly silenceThreshold = 0.01;
+  private readonly maxBufferChunks = 100; // Cap audio buffer to prevent unbounded growth
+  private readonly vpioTimeoutMs = 30000; // VPIO startup timeout
 
   constructor(
     private mainWindowGetter: () => BrowserWindow | null,
@@ -131,6 +133,16 @@ export class AudioProcessorService extends EventEmitter {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
 
+      // Startup timeout: kill if no output within vpioTimeoutMs
+      const startupTimeout = setTimeout(() => {
+        if (this.vpioProcess && this.processedFrames === 0) {
+          this.debugLog('[AudioProcessor] VPIO startup timeout, killing process');
+          this.vpioProcess.kill('SIGKILL');
+        }
+      }, this.vpioTimeoutMs);
+      this.vpioProcess.stdout?.once('data', () => { clearTimeout(startupTimeout); });
+      this.vpioProcess.on('close', () => { clearTimeout(startupTimeout); });
+
       this.vpioProcess.stdout?.on('data', (data: Buffer) => {
         this.handleVPIOOutput(data.toString());
       });
@@ -205,6 +217,11 @@ export class AudioProcessorService extends EventEmitter {
    */
   private processAudioChunk(data: Buffer): void {
     this.processedFrames++;
+
+    // Cap buffer to prevent unbounded memory growth
+    if (this.audioBuffer.length >= this.maxBufferChunks) {
+      this.audioBuffer.shift();
+    }
     this.audioBuffer.push(data);
 
     // Calculate energy for this chunk

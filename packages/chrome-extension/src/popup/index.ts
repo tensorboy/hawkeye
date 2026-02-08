@@ -93,6 +93,25 @@ let config: ExtensionConfig = {
   enableNotifications: true,
 };
 
+// WebGazer State
+interface WebGazerState {
+  isActive: boolean;
+  isLoading: boolean;
+  sampleCount: number;
+  gazeX: number | null;
+  gazeY: number | null;
+  error: string | null;
+}
+
+let webgazerState: WebGazerState = {
+  isActive: false,
+  isLoading: false,
+  sampleCount: 0,
+  gazeX: null,
+  gazeY: null,
+  error: null,
+};
+
 // ============ i18n Helper ============
 
 function getMessage(key: string, substitutions?: string | string[]): string {
@@ -128,6 +147,20 @@ const cardContainer = document.getElementById('cardContainer') as HTMLDivElement
 const refreshBtn = document.getElementById('refreshBtn') as HTMLButtonElement;
 const analyzeBtn = document.getElementById('analyzeBtn') as HTMLButtonElement;
 const clipboardBtn = document.getElementById('clipboardBtn') as HTMLButtonElement;
+const sidePanelBtn = document.getElementById('sidePanelBtn') as HTMLButtonElement;
+
+// WebGazer DOM Elements
+const webgazerBtn = document.getElementById('webgazerBtn') as HTMLButtonElement;
+const webgazerPanel = document.getElementById('webgazerPanel') as HTMLDivElement;
+const webgazerCloseBtn = document.getElementById('webgazerCloseBtn') as HTMLButtonElement;
+const webgazerSamples = document.getElementById('webgazerSamples') as HTMLSpanElement;
+const webgazerPosition = document.getElementById('webgazerPosition') as HTMLSpanElement;
+const webgazerToggleBtn = document.getElementById('webgazerToggleBtn') as HTMLButtonElement;
+const webgazerToggleIcon = document.getElementById('webgazerToggleIcon') as HTMLSpanElement;
+const webgazerToggleText = document.getElementById('webgazerToggleText') as HTMLSpanElement;
+const webgazerSyncBtn = document.getElementById('webgazerSyncBtn') as HTMLButtonElement;
+const webgazerDebugBtn = document.getElementById('webgazerDebugBtn') as HTMLButtonElement;
+const webgazerClearBtn = document.getElementById('webgazerClearBtn') as HTMLButtonElement;
 
 // ============ Card Management ============
 
@@ -840,6 +873,245 @@ async function handleClipboard(): Promise<void> {
   }
 }
 
+// ============ WebGazer Controls ============
+
+function showWebGazerPanel(): void {
+  webgazerPanel.classList.remove('hidden');
+  refreshWebGazerStatus();
+}
+
+function hideWebGazerPanel(): void {
+  webgazerPanel.classList.add('hidden');
+}
+
+function updateWebGazerUI(): void {
+  // Update status text
+  const statusEl = document.getElementById('webgazerStatus') as HTMLSpanElement;
+  if (statusEl) {
+    if (webgazerState.isLoading) {
+      statusEl.textContent = getMessage('loading') || 'Loading...';
+      statusEl.className = 'webgazer-status-value loading';
+    } else if (webgazerState.error) {
+      statusEl.textContent = getMessage('error') || 'Error';
+      statusEl.className = 'webgazer-status-value error';
+    } else if (webgazerState.isActive) {
+      statusEl.textContent = getMessage('active') || 'Active';
+      statusEl.className = 'webgazer-status-value active';
+    } else {
+      statusEl.textContent = getMessage('inactive') || 'Inactive';
+      statusEl.className = 'webgazer-status-value';
+    }
+  }
+
+  // Update sample count
+  if (webgazerSamples) {
+    webgazerSamples.textContent = webgazerState.sampleCount.toString();
+  }
+
+  // Update gaze position
+  if (webgazerPosition) {
+    if (webgazerState.gazeX !== null && webgazerState.gazeY !== null) {
+      webgazerPosition.textContent = `${Math.round(webgazerState.gazeX)}, ${Math.round(webgazerState.gazeY)}`;
+    } else {
+      webgazerPosition.textContent = '--';
+    }
+  }
+
+  // Update toggle button
+  if (webgazerToggleBtn && webgazerToggleIcon && webgazerToggleText) {
+    if (webgazerState.isActive) {
+      webgazerToggleIcon.textContent = '⏹';
+      webgazerToggleText.textContent = getMessage('stop') || 'Stop';
+      webgazerToggleBtn.classList.add('active');
+    } else {
+      webgazerToggleIcon.textContent = '▶';
+      webgazerToggleText.textContent = getMessage('start') || 'Start';
+      webgazerToggleBtn.classList.remove('active');
+    }
+  }
+
+  // Update quick action button state
+  if (webgazerBtn) {
+    if (webgazerState.isActive) {
+      webgazerBtn.classList.add('webgazer-active');
+    } else {
+      webgazerBtn.classList.remove('webgazer-active');
+    }
+  }
+}
+
+async function refreshWebGazerStatus(): Promise<void> {
+  try {
+    // Get active tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+
+    // Request status from content script
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'webgazer-status' });
+    if (response) {
+      webgazerState = {
+        isActive: response.isActive || false,
+        isLoading: response.isLoading || false,
+        sampleCount: response.sampleCount || 0,
+        gazeX: response.gazeX ?? null,
+        gazeY: response.gazeY ?? null,
+        error: response.error || null,
+      };
+      updateWebGazerUI();
+    }
+  } catch (error) {
+    console.warn('Failed to get WebGazer status:', error);
+    webgazerState = {
+      isActive: false,
+      isLoading: false,
+      sampleCount: 0,
+      gazeX: null,
+      gazeY: null,
+      error: 'Not available on this page',
+    };
+    updateWebGazerUI();
+  }
+}
+
+async function toggleWebGazer(): Promise<void> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) {
+      addCard({
+        id: 'webgazer-error',
+        type: 'error',
+        title: 'WebGazer Error',
+        description: 'No active tab found',
+        icon: '❌',
+      });
+      return;
+    }
+
+    const messageType = webgazerState.isActive ? 'webgazer-stop' : 'webgazer-start';
+    const response = await chrome.tabs.sendMessage(tab.id, { type: messageType });
+
+    if (response?.success) {
+      webgazerState.isActive = !webgazerState.isActive;
+      webgazerState.isLoading = messageType === 'webgazer-start';
+      updateWebGazerUI();
+
+      // Refresh status after a short delay
+      setTimeout(refreshWebGazerStatus, 1000);
+    } else {
+      addCard({
+        id: 'webgazer-error',
+        type: 'error',
+        title: 'WebGazer Error',
+        description: response?.error || 'Failed to toggle WebGazer',
+        icon: '❌',
+      });
+    }
+  } catch (error) {
+    console.error('Failed to toggle WebGazer:', error);
+    addCard({
+      id: 'webgazer-error',
+      type: 'error',
+      title: 'WebGazer Error',
+      description: 'WebGazer is not available on this page. Try refreshing the page.',
+      icon: '❌',
+    });
+  }
+}
+
+async function syncWebGazerWithDesktop(): Promise<void> {
+  if (!isConnected) {
+    addCard({
+      id: 'webgazer-sync-error',
+      type: 'error',
+      title: 'Sync Failed',
+      description: 'Not connected to Hawkeye Desktop',
+      icon: '🔌',
+    });
+    return;
+  }
+
+  try {
+    // Request sync from background script
+    const response = await chrome.runtime.sendMessage({ type: 'webgazer-sync-request' });
+
+    if (response?.success) {
+      addCard({
+        id: 'webgazer-sync-success',
+        type: 'info',
+        title: 'Sync Started',
+        description: 'Syncing calibration data with desktop...',
+        icon: '🔄',
+      });
+
+      // Also export extension data to desktop
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        const exportResponse = await chrome.tabs.sendMessage(tab.id, { type: 'webgazer-export' });
+        if (exportResponse?.samples?.length > 0) {
+          await chrome.runtime.sendMessage({
+            type: 'webgazer-sync-to-desktop',
+            samples: exportResponse.samples,
+          });
+        }
+      }
+
+      // Refresh status
+      setTimeout(refreshWebGazerStatus, 1000);
+    } else {
+      addCard({
+        id: 'webgazer-sync-error',
+        type: 'error',
+        title: 'Sync Failed',
+        description: response?.error || 'Failed to sync with desktop',
+        icon: '❌',
+      });
+    }
+  } catch (error) {
+    console.error('Failed to sync WebGazer:', error);
+    addCard({
+      id: 'webgazer-sync-error',
+      type: 'error',
+      title: 'Sync Failed',
+      description: 'Failed to sync calibration data',
+      icon: '❌',
+    });
+  }
+}
+
+async function toggleWebGazerDebug(): Promise<void> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+
+    await chrome.tabs.sendMessage(tab.id, { type: 'webgazer-toggle-debug' });
+  } catch (error) {
+    console.warn('Failed to toggle WebGazer debug:', error);
+  }
+}
+
+async function clearWebGazerData(): Promise<void> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'webgazer-clear' });
+
+    if (response?.success) {
+      webgazerState.sampleCount = 0;
+      updateWebGazerUI();
+      addCard({
+        id: 'webgazer-clear-success',
+        type: 'info',
+        title: 'Data Cleared',
+        description: 'Calibration data has been cleared',
+        icon: '🗑️',
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to clear WebGazer data:', error);
+  }
+}
+
 // ============ Event Handlers ============
 
 settingsBtn.addEventListener('click', showSettings);
@@ -849,6 +1121,28 @@ cancelSettingsBtn.addEventListener('click', hideSettings);
 refreshBtn.addEventListener('click', handleRefresh);
 analyzeBtn.addEventListener('click', handleAnalyze);
 clipboardBtn.addEventListener('click', handleClipboard);
+
+// Side Panel button — opens the side panel
+sidePanelBtn?.addEventListener('click', async () => {
+  try {
+    // chrome.sidePanel.open requires a windowId
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.windowId) {
+      await (chrome as any).sidePanel.open({ windowId: tab.windowId });
+      window.close(); // Close popup after opening side panel
+    }
+  } catch (err) {
+    console.warn('Could not open side panel:', err);
+  }
+});
+
+// WebGazer event handlers
+webgazerBtn.addEventListener('click', showWebGazerPanel);
+webgazerCloseBtn.addEventListener('click', hideWebGazerPanel);
+webgazerToggleBtn.addEventListener('click', toggleWebGazer);
+webgazerSyncBtn.addEventListener('click', syncWebGazerWithDesktop);
+webgazerDebugBtn.addEventListener('click', toggleWebGazerDebug);
+webgazerClearBtn.addEventListener('click', clearWebGazerData);
 
 // ============ Message Handlers ============
 
@@ -915,6 +1209,50 @@ chrome.runtime.onMessage.addListener((message) => {
         ],
       });
       break;
+
+    // WebGazer status updates
+    case 'webgazer_status':
+      webgazerState = {
+        isActive: message.isActive || false,
+        isLoading: message.isLoading || false,
+        sampleCount: message.sampleCount || 0,
+        gazeX: message.gazeX ?? null,
+        gazeY: message.gazeY ?? null,
+        error: message.error || null,
+      };
+      updateWebGazerUI();
+      break;
+
+    case 'webgazer_ready':
+      webgazerState.isActive = true;
+      webgazerState.isLoading = false;
+      updateWebGazerUI();
+      addCard({
+        id: 'webgazer-ready',
+        type: 'info',
+        title: 'Eye Tracking Ready',
+        description: 'WebGazer initialized. Click anywhere to calibrate.',
+        icon: '👁️',
+      });
+      break;
+
+    case 'webgazer_calibration_sample':
+      webgazerState.sampleCount = message.sampleCount || webgazerState.sampleCount + 1;
+      updateWebGazerUI();
+      break;
+
+    case 'webgazer_sync_complete':
+      removeCard('webgazer-sync-success');
+      addCard({
+        id: 'webgazer-sync-done',
+        type: 'result',
+        title: 'Sync Complete',
+        description: `Synced ${message.syncedCount || 0} calibration samples`,
+        icon: '✓',
+        data: { success: true },
+      });
+      refreshWebGazerStatus();
+      break;
   }
 });
 
@@ -967,6 +1305,21 @@ async function init(): Promise<void> {
 
   // Render initial state
   renderCards();
+
+  // Initialize WebGazer status
+  refreshWebGazerStatus();
+
+  // Periodically update WebGazer status while panel is open
+  const webgazerStatusInterval = setInterval(() => {
+    if (!webgazerPanel.classList.contains('hidden')) {
+      refreshWebGazerStatus();
+    }
+  }, 2000);
+
+  // Clean up interval when popup closes
+  window.addEventListener('unload', () => {
+    clearInterval(webgazerStatusInterval);
+  });
 }
 
 init();

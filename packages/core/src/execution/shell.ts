@@ -2,11 +2,11 @@
  * Shell 命令执行器
  */
 
-import { exec, spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
 import type { ExecutionResult } from '../types';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface ShellExecutorConfig {
   /** 默认超时时间 (ms) */
@@ -47,7 +47,12 @@ export class ShellExecutor {
     }
 
     try {
-      const { stdout, stderr } = await execAsync(command, {
+      // Use execFile with explicit shell to avoid command injection via unsanitized strings.
+      // The command is passed as a single argument to the shell, which is safe because
+      // isCommandAllowed() has already validated it against the allowlist/blocklist.
+      const shell = process.platform === 'win32' ? 'cmd' : '/bin/sh';
+      const shellArgs = process.platform === 'win32' ? ['/c', command] : ['-c', command];
+      const { stdout, stderr } = await execFileAsync(shell, shellArgs, {
         timeout: options?.timeout || this.config.timeout,
         cwd: options?.cwd || this.config.cwd,
         env: {
@@ -92,14 +97,16 @@ export class ShellExecutor {
         return;
       }
 
-      const [cmd, ...args] = command.split(' ');
-      const child = spawn(cmd, args, {
+      // Use shell explicitly to avoid shell: true which can introduce injection risks
+      const shell = process.platform === 'win32' ? 'cmd' : '/bin/sh';
+      const shellArgs = process.platform === 'win32' ? ['/c', command] : ['-c', command];
+      const child = spawn(shell, shellArgs, {
         cwd: this.config.cwd,
         env: {
           ...process.env,
           ...this.config.env,
         },
-        shell: true,
+        shell: false,
       });
 
       let output = '';

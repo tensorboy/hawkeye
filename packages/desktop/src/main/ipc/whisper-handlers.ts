@@ -31,7 +31,6 @@ export function registerWhisperHandlers(
             text: result,
             language: whisperService.getStatus().language,
             confidence: 0.9, // Whisper doesn't provide confidence, use default
-            duration: 0, // We don't track duration
           });
           log(`[Whisper] 已添加到 Debug Timeline`);
         }

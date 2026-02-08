@@ -1,0 +1,769 @@
+/* === Reset & Base === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  height: 100vh;
+  overflow: hidden;
+  background: white;
+  color: #334155;
+}
+
+#sidepanel {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* === Header === */
+.sp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: white;
+}
+
+.sp-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sp-brand h1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.sp-logo {
+  font-size: 18px;
+}
+
+.sp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sp-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: #64748b;
+  transition: background 0.15s;
+}
+
+.sp-icon-btn:hover {
+  background: #f1f5f9;
+}
+
+/* === Connection Dot === */
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.connection-dot.connected {
+  background: #10b981;
+}
+
+.connection-dot.disconnected {
+  background: #ef4444;
+}
+
+.connection-dot.connecting {
+  background: #f59e0b;
+  animation: pulse 1.5s infinite;
+}
+
+/* === Sessions List === */
+.sp-sessions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-sessions.hidden {
+  display: none;
+}
+
+.sp-sessions-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sp-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.sp-back-btn:hover {
+  text-decoration: underline;
+}
+
+.sp-sessions-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.session-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.session-item:hover {
+  background: #f8fafc;
+}
+
+.session-item-title {
+  font-weight: 500;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.session-item-time {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 2px;
+}
+
+.session-item-url {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* === Agent Status Bar === */
+.sp-agent-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.agent-indicators {
+  display: flex;
+  gap: 12px;
+}
+
+.agent-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.agent-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+
+.agent-indicator.active .agent-dot {
+  animation: pulse 1s infinite;
+}
+
+.agent-indicator[data-agent="planner"].active .agent-dot {
+  background: #8b5cf6;
+}
+
+.agent-indicator[data-agent="navigator"].active .agent-dot {
+  background: #10b981;
+}
+
+.agent-indicator[data-agent="validator"].active .agent-dot {
+  background: #f59e0b;
+}
+
+.agent-label {
+  font-weight: 500;
+}
+
+/* Task progress */
+.task-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-progress.hidden {
+  display: none;
+}
+
+.progress-bar {
+  width: 60px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.progress-text {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* === Chat Messages === */
+.sp-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Welcome */
+.sp-welcome {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.welcome-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.sp-welcome h2 {
+  font-size: 16px;
+  margin-bottom: 6px;
+  color: #0f172a;
+}
+
+.sp-welcome p {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.welcome-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.suggestion-chip {
+  padding: 6px 12px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #334155;
+  transition: all 0.15s;
+}
+
+.suggestion-chip:hover {
+  background: #e2e8f0;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+/* Message bubble */
+.chat-message {
+  max-width: 90%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  background: #3b82f6;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-message.system {
+  align-self: center;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.chat-message.planner {
+  align-self: flex-start;
+  background: #f5f3ff;
+  border-left: 3px solid #8b5cf6;
+  border-bottom-left-radius: 4px;
+  color: #1e1b4b;
+}
+
+.chat-message.navigator {
+  align-self: flex-start;
+  background: #ecfdf5;
+  border-left: 3px solid #10b981;
+  border-bottom-left-radius: 4px;
+  color: #064e3b;
+}
+
+.chat-message.validator {
+  align-self: flex-start;
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+  border-bottom-left-radius: 4px;
+  color: #78350f;
+}
+
+/* Message header (role + time) */
+.msg-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.msg-role {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.msg-time {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* Plan display */
+.plan-steps {
+  margin-top: 6px;
+  padding-left: 12px;
+}
+
+.plan-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.step-number {
+  font-weight: 600;
+  color: #64748b;
+  min-width: 16px;
+}
+
+.step-status-icon {
+  font-size: 11px;
+}
+
+.step-status-icon.pending {
+  color: #94a3b8;
+}
+
+.step-status-icon.running {
+  color: #3b82f6;
+  animation: spin 1s linear infinite;
+}
+
+.step-status-icon.completed {
+  color: #10b981;
+}
+
+.step-status-icon.failed {
+  color: #ef4444;
+}
+
+/* Thinking indicator */
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.thinking-dot {
+  width: 4px;
+  height: 4px;
+  background: #94a3b8;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite;
+}
+
+.thinking-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.thinking-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* === Confirmation Banner === */
+.sp-confirm-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #eff6ff;
+  border-top: 1px solid #bfdbfe;
+}
+
+.sp-confirm-banner.hidden {
+  display: none;
+}
+
+.confirm-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #1e40af;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.confirm-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.confirm-btn.approve {
+  background: #10b981;
+  color: white;
+}
+
+.confirm-btn.approve:hover {
+  background: #059669;
+}
+
+.confirm-btn.reject {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.confirm-btn.reject:hover {
+  background: #e2e8f0;
+}
+
+/* === Input Area === */
+.sp-input-area {
+  padding: 8px 12px;
+  border-top: 1px solid #e2e8f0;
+  background: white;
+}
+
+.sp-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.sp-input {
+  flex: 1;
+  resize: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  max-height: 100px;
+  min-height: 36px;
+  line-height: 1.4;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sp-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.sp-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.sp-send-btn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.sp-send-btn:not(:disabled):hover {
+  background: #2563eb;
+}
+
+.sp-input-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.sp-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #64748b;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  transition: background 0.15s;
+}
+
+.sp-action-btn:hover {
+  background: #f1f5f9;
+}
+
+.sp-action-btn.hidden {
+  display: none;
+}
+
+.sp-action-btn.recording {
+  color: #ef4444;
+}
+
+/* === Animations === */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* === Dark Theme === */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+
+  .sp-header {
+    background: #0f172a;
+    border-color: #334155;
+  }
+
+  .sp-brand h1 {
+    color: #f1f5f9;
+  }
+
+  .sp-icon-btn {
+    color: #94a3b8;
+  }
+
+  .sp-icon-btn:hover {
+    background: #334155;
+  }
+
+  .sp-agent-status {
+    background: #0f172a;
+    border-color: #334155;
+  }
+
+  .agent-indicator {
+    color: #64748b;
+  }
+
+  .agent-dot {
+    background: #475569;
+  }
+
+  .sp-chat-messages {
+    background: #1e293b;
+  }
+
+  .sp-welcome h2 {
+    color: #f1f5f9;
+  }
+
+  .sp-welcome p {
+    color: #94a3b8;
+  }
+
+  .suggestion-chip {
+    background: #334155;
+    border-color: #475569;
+    color: #cbd5e1;
+  }
+
+  .suggestion-chip:hover {
+    background: #475569;
+  }
+
+  .chat-message.system {
+    background: #334155;
+    color: #94a3b8;
+  }
+
+  .chat-message.planner {
+    background: #1e1b4b;
+    border-color: #7c3aed;
+    color: #e2e8f0;
+  }
+
+  .chat-message.navigator {
+    background: #022c22;
+    border-color: #059669;
+    color: #e2e8f0;
+  }
+
+  .chat-message.validator {
+    background: #451a03;
+    border-color: #d97706;
+    color: #e2e8f0;
+  }
+
+  .sp-confirm-banner {
+    background: #1e3a5f;
+    border-color: #2563eb;
+  }
+
+  .confirm-content {
+    color: #93c5fd;
+  }
+
+  .sp-input-area {
+    background: #0f172a;
+    border-color: #334155;
+  }
+
+  .sp-input {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  .sp-input:focus {
+    border-color: #3b82f6;
+  }
+
+  .sp-sessions {
+    background: #1e293b;
+  }
+
+  .sp-sessions-header {
+    border-color: #334155;
+  }
+
+  .session-item {
+    border-color: #334155;
+  }
+
+  .session-item:hover {
+    background: #334155;
+  }
+
+  .confirm-btn.reject {
+    background: #334155;
+    color: #94a3b8;
+  }
+
+  .confirm-btn.reject:hover {
+    background: #475569;
+  }
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+}
+
+/* === Utility === */
+.hidden {
+  display: none !important;
+}

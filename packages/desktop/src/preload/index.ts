@@ -585,4 +585,134 @@ contextBridge.exposeInMainWorld('hawkeye', {
       return () => ipcRenderer.removeListener('audio-processed', handler);
     },
   },
+
+  // ============ Sherpa-ONNX Voice Engine API ============
+
+  sherpaOnnx: {
+    // Get status of all Sherpa components
+    getStatus: () => ipcRenderer.invoke('sherpa:get-status'),
+
+    // Initialize Sherpa engine
+    initialize: (options?: {
+      asrModel?: string;
+      ttsModel?: string;
+      vadModel?: string;
+    }) => ipcRenderer.invoke('sherpa:initialize', options),
+
+    // Shutdown Sherpa engine
+    shutdown: () => ipcRenderer.invoke('sherpa:shutdown'),
+
+    // Download a specific model
+    downloadModel: (modelId: string) => ipcRenderer.invoke('sherpa:download-model', modelId),
+
+    // Get available models
+    getModels: () => ipcRenderer.invoke('sherpa:get-models'),
+
+    // --- Streaming ASR ---
+    startStreaming: () => ipcRenderer.invoke('sherpa:start-streaming'),
+    stopStreaming: () => ipcRenderer.invoke('sherpa:stop-streaming'),
+    feedAudio: (audioData: ArrayBuffer) => ipcRenderer.invoke('sherpa:feed-audio', audioData),
+
+    // Listen for transcription events
+    onTranscript: (callback: (data: {
+      text: string;
+      isFinal: boolean;
+      timestamp: number;
+      language?: string;
+    }) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: {
+        text: string;
+        isFinal: boolean;
+        timestamp: number;
+        language?: string;
+      }) => callback(data);
+      ipcRenderer.on('sherpa-transcript', handler);
+      return () => ipcRenderer.removeListener('sherpa-transcript', handler);
+    },
+
+    // Listen for speech start/end
+    onSpeechStart: (callback: () => void) => {
+      const handler = () => callback();
+      ipcRenderer.on('sherpa-speech-start', handler);
+      return () => ipcRenderer.removeListener('sherpa-speech-start', handler);
+    },
+
+    onSpeechEnd: (callback: () => void) => {
+      const handler = () => callback();
+      ipcRenderer.on('sherpa-speech-end', handler);
+      return () => ipcRenderer.removeListener('sherpa-speech-end', handler);
+    },
+
+    // Listen for model download progress
+    onDownloadProgress: (callback: (data: {
+      modelId: string;
+      status: string;
+      progress: number;
+      downloadedBytes: number;
+      totalBytes: number;
+      error?: string;
+    }) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: {
+        modelId: string;
+        status: string;
+        progress: number;
+        downloadedBytes: number;
+        totalBytes: number;
+        error?: string;
+      }) => callback(data);
+      ipcRenderer.on('sherpa-download-progress', handler);
+      return () => ipcRenderer.removeListener('sherpa-download-progress', handler);
+    },
+
+    // --- Wake Word ---
+    wakeWord: {
+      start: () => ipcRenderer.invoke('sherpa:wake-word-start'),
+      stop: () => ipcRenderer.invoke('sherpa:wake-word-stop'),
+      configure: (config: {
+        keywords?: string[];
+        sensitivity?: number;
+        cooldownMs?: number;
+      }) => ipcRenderer.invoke('sherpa:wake-word-configure', config),
+      status: () => ipcRenderer.invoke('sherpa:wake-word-status'),
+
+      onDetected: (callback: (data: { keyword: string; confidence: number; timestamp: number }) => void) => {
+        const handler = (_event: Electron.IpcRendererEvent, data: { keyword: string; confidence: number; timestamp: number }) => callback(data);
+        ipcRenderer.on('sherpa-wake-word-detected', handler);
+        return () => ipcRenderer.removeListener('sherpa-wake-word-detected', handler);
+      },
+    },
+
+    // --- TTS Playback ---
+    tts: {
+      speak: (text: string, options?: {
+        voice?: string;
+        speed?: number;
+        priority?: 'normal' | 'high' | 'system';
+        interrupt?: boolean;
+      }) => ipcRenderer.invoke('sherpa:tts-speak', text, options),
+      stop: () => ipcRenderer.invoke('sherpa:tts-stop'),
+      skip: () => ipcRenderer.invoke('sherpa:tts-skip'),
+      pause: () => ipcRenderer.invoke('sherpa:tts-pause'),
+      resume: () => ipcRenderer.invoke('sherpa:tts-resume'),
+      configure: (config: {
+        defaultVoice?: string;
+        defaultSpeed?: number;
+        maxQueueSize?: number;
+      }) => ipcRenderer.invoke('sherpa:tts-configure', config),
+
+      onPlaybackDone: (callback: () => void) => {
+        const handler = () => callback();
+        ipcRenderer.on('sherpa-tts-done', handler);
+        return () => ipcRenderer.removeListener('sherpa-tts-done', handler);
+      },
+    },
+
+    // --- Speaker ID ---
+    speaker: {
+      register: (name: string, audioData: ArrayBuffer) =>
+        ipcRenderer.invoke('sherpa:register-speaker', name, audioData),
+      identify: (audioData: ArrayBuffer) =>
+        ipcRenderer.invoke('sherpa:identify-speaker', audioData),
+    },
+  },
 });

@@ -216,18 +216,18 @@ export class EmbeddingCache {
   }
 
   private getCacheKey(provider: string, model: string, text: string): string {
-    // Use text hash for the key
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      const char = text.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return `${provider}:${model}:${hash}`;
+    return `${provider}:${model}:${text}`;
   }
 
   get(provider: string, model: string, text: string): number[] | undefined {
-    return this.cache.get(this.getCacheKey(provider, model, text));
+    const key = this.getCacheKey(provider, model, text);
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      // LRU promotion: delete and re-insert to move to end
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
   }
 
   set(provider: string, model: string, text: string, embedding: number[]): void {

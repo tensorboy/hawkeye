@@ -144,3 +144,37 @@ export {
   type ComputerUseInput,
   type ClaudeComputerUseConfig,
 } from './claude-computer-use';
+
+// 状态机浏览器代理 (基于 on-device-browser-agent)
+export {
+  // Types
+  type AgentState,
+  type StateTransition,
+  type TransitionTrigger,
+  type StateAction,
+  type StateActionType,
+  type StateMachineDefinition,
+  type ObstacleDefinition,
+  type ObstacleType,
+  type DOMSnapshot,
+  type ElementState,
+  type ChangeResult,
+  type AgentContext,
+  type ExecutionResult,
+  type ExecutionMetrics,
+  type AutomationRule,
+  type BrowserAgentEvents,
+  type BrowserAgentConfig,
+  DEFAULT_BROWSER_AGENT_CONFIG,
+  // Core
+  SiteRouter,
+  StateMachineExecutor,
+  ChangeObserver,
+  ObstacleDetector,
+  RuleEngine,
+  // Site machines
+  AMAZON_MACHINE,
+  YOUTUBE_MACHINE,
+  GOOGLE_SEARCH_MACHINE,
+  TAOBAO_MACHINE,
+} from './browser-agent';

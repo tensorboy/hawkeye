@@ -241,6 +241,10 @@ export class ContextCompressor extends EventEmitter {
       0
     );
 
+    // Replace chunks with only the selected ones to prevent unbounded growth
+    this.chunks = selected;
+    this.totalTokensUsed = selected.reduce((sum, c) => sum + c.estimatedTokens, 0);
+
     const result: CompressedContext = {
       messages,
       totalTokens,

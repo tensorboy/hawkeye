@@ -18,18 +18,18 @@ import { TrayStatusService } from './services/tray-status-service';
 import { ActivitySummarizerService } from './services/activity-summarizer-service';
 import { LifeTreeService } from './services/life-tree-service';
 import { AudioProcessorService } from './services/audio-processor-service';
+import { SherpaOnnxService } from './services/sherpa-onnx-service';
+import { WakeWordService } from './services/wake-word-service';
+import { TTSPlaybackService } from './services/tts-playback-service';
 import { registerAllHandlers } from './ipc';
 import { initI18n, t } from './i18n';
 
-// Debug logging
+// Debug logging - use async write stream to avoid blocking main process
 const debugLogPath = path.join(os.homedir(), 'hawkeye_debug.log');
+const debugLogStream = fs.createWriteStream(debugLogPath, { flags: 'a' });
 function debugLog(msg: string) {
   const timestamp = new Date().toISOString();
-  try {
-    fs.appendFileSync(debugLogPath, `[${timestamp}] ${msg}\n`);
-  } catch (e) {
-    // Ignore
-  }
+  debugLogStream.write(`[${timestamp}] ${msg}\n`);
 }
 
 debugLog('Main process started (Modular Architecture)');
@@ -48,6 +48,13 @@ const trayStatusService = new TrayStatusService(() => mainWindow, debugLog);
 const activitySummarizerService = new ActivitySummarizerService(debugLog);
 const lifeTreeService = new LifeTreeService(debugLog);
 const audioProcessorService = new AudioProcessorService(() => mainWindow, debugLog);
+const sherpaOnnxService = new SherpaOnnxService(() => mainWindow, debugLog);
+const wakeWordService = new WakeWordService(() => mainWindow, debugLog);
+const ttsPlaybackService = new TTSPlaybackService(() => mainWindow, debugLog);
+
+// Connect dependent services to SherpaOnnxService
+wakeWordService.setSherpaService(sherpaOnnxService);
+ttsPlaybackService.setSherpaService(sherpaOnnxService);
 
 // Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -237,6 +244,9 @@ app.whenReady().then(async () => {
       activitySummarizerService,
       lifeTreeService,
       audioProcessorService,
+      sherpaOnnxService,
+      wakeWordService,
+      ttsPlaybackService,
       mainWindowGetter: () => mainWindow,
       debugLog,
     });
@@ -360,6 +370,19 @@ app.whenReady().then(async () => {
       }
     });
 
+    // Connect AudioProcessor to SherpaOnnxService for streaming ASR (parallel to Whisper)
+    audioProcessorService.on('audio-buffer', (buffer: Buffer) => {
+      try {
+        const status = sherpaOnnxService.getStatus();
+        if (status.initialized && status.isStreaming) {
+          const float32 = new Float32Array(buffer.buffer, buffer.byteOffset, buffer.byteLength / 4);
+          sherpaOnnxService.feedAudio(float32);
+        }
+      } catch (error) {
+        debugLog(`[AudioProcessor→Sherpa] Error: ${error}`);
+      }
+    });
+
     // Auto-start audio processor if whisper is enabled
     const audioConfig = configService.getConfig();
     if (audioConfig.whisperEnabled && audioConfig.aecEnabled !== false) {
@@ -385,6 +408,9 @@ app.on('will-quit', async () => {
   // @ts-ignore
   if (global.stopSmartObserve) global.stopSmartObserve();
   audioProcessorService.stop();
+  wakeWordService.stop();
+  ttsPlaybackService.stop();
+  await sherpaOnnxService.shutdown();
   trayStatusService.destroy();
   lifeTreeService.destroy();
   await whisperService.shutdown();

@@ -167,6 +167,14 @@ export class PluginManager extends EventEmitter {
       throw new Error(`Plugin file not found: ${resolvedPath}`);
     }
 
+    // Security: ensure plugin path is within the configured plugin directory
+    const pluginDir = this.resolvePluginDir();
+    const normalizedPlugin = path.normalize(resolvedPath);
+    const normalizedDir = path.normalize(pluginDir);
+    if (!normalizedPlugin.startsWith(normalizedDir + path.sep) && normalizedPlugin !== normalizedDir) {
+      throw new Error(`Plugin path is outside the allowed plugin directory: ${normalizedPlugin}`);
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const pluginModule = require(resolvedPath);
     const plugin: HawkeyePlugin = pluginModule.default || pluginModule;

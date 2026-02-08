@@ -76,7 +76,10 @@ export class SyncClient {
         return;
       }
 
-      const url = `ws://${this.config.host}:${this.config.port}`;
+      // Prefer wss:// for encrypted transport; fall back to ws:// only for localhost
+      const isLocalhost = this.config.host === 'localhost' || this.config.host === '127.0.0.1';
+      const protocol = isLocalhost ? 'ws' : 'wss';
+      const url = `${protocol}://${this.config.host}:${this.config.port}`;
 
       try {
         this.ws = new WebSocket(url);
@@ -352,6 +355,11 @@ export class SyncClient {
   }
 
   private scheduleReconnect(): void {
+    // Guard against multiple concurrent reconnect timers
+    if (this.reconnectTimer) {
+      return;
+    }
+
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts!) {
       console.log('Max reconnect attempts reached');
       this._desktopAvailable = false;
@@ -363,6 +371,7 @@ export class SyncClient {
     console.log(`Reconnecting in ${this.config.reconnectDelay}ms (attempt ${this.reconnectAttempts})`);
 
     this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
       this.connect().catch(() => {
         // Will trigger onclose and schedule another reconnect
       });

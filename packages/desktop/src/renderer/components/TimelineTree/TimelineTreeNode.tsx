@@ -154,7 +154,7 @@ export const TimelineTreeNode: React.FC<TimelineTreeNodeProps> = ({
           y={cardY + 34}
           fill="rgba(148, 163, 184, 0.6)"
           fontSize={9}
-          textTransform="uppercase"
+          style={{ textTransform: 'uppercase' }}
         >
           {node.dominantStage}
         </text>

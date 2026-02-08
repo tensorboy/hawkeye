@@ -76,8 +76,53 @@
       <!-- Cards will be rendered here dynamically -->
     </div>
 
+    <!-- WebGazer Status Panel -->
+    <div id="webgazerPanel" class="webgazer-panel hidden">
+      <div class="webgazer-panel-header">
+        <span class="webgazer-panel-icon">👁️</span>
+        <span class="webgazer-panel-title" data-i18n="eyeTracking">Eye Tracking</span>
+        <button id="webgazerCloseBtn" class="webgazer-close-btn">×</button>
+      </div>
+      <div class="webgazer-panel-body">
+        <div class="webgazer-status-row">
+          <span data-i18n="status">Status</span>
+          <span id="webgazerStatus" class="webgazer-status-value">Inactive</span>
+        </div>
+        <div class="webgazer-status-row">
+          <span data-i18n="calibrationSamples">Samples</span>
+          <span id="webgazerSamples" class="webgazer-status-value">0</span>
+        </div>
+        <div class="webgazer-status-row">
+          <span data-i18n="gazePosition">Position</span>
+          <span id="webgazerPosition" class="webgazer-status-value">--</span>
+        </div>
+      </div>
+      <div class="webgazer-panel-actions">
+        <button id="webgazerToggleBtn" class="webgazer-action-btn primary">
+          <span id="webgazerToggleIcon">▶</span>
+          <span id="webgazerToggleText" data-i18n="start">Start</span>
+        </button>
+        <button id="webgazerSyncBtn" class="webgazer-action-btn secondary">
+          <span>🔄</span>
+          <span data-i18n="syncDesktop">Sync</span>
+        </button>
+        <button id="webgazerDebugBtn" class="webgazer-action-btn secondary">
+          <span>🔧</span>
+          <span data-i18n="debug">Debug</span>
+        </button>
+        <button id="webgazerClearBtn" class="webgazer-action-btn danger">
+          <span>🗑️</span>
+          <span data-i18n="clear">Clear</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Quick Actions Bar -->
     <div id="quickActions" class="a2ui-quick-actions">
+      <button id="sidePanelBtn" class="quick-action-btn" title="Open Side Panel">
+        <span class="quick-action-icon">💬</span>
+        <span class="quick-action-label">Agent</span>
+      </button>
       <button id="refreshBtn" class="quick-action-btn" data-i18n-title="observePage">
         <span class="quick-action-icon">🔄</span>
         <span class="quick-action-label" data-i18n="refresh"></span>
@@ -89,6 +134,10 @@
       <button id="clipboardBtn" class="quick-action-btn" data-i18n-title="analyzeClipboard">
         <span class="quick-action-icon">📋</span>
         <span class="quick-action-label" data-i18n="clipboard"></span>
+      </button>
+      <button id="webgazerBtn" class="quick-action-btn" data-i18n-title="eyeTracking">
+        <span class="quick-action-icon">👁️‍🗨️</span>
+        <span class="quick-action-label" data-i18n="gaze">Gaze</span>
       </button>
     </div>
   </div>

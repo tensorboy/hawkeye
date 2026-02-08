@@ -109,7 +109,7 @@ export class GlobalClickService {
     return {
       x: e.x,
       y: e.y,
-      button: e.button,
+      button: e.button as number,
       timestamp: Date.now(),
       isInsideApp,
     };

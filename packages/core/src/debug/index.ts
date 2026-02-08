@@ -5,3 +5,6 @@
 
 export { EventCollector } from './event-collector';
 export * from './types';
+
+// Logger utilities
+export { loguru, setLogLevel, getLogLevel, type Logger, type LogLevel } from './logger';

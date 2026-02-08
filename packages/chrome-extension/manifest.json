@@ -21,6 +21,9 @@
     "service_worker": "background/index.js",
     "type": "module"
   },
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
+  },
   "permissions": [
     "activeTab",
     "tabs",
@@ -28,7 +31,9 @@
     "contextMenus",
     "notifications",
     "clipboardRead",
-    "clipboardWrite"
+    "clipboardWrite",
+    "scripting",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://api.anthropic.com/*"
@@ -51,7 +56,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["icons/*"],
+      "resources": ["icons/*", "vendor/*"],
       "matches": ["<all_urls>"]
     }
   ]

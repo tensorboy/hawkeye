@@ -214,6 +214,82 @@ interface HawkeyeAPI {
   onGestureControlToggleRecording?: (callback: () => void) => (() => void);
   onGestureControlPause?: (callback: () => void) => (() => void);
   onGestureControlQuickMenu?: (callback: () => void) => (() => void);
+
+  // Whisper API
+  whisperTranscribe: (audioBuffer: any) => Promise<string>;
+  whisperStatus: () => Promise<any>;
+  whisperCheckMic: () => Promise<string>;
+  whisperRequestMic: () => Promise<boolean>;
+  whisperResetModel: () => Promise<any>;
+  whisperDownloadModel: () => Promise<any>;
+  whisperModelInfo: () => Promise<any>;
+  onWhisperSegment: (callback: (data: { text: string; timestamp: number }) => void) => (() => void);
+  onWhisperDownloadProgress: (callback: (data: any) => void) => (() => void);
+
+  // Adaptive Refresh API
+  getAdaptiveRefreshStatus: () => Promise<any>;
+  recordUserActivity: (type: string) => Promise<any>;
+  onSmartObserveIntervalChanged: (callback: (data: any) => void) => (() => void);
+
+  // Global Click API (WebGazer Calibration)
+  globalClick: {
+    start: () => Promise<{ success: boolean }>;
+    stop: () => Promise<any>;
+    status: () => Promise<any>;
+    onEvent: (callback: (event: {
+      x: number;
+      y: number;
+      button: number;
+      timestamp: number;
+      isInsideApp: boolean;
+    }) => void) => (() => void);
+  };
+
+  // Audio Processor API
+  audioProcessor: {
+    start: () => Promise<any>;
+    stop: () => Promise<any>;
+    status: () => Promise<any>;
+    process: (audioData: ArrayBuffer) => Promise<any>;
+    onStatusChange: (callback: (status: any) => void) => (() => void);
+    onProcessed: (callback: (data: any) => void) => (() => void);
+  };
+
+  // Sherpa-ONNX Voice Engine API
+  sherpaOnnx: {
+    getStatus: () => Promise<any>;
+    initialize: (options?: any) => Promise<any>;
+    shutdown: () => Promise<any>;
+    downloadModel: (modelId: string) => Promise<any>;
+    getModels: () => Promise<any>;
+    startStreaming: () => Promise<any>;
+    stopStreaming: () => Promise<any>;
+    feedAudio: (audioData: ArrayBuffer) => Promise<any>;
+    onTranscript: (callback: (data: any) => void) => (() => void);
+    onSpeechStart: (callback: () => void) => (() => void);
+    onSpeechEnd: (callback: () => void) => (() => void);
+    onDownloadProgress: (callback: (data: any) => void) => (() => void);
+    wakeWord: {
+      start: () => Promise<any>;
+      stop: () => Promise<any>;
+      configure: (config: any) => Promise<any>;
+      status: () => Promise<any>;
+      onDetected: (callback: (data: any) => void) => (() => void);
+    };
+    tts: {
+      speak: (text: string, options?: any) => Promise<any>;
+      stop: () => Promise<any>;
+      skip: () => Promise<any>;
+      pause: () => Promise<any>;
+      resume: () => Promise<any>;
+      configure: (config: any) => Promise<any>;
+      onPlaybackDone: (callback: () => void) => (() => void);
+    };
+    speaker: {
+      register: (name: string, audioData: ArrayBuffer) => Promise<any>;
+      identify: (audioData: ArrayBuffer) => Promise<any>;
+    };
+  };
 }
 
 declare global {

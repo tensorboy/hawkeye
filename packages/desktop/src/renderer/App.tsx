@@ -261,6 +261,20 @@ declare global {
       onGestureControlToggleRecording?: (callback: () => void) => (() => void);
       onGestureControlPause?: (callback: () => void) => (() => void);
       onGestureControlQuickMenu?: (callback: () => void) => (() => void);
+
+      // Global Click API (WebGazer Calibration)
+      globalClick?: {
+        start: () => Promise<{ success: boolean }>;
+        stop: () => Promise<any>;
+        status: () => Promise<any>;
+        onEvent: (callback: (event: {
+          x: number;
+          y: number;
+          button: number;
+          timestamp: number;
+          isInsideApp: boolean;
+        }) => void) => (() => void);
+      };
     };
   }
 }

@@ -10,12 +10,17 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
+  "dependencies": {
+    "idb": "^8.0.3",
+    "webgazer": "^3.0.1"
+  },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
+    "@crxjs/vite-plugin": "^1.0.14",
+    "@huggingface/transformers": "^3.8.1",
     "@types/chrome": "^0.0.254",
     "@types/node": "^20.10.0",
     "typescript": "^5.3.3",
-    "vite": "^5.0.10",
-    "@crxjs/vite-plugin": "^1.0.14"
+    "vite": "^5.0.10"
   }
 }

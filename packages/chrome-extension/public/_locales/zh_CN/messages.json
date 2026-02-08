@@ -131,5 +131,56 @@
   },
   "notificationError": {
     "message": "Hawkeye 错误"
+  },
+  "eyeTracking": {
+    "message": "眼动追踪"
+  },
+  "gaze": {
+    "message": "注视"
+  },
+  "status": {
+    "message": "状态"
+  },
+  "calibrationSamples": {
+    "message": "样本数"
+  },
+  "gazePosition": {
+    "message": "位置"
+  },
+  "start": {
+    "message": "开始"
+  },
+  "stop": {
+    "message": "停止"
+  },
+  "syncDesktop": {
+    "message": "同步"
+  },
+  "debug": {
+    "message": "调试"
+  },
+  "clear": {
+    "message": "清除"
+  },
+  "active": {
+    "message": "运行中"
+  },
+  "inactive": {
+    "message": "未激活"
+  },
+  "loading": {
+    "message": "加载中..."
+  },
+  "error": {
+    "message": "错误"
+  },
+  "refresh": {
+    "message": "刷新"
+  },
+  "analyze": {
+    "message": "分析"
+  },
+  "clipboard": {
+    "message": "剪贴板"
   }
 }

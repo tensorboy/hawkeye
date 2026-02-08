@@ -12,11 +12,21 @@ import type {
   ExtensionConfig,
   DEFAULT_CONFIG,
 } from './types';
+import { BackgroundHeartbeat } from './heartbeat';
+import { Orchestrator } from '../agents/orchestrator';
+import { ChatDB } from '../storage/chat-db';
+import type { AgentEvent, AgentTask, AgentMessage } from '../agents/types';
+import { DEFAULT_AGENT_CONFIG } from '../agents/types';
 
 // State
 let syncClient: SyncClient | null = null;
 let currentIntents: UserIntent[] = [];
 let currentPlan: ExecutionPlan | null = null;
+
+// Agent state
+let heartbeat: BackgroundHeartbeat | null = null;
+let orchestrator: Orchestrator | null = null;
+let agentChatDB: ChatDB | null = null;
 let config: ExtensionConfig = {
   connectionMode: 'desktop',
   desktopHost: 'localhost',
@@ -46,6 +56,19 @@ async function initialize() {
 
   // Initialize sync client
   await initSyncClient();
+
+  // Initialize agent heartbeat (side panel ↔ background)
+  heartbeat = new BackgroundHeartbeat();
+  heartbeat.listen();
+  heartbeat.onStatus((status) => {
+    console.log('Side panel connection:', status);
+  });
+  heartbeat.onMessageReceived((message) => {
+    handleSidePanelMessage(message as AgentMessage);
+  });
+
+  // Initialize agent chat DB
+  agentChatDB = new ChatDB();
 
   console.log('Hawkeye extension initialized');
 }
@@ -148,6 +171,13 @@ async function initSyncClient() {
     console.error('Sync error:', message.payload);
   });
 
+  // WebGazer calibration sync from desktop
+  syncClient.on('webgazer_calibration_sync', (message) => {
+    const payload = message.payload as { samples: unknown[] };
+    // Forward to active tab's content script
+    forwardWebGazerSyncToActiveTab(payload.samples);
+  });
+
   // Connect
   try {
     await syncClient.connect();
@@ -161,6 +191,32 @@ function notifyPopup(type: string, payload: unknown) {
   chrome.runtime.sendMessage({ type, ...payload as object }).catch(() => {
     // Popup may not be open
   });
+}
+
+// ============ WebGazer Sync ============
+
+// Forward WebGazer calibration data to active tab
+async function forwardWebGazerSyncToActiveTab(samples: unknown[]) {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'webgazer-sync-from-desktop',
+        samples,
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to forward WebGazer sync:', error);
+  }
+}
+
+// Send WebGazer calibration to desktop
+function sendWebGazerCalibrationToDesktop(samples: unknown[]) {
+  if (syncClient?.isConnected) {
+    syncClient.send('webgazer_calibration_sync', { samples, source: 'extension' });
+    return true;
+  }
+  return false;
 }
 
 // ============ Page Analysis ============
@@ -302,6 +358,7 @@ async function handleMessage(
   message: { type: string; [key: string]: unknown },
   sendResponse: (response: unknown) => void
 ) {
+  try {
   switch (message.type) {
     // Connection
     case 'get-connection-status':
@@ -444,8 +501,233 @@ async function handleMessage(
       }
       break;
 
+    // WebGazer eye tracking
+    case 'webgazer-start': {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab?.id) {
+        try {
+          const response = await chrome.tabs.sendMessage(activeTab.id, { type: 'webgazer-start' });
+          sendResponse(response);
+        } catch (error) {
+          sendResponse({ success: false, error: (error as Error).message });
+        }
+      } else {
+        sendResponse({ success: false, error: 'No active tab' });
+      }
+      break;
+    }
+
+    case 'webgazer-stop': {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab?.id) {
+        try {
+          const response = await chrome.tabs.sendMessage(activeTab.id, { type: 'webgazer-stop' });
+          sendResponse(response);
+        } catch (error) {
+          sendResponse({ success: false, error: (error as Error).message });
+        }
+      } else {
+        sendResponse({ success: false, error: 'No active tab' });
+      }
+      break;
+    }
+
+    case 'webgazer-status': {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab?.id) {
+        try {
+          const response = await chrome.tabs.sendMessage(activeTab.id, { type: 'webgazer-status' });
+          sendResponse(response);
+        } catch (error) {
+          sendResponse({ enabled: false, error: (error as Error).message });
+        }
+      } else {
+        sendResponse({ enabled: false, error: 'No active tab' });
+      }
+      break;
+    }
+
+    case 'webgazer-sync-request': {
+      // Request calibration data from desktop
+      if (syncClient?.isConnected) {
+        syncClient.send('webgazer_calibration_request', { source: 'extension' });
+        sendResponse({ success: true });
+      } else {
+        sendResponse({ success: false, error: 'Not connected to desktop' });
+      }
+      break;
+    }
+
+    case 'webgazer-sync-to-desktop': {
+      // Send extension's calibration data to desktop
+      const success = sendWebGazerCalibrationToDesktop(message.samples as unknown[]);
+      sendResponse({ success });
+      break;
+    }
+
+    case 'webgazer-toggle-debug': {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab?.id) {
+        try {
+          const response = await chrome.tabs.sendMessage(activeTab.id, { type: 'webgazer-toggle-debug' });
+          sendResponse(response);
+        } catch (error) {
+          sendResponse({ success: false, error: (error as Error).message });
+        }
+      } else {
+        sendResponse({ success: false, error: 'No active tab' });
+      }
+      break;
+    }
+
     default:
       sendResponse({ error: 'Unknown message type' });
+  }
+  } catch (error) {
+    console.error('[Background] handleMessage error:', error);
+    sendResponse({ success: false, error: (error as Error).message });
+  }
+}
+
+// ============ Agent Side Panel Messaging ============
+
+/** Create or return the orchestrator instance */
+function getOrCreateOrchestrator(): Orchestrator {
+  if (!orchestrator) {
+    orchestrator = new Orchestrator({
+      agentConfig: DEFAULT_AGENT_CONFIG,
+      onEvent: (event: AgentEvent) => {
+        // Forward all agent events to side panel
+        heartbeat?.send({ type: 'agent-event', payload: event, timestamp: Date.now() });
+      },
+      onTaskUpdate: (task: AgentTask) => {
+        // Forward task updates to side panel
+        heartbeat?.send({
+          type: 'task-update',
+          payload: { task },
+          timestamp: Date.now(),
+        });
+      },
+    });
+  }
+  return orchestrator;
+}
+
+/** Handle messages from the side panel via heartbeat port */
+async function handleSidePanelMessage(message: AgentMessage) {
+  if (!message || !message.type) return;
+
+  const sessionId = message.sessionId || '';
+
+  try {
+    switch (message.type) {
+      case 'start-task': {
+        const orch = getOrCreateOrchestrator();
+        const description = (message.payload?.description as string) || '';
+        if (!description) {
+          heartbeat?.send({
+            type: 'agent-event',
+            payload: {
+              id: `${Date.now()}`,
+              sessionId,
+              role: 'system',
+              type: 'error',
+              content: 'No task description provided',
+              timestamp: Date.now(),
+            },
+            timestamp: Date.now(),
+          });
+          return;
+        }
+        await orch.startTask(description, sessionId);
+        break;
+      }
+
+      case 'confirm-plan': {
+        const orch = getOrCreateOrchestrator();
+        await orch.confirmPlan(sessionId);
+        break;
+      }
+
+      case 'reject-plan': {
+        const orch = getOrCreateOrchestrator();
+        const reason = (message.payload?.reason as string) || undefined;
+        await orch.rejectPlan(sessionId, reason);
+        break;
+      }
+
+      case 'cancel-task': {
+        orchestrator?.cancel();
+        break;
+      }
+
+      case 'pause-task': {
+        orchestrator?.pause();
+        break;
+      }
+
+      case 'resume-task': {
+        orchestrator?.resume();
+        break;
+      }
+
+      case 'get-sessions': {
+        if (!agentChatDB) agentChatDB = new ChatDB();
+        const sessions = await agentChatDB.listSessions();
+        heartbeat?.send({
+          type: 'sessions-list',
+          payload: { sessions },
+          timestamp: Date.now(),
+        });
+        break;
+      }
+
+      case 'get-session': {
+        if (!agentChatDB) agentChatDB = new ChatDB();
+        const sid = message.payload?.sessionId as string;
+        if (sid) {
+          const session = await agentChatDB.getSession(sid);
+          const events = await agentChatDB.getEventsForSession(sid);
+          heartbeat?.send({
+            type: 'session-data',
+            payload: { session, events },
+            timestamp: Date.now(),
+          });
+        }
+        break;
+      }
+
+      case 'delete-session': {
+        if (!agentChatDB) agentChatDB = new ChatDB();
+        const delId = message.payload?.sessionId as string;
+        if (delId) {
+          await agentChatDB.deleteSession(delId);
+          heartbeat?.send({
+            type: 'session-deleted',
+            payload: { sessionId: delId },
+            timestamp: Date.now(),
+          });
+        }
+        break;
+      }
+
+      default:
+        console.warn('Unknown side panel message type:', message.type);
+    }
+  } catch (err) {
+    console.error('Error handling side panel message:', err);
+    heartbeat?.send({
+      type: 'agent-event',
+      payload: {
+        id: `${Date.now()}`,
+        sessionId,
+        role: 'system',
+        type: 'error',
+        content: `Error: ${(err as Error).message}`,
+        timestamp: Date.now(),
+      },
+      timestamp: Date.now(),
+    });
   }
 }
 
@@ -460,6 +742,3 @@ chrome.runtime.onStartup.addListener(() => {
   console.log('Hawkeye extension starting');
   initialize();
 });
-
-// Initialize on load
-initialize();

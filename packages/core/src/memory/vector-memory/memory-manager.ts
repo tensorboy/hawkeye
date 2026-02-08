@@ -14,8 +14,11 @@ import type {
   SearchResult,
   SearchOptions,
   MemoryStats,
+  AdvancedSearchOptions,
+  DetailedSearchResult,
   DEFAULT_VECTOR_MEMORY_CONFIG,
 } from './types';
+import { DEFAULT_ADVANCED_SEARCH_OPTIONS } from './types';
 
 export interface AddMemoryOptions {
   source?: MemoryChunk['source'];
@@ -70,17 +73,28 @@ export class VectorMemoryManager extends EventEmitter {
   /**
    * 初始化记忆系统
    */
+  private initPromise: Promise<void> | null = null;
+
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
+    if (this.initPromise) return this.initPromise;
 
-    console.log('[VectorMemory] Initializing...');
+    this.initPromise = (async () => {
+      console.log('[VectorMemory] Initializing...');
 
-    await this.store.initialize();
+      await this.store.initialize();
 
-    this.isInitialized = true;
-    this.emit('initialized');
+      this.isInitialized = true;
+      this.emit('initialized');
 
-    console.log('[VectorMemory] Initialized with provider:', this.embeddingProvider.name);
+      console.log('[VectorMemory] Initialized with provider:', this.embeddingProvider.name);
+    })();
+
+    try {
+      await this.initPromise;
+    } finally {
+      this.initPromise = null;
+    }
   }
 
   /**
@@ -211,6 +225,94 @@ export class VectorMemoryManager extends EventEmitter {
   }
 
   /**
+   * 高级搜索 - 支持 RRF 融合、重排序和查询扩展
+   *
+   * @param query - 搜索查询
+   * @param options - 高级搜索选项
+   * @returns 详细搜索结果（包含 RRF 分数、排名等信息）
+   *
+   * @example
+   * ```typescript
+   * // 使用 RRF 融合算法
+   * const results = await memory.searchAdvanced('user query', {
+   *   algorithm: 'rrf',
+   *   limit: 10,
+   * });
+   *
+   * // 使用 RRF + 重排序 (需要配置 reranker)
+   * const results = await memory.searchAdvanced('user query', {
+   *   algorithm: 'rrf-rerank',
+   *   enableReranking: true,
+   *   maxDocsToRerank: 30,
+   * });
+   * ```
+   */
+  async searchAdvanced(
+    query: string,
+    options: AdvancedSearchOptions = {}
+  ): Promise<DetailedSearchResult[]> {
+    await this.ensureInitialized();
+
+    const {
+      algorithm = DEFAULT_ADVANCED_SEARCH_OPTIONS.algorithm,
+      enableReranking = DEFAULT_ADVANCED_SEARCH_OPTIONS.enableReranking,
+      enableQueryExpansion = DEFAULT_ADVANCED_SEARCH_OPTIONS.enableQueryExpansion,
+    } = options;
+
+    // Generate query embedding
+    const queryEmbedding = await this.getOrCreateEmbedding(query);
+
+    // Select search strategy based on algorithm
+    let results: DetailedSearchResult[];
+
+    switch (algorithm) {
+      case 'rrf':
+      case 'rrf-rerank':
+        // Use RRF fusion
+        results = this.store.searchHybridRRF(query, queryEmbedding, options);
+        break;
+
+      case 'weighted':
+      default:
+        // Use traditional weighted average (convert to DetailedSearchResult)
+        const weightedResults = this.store.searchHybrid(query, queryEmbedding, options);
+        results = weightedResults.map((r) => ({
+          ...r,
+          rrfScore: undefined,
+          vectorRank: undefined,
+          ftsRank: undefined,
+        }));
+        break;
+    }
+
+    // Apply reranking if enabled and algorithm is 'rrf-rerank'
+    if (enableReranking && algorithm === 'rrf-rerank') {
+      // TODO: Phase 2 - Apply LLM reranking here
+      // This will be implemented when the reranker is added
+      console.log(
+        '[VectorMemory] Reranking requested but not yet implemented. Using RRF results directly.'
+      );
+    }
+
+    // Apply query expansion if enabled
+    if (enableQueryExpansion) {
+      // TODO: Phase 4 - Apply query expansion here
+      // This will be implemented when query expansion is added
+      console.log(
+        '[VectorMemory] Query expansion requested but not yet implemented.'
+      );
+    }
+
+    this.emit('searched', {
+      query: query.substring(0, 50),
+      algorithm,
+      resultCount: results.length,
+    });
+
+    return results;
+  }
+
+  /**
    * 获取记忆
    */
   async get(id: string): Promise<MemoryChunk | null> {
@@ -316,6 +418,7 @@ export class VectorMemoryManager extends EventEmitter {
     this.store.close();
     this.isInitialized = false;
     this.emit('closed');
+    this.removeAllListeners();
   }
 
   // ============ Private Methods ============

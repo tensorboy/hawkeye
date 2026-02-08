@@ -7,6 +7,7 @@ import { createIntentSlice } from './slices/intent-slice';
 import { createExecutionSlice } from './slices/execution-slice';
 import { createLifeTreeSlice } from './slices/life-tree-slice';
 import { createSafetySlice } from './slices/safety-slice';
+import { createLifeTemplateSlice } from './slices/life-template-slice';
 
 export const useHawkeyeStore = create<HawkeyeStore>()(
   subscribeWithSelector((...a) => ({
@@ -16,6 +17,7 @@ export const useHawkeyeStore = create<HawkeyeStore>()(
     ...createExecutionSlice(...a),
     ...createLifeTreeSlice(...a),
     ...createSafetySlice(...a),
+    ...createLifeTemplateSlice(...a),
   }))
 );
 

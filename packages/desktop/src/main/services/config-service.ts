@@ -118,7 +118,7 @@ export class ConfigService {
         fs.mkdirSync(dir, { recursive: true });
       }
       const encrypted = safeStorage.encryptString(JSON.stringify(secrets));
-      fs.writeFileSync(this.secretsPath, encrypted);
+      fs.writeFileSync(this.secretsPath, encrypted, { mode: 0o600 });
       this.debugLogFn('Secrets saved (encrypted)');
     } catch (error) {
       this.debugLogFn(`Failed to save secrets: ${error}`);

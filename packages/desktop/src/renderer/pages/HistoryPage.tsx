@@ -54,7 +54,7 @@ function getStatusIcon(status: string): string {
   }
 }
 
-function getStatusText(status: string, t: (key: string, fallback?: string) => string): string {
+function getStatusText(status: string, t: (key: string, fallback?: any) => string): string {
   switch (status) {
     case 'completed': return t('app.executionCompleted', '已完成');
     case 'failed': return t('app.executionFailed', '执行失败');

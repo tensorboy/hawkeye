@@ -33,3 +33,13 @@ coverage/
 *.temp
 packages/desktop/release/
 packages/desktop/build/
+
+# Playwright MCP screenshots
+.playwright-mcp/
+
+# Misc generated images
+bmc_qr.png
+life-tree-*.png
+
+# Native build artifacts
+packages/desktop/native/.build/

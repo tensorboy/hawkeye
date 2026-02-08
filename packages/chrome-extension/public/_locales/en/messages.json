@@ -174,5 +174,73 @@
   "notificationError": {
     "message": "Hawkeye Error",
     "description": "Error notification title"
+  },
+  "eyeTracking": {
+    "message": "Eye Tracking",
+    "description": "Eye tracking panel title"
+  },
+  "gaze": {
+    "message": "Gaze",
+    "description": "Gaze button label"
+  },
+  "status": {
+    "message": "Status",
+    "description": "Status label"
+  },
+  "calibrationSamples": {
+    "message": "Samples",
+    "description": "Calibration samples label"
+  },
+  "gazePosition": {
+    "message": "Position",
+    "description": "Gaze position label"
+  },
+  "start": {
+    "message": "Start",
+    "description": "Start button text"
+  },
+  "stop": {
+    "message": "Stop",
+    "description": "Stop button text"
+  },
+  "syncDesktop": {
+    "message": "Sync",
+    "description": "Sync with desktop button"
+  },
+  "debug": {
+    "message": "Debug",
+    "description": "Debug button"
+  },
+  "clear": {
+    "message": "Clear",
+    "description": "Clear data button"
+  },
+  "active": {
+    "message": "Active",
+    "description": "Active status"
+  },
+  "inactive": {
+    "message": "Inactive",
+    "description": "Inactive status"
+  },
+  "loading": {
+    "message": "Loading...",
+    "description": "Loading status"
+  },
+  "error": {
+    "message": "Error",
+    "description": "Error status"
+  },
+  "refresh": {
+    "message": "Refresh",
+    "description": "Refresh button"
+  },
+  "analyze": {
+    "message": "Analyze",
+    "description": "Analyze button"
+  },
+  "clipboard": {
+    "message": "Clipboard",
+    "description": "Clipboard button"
   }
 }

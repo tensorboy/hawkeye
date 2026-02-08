@@ -162,4 +162,24 @@ export interface SafetySlice {
   setLastCheckResult: (result: SafetyAnalysisResult | null) => void;
 }
 
-export type HawkeyeStore = AppSlice & ConfigSlice & IntentSlice & ExecutionSlice & LifeTreeSlice & SafetySlice;
+export type LifeTemplateTabId = 'overview' | 'wheel' | 'personality' | 'psyche' | 'ikigai' | 'narrative';
+
+export interface LifeTemplateSlice {
+  // State
+  lifeTemplate: any | null; // LifeTemplate type from @hawkeye/core
+  lifeTemplateLoading: boolean;
+  lifeTemplateError: string | null;
+  showLifeTemplate: boolean;
+  activeLifeTemplateTab: LifeTemplateTabId;
+
+  // Actions
+  setShowLifeTemplate: (show: boolean) => void;
+  setActiveLifeTemplateTab: (tab: LifeTemplateTabId) => void;
+  fetchLifeTemplate: () => Promise<void>;
+  updateLifeTemplate: (updates: Record<string, any>) => Promise<void>;
+  createLifeTemplate: (name: string) => Promise<void>;
+  updateWheelCategory: (categoryId: string, score: number, notes?: string) => Promise<void>;
+  addIkigaiItem: (quadrant: string, item: string) => Promise<void>;
+}
+
+export type HawkeyeStore = AppSlice & ConfigSlice & IntentSlice & ExecutionSlice & LifeTreeSlice & SafetySlice & LifeTemplateSlice;

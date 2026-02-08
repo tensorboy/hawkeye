@@ -8,24 +8,41 @@ function copyExtensionFiles() {
     name: 'copy-extension-files',
     closeBundle() {
       const distDir = resolve(__dirname, 'dist');
-      const srcPopupDir = resolve(distDir, 'src', 'popup');
-      const destPopupDir = resolve(distDir, 'popup');
+      const srcDir = resolve(distDir, 'src');
 
       // Move HTML from dist/src/popup to dist/popup and fix paths
+      const srcPopupDir = resolve(srcDir, 'popup');
+      const destPopupDir = resolve(distDir, 'popup');
       if (existsSync(srcPopupDir)) {
         const htmlFile = resolve(srcPopupDir, 'index.html');
         if (existsSync(htmlFile)) {
           if (!existsSync(destPopupDir)) {
             mkdirSync(destPopupDir, { recursive: true });
           }
-          // Read HTML and fix relative paths
           let htmlContent = readFileSync(htmlFile, 'utf-8');
-          // Fix paths: ../../popup/ -> ./ (since we're moving to dist/popup/)
           htmlContent = htmlContent.replace(/\.\.\/\.\.\/popup\//g, './');
           writeFileSync(resolve(destPopupDir, 'index.html'), htmlContent);
         }
-        // Remove dist/src folder
-        rmSync(resolve(distDir, 'src'), { recursive: true, force: true });
+      }
+
+      // Move HTML from dist/src/sidepanel to dist/sidepanel and fix paths
+      const srcSidepanelDir = resolve(srcDir, 'sidepanel');
+      const destSidepanelDir = resolve(distDir, 'sidepanel');
+      if (existsSync(srcSidepanelDir)) {
+        const htmlFile = resolve(srcSidepanelDir, 'index.html');
+        if (existsSync(htmlFile)) {
+          if (!existsSync(destSidepanelDir)) {
+            mkdirSync(destSidepanelDir, { recursive: true });
+          }
+          let htmlContent = readFileSync(htmlFile, 'utf-8');
+          htmlContent = htmlContent.replace(/\.\.\/\.\.\/sidepanel\//g, './');
+          writeFileSync(resolve(destSidepanelDir, 'index.html'), htmlContent);
+        }
+      }
+
+      // Remove dist/src folder
+      if (existsSync(srcDir)) {
+        rmSync(srcDir, { recursive: true, force: true });
       }
 
       // Copy manifest.json
@@ -60,6 +77,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'src/popup/index.html'),
+        sidepanel: resolve(__dirname, 'src/sidepanel/index.html'),
         background: resolve(__dirname, 'src/background/index.ts'),
         content: resolve(__dirname, 'src/content/index.ts'),
       },
@@ -70,7 +88,8 @@ export default defineConfig({
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
           const name = assetInfo.name || '';
-          if (name.endsWith('.css')) {
+          if (name === 'styles.css' || name === 'index.css') {
+            // Route CSS to correct folder based on source
             return 'popup/styles.css';
           }
           return 'assets/[name][extname]';
