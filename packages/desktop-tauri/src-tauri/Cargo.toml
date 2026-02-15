@@ -17,11 +17,12 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 # Tauri
-tauri = { version = "2", features = ["macos-private-api"] }
+tauri = { version = "2", features = ["macos-private-api", "tray-icon"] }
 tauri-plugin-shell = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2"
+tauri-plugin-updater = "2"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
@@ -40,14 +41,25 @@ screenshots = "0.8"
 # Image processing
 image = "0.25"
 
-# OCR (using native macOS Vision framework)
-# Will use Tauri command to call Swift/Objective-C for Vision API
+# HTTP client (for AI API calls)
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+# Async stream utilities
+futures-util = "0.3"
+
+# Async trait support
+async-trait = "0.1"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
 
 # Utilities
 uuid = { version = "1", features = ["v4"] }
 chrono = "0.4"
 base64 = "0.22"
 open = "5"
+dirs = "6"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.26"

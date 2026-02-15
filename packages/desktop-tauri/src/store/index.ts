@@ -18,7 +18,6 @@ interface HawkeyeState {
 
   // UI state
   showSettings: boolean;
-  showDebugTimeline: boolean;
   showScreenshotPreview: boolean;
 
   // Actions
@@ -30,7 +29,6 @@ interface HawkeyeState {
   setActiveWindow: (window: WindowInfo) => void;
   setClipboard: (text: string) => void;
   setShowSettings: (show: boolean) => void;
-  setShowDebugTimeline: (show: boolean) => void;
   setShowScreenshotPreview: (show: boolean) => void;
 }
 
@@ -45,7 +43,6 @@ export const useHawkeyeStore = create<HawkeyeState>()(
     activeWindow: null,
     clipboard: '',
     showSettings: false,
-    showDebugTimeline: false,
     showScreenshotPreview: false,
 
     // Actions
@@ -57,7 +54,6 @@ export const useHawkeyeStore = create<HawkeyeState>()(
     setActiveWindow: (window) => set({ activeWindow: window }),
     setClipboard: (text) => set({ clipboard: text }),
     setShowSettings: (show) => set({ showSettings: show }),
-    setShowDebugTimeline: (show) => set({ showDebugTimeline: show }),
     setShowScreenshotPreview: (show) => set({ showScreenshotPreview: show }),
   }))
 );

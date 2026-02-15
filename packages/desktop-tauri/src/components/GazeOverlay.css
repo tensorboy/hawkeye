@@ -1,0 +1,161 @@
+/* GazeOverlay component styles */
+
+/* Loading state */
+.gaze-loading {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+}
+
+.gaze-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: gaze-spin 1s linear infinite;
+}
+
+@keyframes gaze-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state */
+.gaze-error {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  padding: 12px 20px;
+  background: rgba(239, 68, 68, 0.9);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+}
+
+/* Gaze indicator (blue dot) */
+.gaze-indicator {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.05s linear, top 0.05s linear;
+}
+
+.gaze-indicator-inner {
+  width: 40%;
+  height: 40%;
+  background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+}
+
+.gaze-indicator-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(59, 130, 246, 0.6);
+  border-radius: 50%;
+  animation: gaze-pulse 2s ease-in-out infinite;
+}
+
+@keyframes gaze-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.3;
+  }
+}
+
+/* Debug panel */
+.gaze-debug {
+  position: fixed;
+  top: 60px;
+  right: 10px;
+  width: 220px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 12px;
+  color: white;
+  font-size: 12px;
+  z-index: 10001;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gaze-debug-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #3b82f6;
+}
+
+.gaze-debug-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.gaze-debug-row span:first-child {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.gaze-debug-value {
+  font-family: 'SF Mono', Monaco, monospace;
+  color: #22c55e;
+}
+
+.gaze-debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gaze-debug-actions button {
+  flex: 1;
+  min-width: calc(50% - 3px);
+  padding: 5px 8px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 6px;
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gaze-debug-actions button:hover {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+.gaze-debug-tip {
+  margin-top: 10px;
+  padding: 6px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
