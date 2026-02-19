@@ -7,6 +7,7 @@ import { ObservePanel } from './components/ObservePanel';
 import { GazeOverlay } from './components/GazeOverlay';
 import { GesturePanel } from './components/GesturePanel';
 import { DebugTimeline } from './components/DebugTimeline';
+import { LifeTreePanel } from './components/LifeTreePanel';
 import {
   getStatus,
   captureScreen,
@@ -18,7 +19,7 @@ import {
   type AppConfig,
 } from './hooks/useTauri';
 
-type TabId = 'status' | 'chat' | 'observe' | 'gaze' | 'gesture' | 'debug';
+type TabId = 'status' | 'chat' | 'observe' | 'gaze' | 'gesture' | 'life-tree' | 'debug';
 
 const fadeIn = {
   initial: { opacity: 0 },
@@ -177,6 +178,7 @@ function App() {
           { id: 'observe' as TabId, label: 'Observe' },
           { id: 'gaze' as TabId, label: 'Gaze' },
           { id: 'gesture' as TabId, label: 'Gesture' },
+          { id: 'life-tree' as TabId, label: 'Life Tree' },
           { id: 'debug' as TabId, label: 'Debug' },
         ]).map((tab) => (
           <button
@@ -296,6 +298,7 @@ function App() {
           </div>
         )}
         {activeTab === 'gesture' && <GesturePanel />}
+        {activeTab === 'life-tree' && <LifeTreePanel />}
         {activeTab === 'debug' && <DebugTimeline />}
       </div>
 

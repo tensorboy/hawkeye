@@ -1,0 +1,394 @@
+.life-tree-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a1a;
+}
+
+.life-tree-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Stats HUD ─────────────────────────────────────── */
+
+.life-tree-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(10, 10, 26, 0.75);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.life-tree-hud-stats {
+  display: flex;
+  gap: 16px;
+  font: 400 11px 'JetBrains Mono', monospace;
+  color: rgba(200, 200, 216, 0.7);
+}
+
+.life-tree-hud-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.life-tree-hud-stat .value {
+  color: rgba(233, 233, 244, 0.95);
+  font-weight: 600;
+}
+
+.life-tree-hud-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.life-tree-hud-btn {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(200, 200, 216, 0.7);
+  font: 400 10px 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.life-tree-hud-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(233, 233, 244, 0.95);
+}
+
+/* ── Stage Filters ─────────────────────────────────── */
+
+.life-tree-filters {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.life-tree-filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(10, 10, 26, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font: 400 10px 'Inter', sans-serif;
+  color: rgba(200, 200, 216, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.life-tree-filter-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.life-tree-filter-chip.active {
+  border-color: var(--chip-color, rgba(255, 255, 255, 0.2));
+}
+
+.life-tree-filter-chip.inactive {
+  opacity: 0.35;
+}
+
+.life-tree-filter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Tooltip ───────────────────────────────────────── */
+
+.life-tree-tooltip {
+  position: fixed;
+  max-width: 260px;
+  padding: 10px 14px;
+  background: rgba(12, 12, 28, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.life-tree-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.life-tree-tooltip-label {
+  font: 600 12px 'Inter', sans-serif;
+  color: rgba(233, 233, 244, 0.95);
+  margin-bottom: 4px;
+}
+
+.life-tree-tooltip-meta {
+  font: 400 10px 'JetBrains Mono', monospace;
+  color: rgba(200, 200, 216, 0.6);
+  line-height: 1.5;
+}
+
+.life-tree-tooltip-apps {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.life-tree-tooltip-app {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  font: 400 9px 'JetBrains Mono', monospace;
+  color: rgba(200, 200, 216, 0.5);
+}
+
+/* ── Node Detail Panel ─────────────────────────────── */
+
+.life-tree-detail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100%;
+  background: rgba(12, 12, 28, 0.88);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.life-tree-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.life-tree-detail-title {
+  font: 600 14px 'Inter', sans-serif;
+  color: rgba(233, 233, 244, 0.95);
+}
+
+.life-tree-detail-close {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  color: rgba(200, 200, 216, 0.6);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.life-tree-detail-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(233, 233, 244, 0.95);
+}
+
+.life-tree-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.life-tree-detail-section {
+  margin-bottom: 16px;
+}
+
+.life-tree-detail-label {
+  font: 500 9px 'JetBrains Mono', monospace;
+  color: rgba(200, 200, 216, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.life-tree-detail-value {
+  font: 400 12px 'Inter', sans-serif;
+  color: rgba(233, 233, 244, 0.85);
+  line-height: 1.5;
+}
+
+.life-tree-detail-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font: 500 10px 'JetBrains Mono', monospace;
+}
+
+.life-tree-detail-badge.active   { background: rgba(74,158,255,0.15); color: #4A9EFF; }
+.life-tree-detail-badge.completed { background: rgba(80,200,120,0.15); color: #50C878; }
+.life-tree-detail-badge.paused   { background: rgba(255,179,71,0.15); color: #FFB347; }
+.life-tree-detail-badge.failed   { background: rgba(255,68,68,0.15); color: #FF4444; }
+
+.life-tree-detail-apps-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.life-tree-detail-app-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font: 400 10px 'JetBrains Mono', monospace;
+  color: rgba(200, 200, 216, 0.6);
+}
+
+.life-tree-detail-children {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.life-tree-detail-children li {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font: 400 11px 'Inter', sans-serif;
+  color: rgba(200, 200, 216, 0.7);
+  cursor: pointer;
+}
+
+.life-tree-detail-children li:hover {
+  color: rgba(233, 233, 244, 0.95);
+}
+
+.life-tree-detail-actions {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.life-tree-propose-btn {
+  width: 100%;
+  padding: 8px 14px;
+  border: 1px solid rgba(233, 69, 96, 0.3);
+  border-radius: 8px;
+  background: rgba(233, 69, 96, 0.1);
+  color: #e94560;
+  font: 500 11px 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.life-tree-propose-btn:hover {
+  background: rgba(233, 69, 96, 0.2);
+}
+
+.life-tree-propose-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Proposal Card ─────────────────────────────────── */
+
+.life-tree-proposal {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.life-tree-proposal-title {
+  font: 600 12px 'Inter', sans-serif;
+  color: rgba(233, 233, 244, 0.9);
+  margin-bottom: 6px;
+}
+
+.life-tree-proposal-desc {
+  font: 400 11px 'Inter', sans-serif;
+  color: rgba(200, 200, 216, 0.65);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.life-tree-proposal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.life-tree-proposal-accept {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(80, 200, 120, 0.2);
+  color: #50C878;
+  font: 500 10px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.life-tree-proposal-accept:hover {
+  background: rgba(80, 200, 120, 0.3);
+}
+
+.life-tree-proposal-dismiss {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(200, 200, 216, 0.5);
+  font: 500 10px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+/* ── Loading / Error ───────────────────────────────── */
+
+.life-tree-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a1a;
+  z-index: 50;
+}
+
+.life-tree-loading-text {
+  font: 400 13px 'JetBrains Mono', monospace;
+  color: rgba(200, 200, 216, 0.5);
+}
+
+.life-tree-error {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: rgba(255, 68, 68, 0.12);
+  border: 1px solid rgba(255, 68, 68, 0.2);
+  border-radius: 8px;
+  font: 400 11px 'Inter', sans-serif;
+  color: #FF6B6B;
+  cursor: pointer;
+  z-index: 30;
+}
