@@ -12,6 +12,18 @@ rust-version = "1.70"
 name = "hawkeye_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+# The Tauri webview app — same as the auto-discovered default but explicit
+# so we can sit alongside `hawkeye-cli` without ambiguity.
+[[bin]]
+name = "hawkeye-desktop"
+path = "src/main.rs"
+
+# Headless / scriptable CLI that drives the same subsystems (observe loop,
+# AI providers, agent runner) without booting Tauri or a webview.
+[[bin]]
+name = "hawkeye-cli"
+path = "src/bin/cli.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -54,12 +66,20 @@ async-trait = "0.1"
 log = "0.4"
 env_logger = "0.11"
 
+# Local LLM inference (llama.cpp Rust bindings, Metal for macOS GPU)
+llama-cpp-2 = { version = "0.1", default-features = false, features = ["metal"] }
+encoding_rs = "0.8"
+
 # Utilities
 uuid = { version = "1", features = ["v4"] }
 chrono = "0.4"
 base64 = "0.22"
 open = "5"
 dirs = "6"
+glob = "0.3"
+
+# CLI argument parsing for the headless `hawkeye-cli` binary.
+clap = { version = "4", features = ["derive"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.26"

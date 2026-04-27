@@ -45,31 +45,11 @@ impl GeminiClient {
                 max_output_tokens: Some(8192),
                 temperature: Some(0.7),
             }),
+            tools: None,
+            tool_config: None,
         };
 
-        let url = format!(
-            "{}/models/{}:generateContent?key={}",
-            self.base_url, self.model, self.api_key
-        );
-
-        let response = self
-            .client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await
-            .map_err(|e| anyhow!("HTTP request failed: {}", e))?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(anyhow!("Gemini API error ({}): {}", status, body));
-        }
-
-        let gemini_response: GeminiResponse = response
-            .json()
-            .await
-            .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
+        let gemini_response = self.post_generate_content(&request).await?;
 
         let text = gemini_response
             .candidates
@@ -113,6 +93,8 @@ impl GeminiClient {
                     mime_type: "image/png".to_string(),
                     data: image_base64.to_string(),
                 }),
+                function_call: None,
+                function_response: None,
             });
         }
 
@@ -122,31 +104,11 @@ impl GeminiClient {
                 max_output_tokens: Some(8192),
                 temperature: Some(0.7),
             }),
+            tools: None,
+            tool_config: None,
         };
 
-        let url = format!(
-            "{}/models/{}:generateContent?key={}",
-            self.base_url, self.model, self.api_key
-        );
-
-        let response = self
-            .client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await
-            .map_err(|e| anyhow!("HTTP request failed: {}", e))?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(anyhow!("Gemini API error ({}): {}", status, body));
-        }
-
-        let gemini_response: GeminiResponse = response
-            .json()
-            .await
-            .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
+        let gemini_response = self.post_generate_content(&request).await?;
 
         let text = gemini_response
             .candidates
@@ -173,12 +135,82 @@ impl GeminiClient {
         })
     }
 
+    /// Tool-using single-turn chat.
+    async fn do_chat_with_tools(
+        &self,
+        messages: Vec<ToolMessage>,
+        tools: &[FunctionDeclaration],
+    ) -> Result<ToolTurn> {
+        let contents = self.convert_tool_messages(messages);
+
+        let (tools_payload, tool_config) = if tools.is_empty() {
+            (None, None)
+        } else {
+            (
+                Some(vec![GeminiTool {
+                    function_declarations: tools.to_vec(),
+                }]),
+                Some(GeminiToolConfig {
+                    function_calling_config: GeminiFunctionCallingConfig {
+                        mode: "AUTO".to_string(),
+                        allowed_function_names: None,
+                    },
+                }),
+            )
+        };
+
+        let request = GeminiRequest {
+            contents,
+            generation_config: Some(GeminiGenerationConfig {
+                max_output_tokens: Some(2048),
+                temperature: Some(0.4),
+            }),
+            tools: tools_payload,
+            tool_config,
+        };
+
+        let response = self.post_generate_content(&request).await?;
+
+        let usage = response.usage_metadata.as_ref().map(|u| UsageInfo {
+            prompt_tokens: u.prompt_token_count.unwrap_or(0),
+            completion_tokens: u.candidates_token_count.unwrap_or(0),
+            total_tokens: u.total_token_count.unwrap_or(0),
+        });
+
+        let parts = response
+            .candidates
+            .as_ref()
+            .and_then(|c| c.first())
+            .and_then(|c| c.content.as_ref())
+            .and_then(|c| c.parts.as_ref())
+            .cloned()
+            .unwrap_or_default();
+
+        // Collect function calls; Gemini may emit multiple in parallel.
+        let mut calls = Vec::new();
+        let mut text_buf = String::new();
+        for p in &parts {
+            if let Some(fc) = &p.function_call {
+                calls.push(FunctionCall { name: fc.name.clone(), args: fc.args.clone() });
+            }
+            if let Some(t) = &p.text {
+                if !text_buf.is_empty() {
+                    text_buf.push('\n');
+                }
+                text_buf.push_str(t);
+            }
+        }
+
+        if !calls.is_empty() {
+            Ok(ToolTurn::ToolCalls { calls, usage })
+        } else {
+            Ok(ToolTurn::Text { text: text_buf, usage })
+        }
+    }
+
     /// Validate the API key by making a test request
     async fn do_validate(&self) -> Result<()> {
-        let url = format!(
-            "{}/models?key={}",
-            self.base_url, self.api_key
-        );
+        let url = format!("{}/models?key={}", self.base_url, self.api_key);
 
         let response = self
             .client
@@ -193,6 +225,32 @@ impl GeminiClient {
             let body = response.text().await.unwrap_or_default();
             Err(anyhow!("API key validation failed: {}", body))
         }
+    }
+
+    async fn post_generate_content(&self, request: &GeminiRequest) -> Result<GeminiResponse> {
+        let url = format!(
+            "{}/models/{}:generateContent?key={}",
+            self.base_url, self.model, self.api_key
+        );
+
+        let response = self
+            .client
+            .post(&url)
+            .json(request)
+            .send()
+            .await
+            .map_err(|e| anyhow!("HTTP request failed: {}", e))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            return Err(anyhow!("Gemini API error ({}): {}", status, body));
+        }
+
+        response
+            .json::<GeminiResponse>()
+            .await
+            .map_err(|e| anyhow!("Failed to parse response: {}", e))
     }
 
     /// Convert ChatMessages to Gemini format
@@ -217,6 +275,8 @@ impl GeminiClient {
                         parts: vec![GeminiPart {
                             text: Some(text),
                             inline_data: None,
+                            function_call: None,
+                            function_response: None,
                         }],
                     });
                 }
@@ -226,6 +286,8 @@ impl GeminiClient {
                         parts: vec![GeminiPart {
                             text: Some(msg.content),
                             inline_data: None,
+                            function_call: None,
+                            function_response: None,
                         }],
                     });
                 }
@@ -236,8 +298,99 @@ impl GeminiClient {
                         parts: vec![GeminiPart {
                             text: Some(msg.content),
                             inline_data: None,
+                            function_call: None,
+                            function_response: None,
                         }],
                     });
+                }
+            }
+        }
+
+        contents
+    }
+
+    /// Convert tool-aware messages to Gemini contents.
+    fn convert_tool_messages(&self, messages: Vec<ToolMessage>) -> Vec<GeminiContent> {
+        let mut contents: Vec<GeminiContent> = Vec::new();
+
+        // Helper: get a mutable handle to the last content if its role matches.
+        fn append_to_last(contents: &mut Vec<GeminiContent>, role: &str, parts: Vec<GeminiPart>) {
+            if let Some(last) = contents.last_mut() {
+                if last.role == role {
+                    last.parts.extend(parts);
+                    return;
+                }
+            }
+            contents.push(GeminiContent { role: role.to_string(), parts });
+        }
+
+        for msg in messages {
+            match msg {
+                ToolMessage::User(text) => {
+                    append_to_last(
+                        &mut contents,
+                        "user",
+                        vec![GeminiPart {
+                            text: Some(text),
+                            inline_data: None,
+                            function_call: None,
+                            function_response: None,
+                        }],
+                    );
+                }
+                ToolMessage::Assistant(text) => {
+                    append_to_last(
+                        &mut contents,
+                        "model",
+                        vec![GeminiPart {
+                            text: Some(text),
+                            inline_data: None,
+                            function_call: None,
+                            function_response: None,
+                        }],
+                    );
+                }
+                ToolMessage::UserImage { mime_type, data } => {
+                    append_to_last(
+                        &mut contents,
+                        "user",
+                        vec![GeminiPart {
+                            text: None,
+                            inline_data: Some(GeminiInlineData { mime_type, data }),
+                            function_call: None,
+                            function_response: None,
+                        }],
+                    );
+                }
+                ToolMessage::AssistantToolCalls(calls) => {
+                    let parts: Vec<GeminiPart> = calls
+                        .into_iter()
+                        .map(|c| GeminiPart {
+                            text: None,
+                            inline_data: None,
+                            function_call: Some(GeminiFunctionCall {
+                                name: c.name,
+                                args: c.args,
+                            }),
+                            function_response: None,
+                        })
+                        .collect();
+                    append_to_last(&mut contents, "model", parts);
+                }
+                ToolMessage::ToolResult(r) => {
+                    append_to_last(
+                        &mut contents,
+                        "user",
+                        vec![GeminiPart {
+                            text: None,
+                            inline_data: None,
+                            function_call: None,
+                            function_response: Some(GeminiFunctionResponse {
+                                name: r.name,
+                                response: r.response,
+                            }),
+                        }],
+                    );
                 }
             }
         }
@@ -258,6 +411,18 @@ impl AiProvider for GeminiClient {
         image_base64: &str,
     ) -> Result<ChatResponse> {
         self.do_chat_with_vision(messages, image_base64).await
+    }
+
+    async fn chat_with_tools(
+        &self,
+        messages: Vec<ToolMessage>,
+        tools: &[FunctionDeclaration],
+    ) -> Result<ToolTurn> {
+        self.do_chat_with_tools(messages, tools).await
+    }
+
+    fn supports_tools(&self) -> bool {
+        true
     }
 
     async fn validate(&self) -> Result<()> {

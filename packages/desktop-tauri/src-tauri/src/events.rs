@@ -38,3 +38,26 @@ pub const DEBUG_CLEARED: &str = "debug:cleared";
 
 /// Status events
 pub const STATUS_CHANGED: &str = "status:changed";
+
+/// Local model events
+pub const LOCAL_MODEL_LOADING: &str = "local-model:loading";
+pub const LOCAL_MODEL_READY: &str = "local-model:ready";
+pub const LOCAL_MODEL_ERROR: &str = "local-model:error";
+
+/// Training data events
+pub const TRAINING_SAMPLE_SAVED: &str = "training:sample-saved";
+pub const TRAINING_EXPORT_COMPLETE: &str = "training:export-complete";
+
+/// Gaze ANE events
+pub const GAZE_TRAINING_STARTED: &str = "gaze:training-started";
+pub const GAZE_TRAINING_PROGRESS: &str = "gaze:training-progress";
+pub const GAZE_TRAINING_COMPLETE: &str = "gaze:training-complete";
+pub const GAZE_TRAINING_ERROR: &str = "gaze:training-error";
+pub const GAZE_MODEL_READY: &str = "gaze:model-ready";
+pub const GAZE_SAMPLE_ADDED: &str = "gaze:sample-added";
+
+/// Agent (cua-driver tool-use) events
+pub const AGENT_TOOL_CALL_START: &str = "agent:tool-call-start";
+pub const AGENT_TOOL_CALL_END: &str = "agent:tool-call-end";
+pub const AGENT_DAEMON_READY: &str = "agent:daemon-ready";
+pub const AGENT_DAEMON_ERROR: &str = "agent:daemon-error";

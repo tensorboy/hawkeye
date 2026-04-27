@@ -1,22 +1,28 @@
 //! Hawkeye Desktop - Tauri Backend
 //!
 //! This is the Rust backend for Hawkeye Desktop, providing:
-//! - AI chat (Gemini, OpenAI-compatible)
+//! - AI chat (Gemini, OpenAI-compatible, local llama.cpp with Metal)
+//! - Local LLM inference via llama-cpp-2 (GGUF models, Apple Metal GPU)
+//! - Training data collection for LoRA fine-tuning
 //! - Screen capture + OCR (macOS Vision API)
 //! - Smart observe loop with adaptive refresh
 //! - Menu bar tray panel
 //! - Configuration persistence
 
-mod ai;
-mod commands;
-mod config;
-mod events;
-mod life_tree;
-mod models;
-mod observe;
-mod perception;
-mod state;
-mod voice;
+pub mod agent;
+pub mod ai;
+pub mod commands;
+pub mod config;
+pub mod event_sink;
+pub mod events;
+pub mod gaze;
+pub mod life_tree;
+pub mod models;
+pub mod observe;
+pub mod perception;
+pub mod state;
+pub mod training;
+pub mod voice;
 
 use tauri::{Emitter, Manager};
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
@@ -39,13 +45,50 @@ pub fn run() {
 
             // Create and manage shared state
             let app_state = state::AppState::new(cfg);
-            app.manage(app_state);
+            app.manage(app_state.clone());
+
+            // Install the Tauri event sink so non-UI runners (agent runner,
+            // observe loop) can emit events through the same handle.
+            {
+                let sink: event_sink::SharedSink = std::sync::Arc::new(
+                    event_sink::TauriSink::new(app.handle().clone()),
+                );
+                let state = app_state.clone();
+                tauri::async_runtime::spawn(async move {
+                    *state.event_sink.write().await = Some(sink);
+                });
+            }
 
             // Initialize perception engine
+            tauri::async_runtime::spawn(async {
+                if let Err(e) = perception::init().await {
+                    log::error!("Failed to initialize perception: {}", e);
+                }
+            });
+
+            // Initialize cua-driver supervisor (does NOT auto-spawn the
+            // daemon — that's user-controlled via start_agent command).
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = perception::init(&handle).await {
-                    log::error!("Failed to initialize perception: {}", e);
+                let state = handle.state::<std::sync::Arc<state::AppState>>();
+                match agent::CuaDriverClient::default_path() {
+                    Ok(client) => {
+                        let supervisor = agent::DaemonSupervisor::new(client);
+                        if supervisor.binary_path().is_none() {
+                            log::warn!(
+                                "[agent] cua-driver binary not found — desktop control unavailable. \
+                                 Install: /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/trycua/cua/main/libs/cua-driver/scripts/install.sh)\""
+                            );
+                        } else {
+                            log::info!(
+                                "[agent] cua-driver binary at {}",
+                                supervisor.binary_path().unwrap().display()
+                            );
+                        }
+                        let mut sup = state.agent_supervisor.write().await;
+                        *sup = Some(supervisor);
+                    }
+                    Err(e) => log::error!("[agent] failed to init supervisor: {}", e),
                 }
             });
 
@@ -107,8 +150,18 @@ pub fn run() {
                             let state = handle.state::<std::sync::Arc<state::AppState>>();
                             let mut loop_handle = state.observe_loop.write().await;
                             if loop_handle.is_none() {
+                                let sink: event_sink::SharedSink = state
+                                    .event_sink
+                                    .read()
+                                    .await
+                                    .clone()
+                                    .unwrap_or_else(|| {
+                                        std::sync::Arc::new(event_sink::TauriSink::new(
+                                            handle.clone(),
+                                        ))
+                                    });
                                 let obs = observe::ObserveLoop::start(
-                                    handle.clone(),
+                                    sink,
                                     std::sync::Arc::clone(&state),
                                     3000,
                                     0.05,
@@ -148,6 +201,11 @@ pub fn run() {
             // Chat
             commands::chat_cmd::chat,
             commands::chat_cmd::init_ai,
+            // Agent (cua-driver tool-use)
+            commands::agent_cmd::get_agent_status,
+            commands::agent_cmd::start_agent,
+            commands::agent_cmd::chat_with_agent,
+            commands::agent_cmd::invoke_cua_tool,
             // Observe
             commands::observe_cmd::start_observe,
             commands::observe_cmd::stop_observe,
@@ -203,6 +261,18 @@ pub fn run() {
             commands::debug_cmd::pause_debug,
             commands::debug_cmd::resume_debug,
             commands::debug_cmd::clear_debug_events,
+            // Gaze ANE
+            commands::gaze_cmd::submit_gaze_sample,
+            commands::gaze_cmd::trigger_gaze_training,
+            commands::gaze_cmd::predict_gaze,
+            commands::gaze_cmd::get_gaze_training_status,
+            commands::gaze_cmd::clear_gaze_model,
+            commands::gaze_cmd::load_gaze_weights,
+            // Training data collection
+            commands::training_cmd::save_training_sample,
+            commands::training_cmd::rate_training_sample,
+            commands::training_cmd::get_training_stats,
+            commands::training_cmd::export_training_data,
             // Utilities
             commands::util_cmd::open_url,
         ])

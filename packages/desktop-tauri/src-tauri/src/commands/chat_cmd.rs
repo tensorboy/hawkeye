@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use tauri::{command, AppHandle, Emitter, State};
 
-use crate::ai::{ChatMessage, ChatResponse, GeminiClient, OpenAiClient};
+use crate::ai::{ChatMessage, ChatResponse, GeminiClient, LocalProvider, OpenAiClient};
 use crate::events;
 use crate::state::AppState;
 
@@ -17,7 +17,27 @@ pub async fn init_ai(
 
     let provider_type = config.ai_provider.as_str();
 
-    let client: Box<dyn crate::ai::AiProvider> = match provider_type {
+    let client: Arc<dyn crate::ai::AiProvider> = match provider_type {
+        "local" | "llama-cpp" => {
+            let model_id = match &config.local_model_id {
+                Some(id) if !id.is_empty() => id.clone(),
+                _ => {
+                    log::warn!("[AI] No local model ID configured");
+                    return Ok(false);
+                }
+            };
+            drop(config); // release read lock before acquiring model_manager lock
+
+            let mgr = state.model_manager.read().await;
+            let model_path = mgr.model_path(&model_id).ok_or_else(|| {
+                format!("Local model '{}' not downloaded. Download it first.", model_id)
+            })?;
+
+            let provider = LocalProvider::load(model_path, Some(model_id))
+                .map_err(|e| format!("Failed to load local model: {}", e))?;
+
+            Arc::new(provider)
+        }
         "openai" => {
             let api_key = match &config.openai_api_key {
                 Some(key) if !key.is_empty() => key.clone(),
@@ -26,7 +46,7 @@ pub async fn init_ai(
                     return Ok(false);
                 }
             };
-            Box::new(OpenAiClient::new(
+            Arc::new(OpenAiClient::new(
                 api_key,
                 config.openai_model.clone(),
                 config.openai_base_url.clone(),
@@ -41,7 +61,7 @@ pub async fn init_ai(
                     return Ok(false);
                 }
             };
-            Box::new(GeminiClient::new(
+            Arc::new(GeminiClient::new(
                 api_key,
                 config.gemini_model.clone(),
                 config.gemini_base_url.clone(),
@@ -70,19 +90,20 @@ pub async fn init_ai(
     }
 }
 
-/// Chat with AI
+/// Chat with AI (no tools).
 #[command]
 pub async fn chat(
     messages: Vec<ChatMessage>,
     state: State<'_, Arc<AppState>>,
 ) -> Result<ChatResponse, String> {
-    let ai = state.ai_client.read().await;
+    let provider = {
+        let ai = state.ai_client.read().await;
+        ai.as_ref()
+            .cloned()
+            .ok_or_else(|| "AI not initialized. Call init_ai first.".to_string())?
+    };
 
-    let client = ai
-        .as_ref()
-        .ok_or_else(|| "AI not initialized. Call init_ai first.".to_string())?;
-
-    client
+    provider
         .chat(messages)
         .await
         .map_err(|e| e.to_string())
