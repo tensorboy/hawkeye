@@ -1,6 +1,7 @@
 //! Command modules — IPC handlers called from frontend via Tauri invoke
 
 pub mod adaptive_cmd;
+pub mod agent_cmd;
 pub mod chat_cmd;
 pub mod config_cmd;
 pub mod intent_cmd;
@@ -15,3 +16,5 @@ pub mod voice_cmd;
 pub mod gesture_cmd;
 pub mod updater_cmd;
 pub mod debug_cmd;
+pub mod gaze_cmd;
+pub mod training_cmd;

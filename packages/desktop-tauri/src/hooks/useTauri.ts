@@ -116,6 +116,60 @@ export async function chat(messages: ChatMessage[]): Promise<ChatResponse> {
   return invoke('chat', { messages });
 }
 
+// --- Agent (cua-driver desktop control) ---
+
+export interface AgentStatus {
+  binaryInstalled: boolean;
+  binaryPath?: string;
+  daemonRunning: boolean;
+  socketPath: string;
+}
+
+export interface ToolCallRecord {
+  round: number;
+  name: string;
+  args: Record<string, unknown>;
+  ok: boolean;
+  summary: string;
+}
+
+export interface AgentTurnResult {
+  text: string;
+  rounds: number;
+  toolCalls: ToolCallRecord[];
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+/// Inspect cua-driver state — whether binary is installed and daemon is running.
+export async function getAgentStatus(): Promise<AgentStatus> {
+  return invoke('get_agent_status');
+}
+
+/// Spawn the cua-driver daemon (no-op if already running). Throws if binary missing.
+export async function startAgent(): Promise<boolean> {
+  return invoke('start_agent');
+}
+
+/// Tool-using chat. `history` is the prior conversation, `userInput` is the new message.
+export async function chatWithAgent(
+  history: ChatMessage[],
+  userInput: string
+): Promise<AgentTurnResult> {
+  return invoke('chat_with_agent', { history, userInput });
+}
+
+/// Direct tool invocation (debugging only — bypasses the LLM).
+export async function invokeCuaTool(
+  name: string,
+  args: Record<string, unknown>
+): Promise<{ name: string; response: Record<string, unknown> }> {
+  return invoke('invoke_cua_tool', { name, args });
+}
+
 // Observe commands
 export async function startObserve(): Promise<boolean> {
   return invoke('start_observe');
@@ -346,6 +400,7 @@ export interface LifeTreeNode {
   experimentPhase?: ExperimentPhase;
   observationCount: number;
   relatedApps: string[];
+  entityIds?: string[];
 }
 
 export interface TreeStats {
@@ -354,6 +409,7 @@ export interface TreeStats {
   activeTasks: number;
   experimentsCompleted: number;
   mostActiveStage?: LifeStage;
+  entityCount?: number;
 }
 
 export interface LifeTreeSnapshot {
@@ -361,12 +417,45 @@ export interface LifeTreeSnapshot {
   nodes: LifeTreeNode[];
   stats: TreeStats;
   generatedAt: number;
+  knowledgeEntities?: KnowledgeEntity[];
+  knowledgeEdges?: KnowledgeEdge[];
+  crossEdges?: KnowledgeCrossEdge[];
 }
 
 export interface ExperimentProposal {
   title: string;
   description: string;
   durationDays: number;
+}
+
+// Knowledge graph types
+export type KnowledgeNodeType = 'person' | 'project' | 'technology' | 'concept' | 'place';
+
+export interface KnowledgeEntity {
+  id: string;
+  label: string;
+  type: KnowledgeNodeType;
+  aliases: string[];
+  sourceNodeIds: string[];
+  firstSeen: number;
+  lastSeen: number;
+  frequency: number;
+}
+
+export interface KnowledgeEdge {
+  id: string;
+  sourceEntityId: string;
+  targetEntityId: string;
+  relation: string;
+  strength: number;
+  sourceNodeIds: string[];
+}
+
+export interface KnowledgeCrossEdge {
+  fromNodeId: string;
+  toNodeId: string;
+  entityLabel: string;
+  strength: number;
 }
 
 // Life Tree commands
@@ -545,4 +634,53 @@ export async function resumeDebug(): Promise<boolean> {
 
 export async function clearDebugEvents(): Promise<void> {
   return invoke('clear_debug_events');
+}
+
+// Gaze ANE types
+export interface GazeSample {
+  features: number[];
+  targetX: number;
+  targetY: number;
+  timestamp: number;
+}
+
+export interface GazeTrainingStatus {
+  sampleCount: number;
+  newSampleCount: number;
+  isTraining: boolean;
+  trainLoss: number | null;
+  modelReady: boolean;
+  aneAvailable: boolean;
+}
+
+export interface GazePrediction {
+  x: number;
+  y: number;
+  confidence: number;
+  latencyUs: number;
+}
+
+// Gaze ANE commands
+export async function submitGazeSample(sample: GazeSample): Promise<number> {
+  return invoke('submit_gaze_sample', { sample });
+}
+
+export async function triggerGazeTraining(): Promise<boolean> {
+  return invoke('trigger_gaze_training');
+}
+
+export async function predictGaze(features: number[]): Promise<GazePrediction> {
+  return invoke('predict_gaze', { features });
+}
+
+export async function getGazeTrainingStatus(): Promise<GazeTrainingStatus> {
+  return invoke('get_gaze_training_status');
+}
+
+export async function clearGazeModel(): Promise<void> {
+  return invoke('clear_gaze_model');
+}
+
+export async function loadGazeWeights(): Promise<boolean> {
+  return invoke('load_gaze_weights');
 }

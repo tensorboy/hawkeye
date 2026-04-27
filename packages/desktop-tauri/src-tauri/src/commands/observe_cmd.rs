@@ -4,6 +4,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use tauri::{command, AppHandle, State};
 
+use crate::event_sink::{SharedSink, TauriSink};
 use crate::observe::ObserveLoop;
 use crate::state::{AppState, ObservationResult};
 
@@ -27,8 +28,17 @@ pub async fn start_observe(
         return Ok(false); // Already running
     }
 
+    // Prefer the pre-installed sink; fall back to a fresh TauriSink so
+    // command callers don't have to wait for setup-time initialization.
+    let sink: SharedSink = state
+        .event_sink
+        .read()
+        .await
+        .clone()
+        .unwrap_or_else(|| -> SharedSink { Arc::new(TauriSink::new(app)) });
+
     let observe = ObserveLoop::start(
-        app,
+        sink,
         Arc::clone(&state),
         3000,  // 3s interval
         0.05,  // 5% change threshold

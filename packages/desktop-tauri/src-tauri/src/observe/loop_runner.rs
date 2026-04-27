@@ -3,8 +3,7 @@
 use std::sync::Arc;
 use tokio::sync::watch;
 
-use tauri::{AppHandle, Emitter};
-
+use crate::event_sink::EventSink;
 use crate::events;
 use crate::observe::change_detector;
 use crate::perception;
@@ -16,9 +15,13 @@ pub struct ObserveLoop {
 }
 
 impl ObserveLoop {
-    /// Start the observe loop as a background task
+    /// Start the observe loop as a background task.
+    ///
+    /// Events are emitted through the supplied [`EventSink`] so the loop
+    /// runs identically under Tauri (with `TauriSink`) or under a CLI
+    /// (with `StdoutSink`).
     pub fn start(
-        app: AppHandle,
+        sink: Arc<dyn EventSink>,
         state: Arc<AppState>,
         interval_ms: u64,
         threshold: f64,
@@ -26,7 +29,7 @@ impl ObserveLoop {
         let (stop_tx, stop_rx) = watch::channel(false);
 
         tokio::spawn(async move {
-            run_loop(app, state, stop_rx, interval_ms, threshold).await;
+            run_loop(sink, state, stop_rx, interval_ms, threshold).await;
         });
 
         Self { stop_tx }
@@ -39,7 +42,7 @@ impl ObserveLoop {
 }
 
 async fn run_loop(
-    app: AppHandle,
+    sink: Arc<dyn EventSink>,
     state: Arc<AppState>,
     mut stop_rx: watch::Receiver<bool>,
     _initial_interval_ms: u64,
@@ -61,7 +64,7 @@ async fn run_loop(
             _ = stop_rx.changed() => {
                 if *stop_rx.borrow() {
                     log::info!("[Observe] Loop stopped by signal");
-                    let _ = app.emit(events::OBSERVE_STOPPED, ());
+                    sink.emit(events::OBSERVE_STOPPED, serde_json::Value::Null);
                     return;
                 }
             }
@@ -106,7 +109,10 @@ async fn run_loop(
         }
 
         log::info!("[Observe] Change detected (ratio={:.2})", change_ratio);
-        let _ = app.emit(events::OBSERVE_CHANGE, change_ratio);
+        sink.emit(
+            events::OBSERVE_CHANGE,
+            serde_json::json!(change_ratio),
+        );
 
         // Record activity for adaptive refresh
         {
@@ -171,7 +177,9 @@ async fn run_loop(
             let intents = recognizer.recognize(&input);
             if !intents.is_empty() {
                 log::debug!("[Observe] Intents: {:?}", intents.iter().map(|i| &i.description).collect::<Vec<_>>());
-                let _ = app.emit(events::INTENT_RECOGNIZED, &intents);
+                if let Ok(payload) = serde_json::to_value(&intents) {
+                    sink.emit(events::INTENT_RECOGNIZED, payload);
+                }
             }
         }
 
@@ -193,7 +201,9 @@ async fn run_loop(
             *last = Some(observation.clone());
         }
 
-        // Emit to frontend
-        let _ = app.emit(events::OBSERVE_UPDATE, &observation);
+        // Emit to host (frontend / stdout)
+        if let Ok(payload) = serde_json::to_value(&observation) {
+            sink.emit(events::OBSERVE_UPDATE, payload);
+        }
     }
 }

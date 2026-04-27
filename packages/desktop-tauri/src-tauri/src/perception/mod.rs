@@ -7,12 +7,12 @@ pub mod window;
 use anyhow::Result;
 use screenshots::Screen;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::AppHandle;
 
 static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
-/// Initialize the perception engine
-pub async fn init(_app: &AppHandle) -> Result<()> {
+/// Initialize the perception engine. UI-agnostic — usable from Tauri,
+/// CLI, or tests.
+pub async fn init() -> Result<()> {
     if INITIALIZED.swap(true, Ordering::SeqCst) {
         return Ok(());
     }

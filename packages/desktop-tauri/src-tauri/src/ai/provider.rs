@@ -1,9 +1,9 @@
 //! AI provider trait — abstraction over Gemini, OpenAI, etc.
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 
-use super::types::{ChatMessage, ChatResponse};
+use super::types::{ChatMessage, ChatResponse, FunctionDeclaration, ToolMessage, ToolTurn};
 
 /// Trait for AI chat providers
 #[async_trait]
@@ -17,6 +17,28 @@ pub trait AiProvider: Send + Sync + std::fmt::Debug {
         messages: Vec<ChatMessage>,
         image_base64: &str,
     ) -> Result<ChatResponse>;
+
+    /// Tool-using chat. Returns the next single turn from the model. The
+    /// caller is responsible for executing any returned tool calls and
+    /// feeding results back via the next invocation.
+    ///
+    /// Default implementation returns an unsupported error so existing
+    /// providers (local llama.cpp, OpenAI legacy) compile without change.
+    async fn chat_with_tools(
+        &self,
+        _messages: Vec<ToolMessage>,
+        _tools: &[FunctionDeclaration],
+    ) -> Result<ToolTurn> {
+        Err(anyhow!(
+            "Provider '{}' does not yet support tool calling",
+            self.provider_name()
+        ))
+    }
+
+    /// Whether this provider supports tool calling.
+    fn supports_tools(&self) -> bool {
+        false
+    }
 
     /// Validate the API key / connectivity
     async fn validate(&self) -> Result<()>;
