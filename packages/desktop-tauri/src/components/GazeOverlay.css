@@ -46,7 +46,7 @@
   backdrop-filter: blur(10px);
 }
 
-/* Gaze indicator (blue dot) */
+/* Gaze indicator (blue dot) — 3-tier visibility per GazeState */
 .gaze-indicator {
   position: fixed;
   pointer-events: none;
@@ -54,8 +54,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: left 0.05s linear, top 0.05s linear;
+  transition:
+    left 0.05s linear,
+    top 0.05s linear,
+    opacity 0.18s ease-out,
+    transform 0.18s ease-out;
 }
+
+/* Fixation — gaze is settling on something, show subtle hint */
+.gaze-indicator--fixation {
+  opacity: 0.25;
+  transform: scale(0.55);
+}
+
+/* Dwell — gaze has locked on, full presence */
+.gaze-indicator--dwell {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Saccade is handled by NOT rendering the element. */
 
 .gaze-indicator-inner {
   width: 40%;
@@ -65,12 +83,21 @@
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
 }
 
+.gaze-indicator--ane .gaze-indicator-inner {
+  background: radial-gradient(circle, #22c55e 0%, #15803d 100%);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+}
+
 .gaze-indicator-ring {
   position: absolute;
   inset: 0;
   border: 2px solid rgba(59, 130, 246, 0.6);
   border-radius: 50%;
   animation: gaze-pulse 2s ease-in-out infinite;
+}
+
+.gaze-indicator--ane .gaze-indicator-ring {
+  border-color: rgba(34, 197, 94, 0.6);
 }
 
 @keyframes gaze-pulse {
@@ -158,4 +185,106 @@
   font-size: 11px;
   color: rgba(255, 255, 255, 0.7);
   line-height: 1.4;
+}
+
+/* ── Gaze-on-entity bounding box (P0/P1) ───────────────────────────── */
+.gaze-entity-bbox {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  border: 2px solid rgba(245, 158, 11, 0.85);
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.25) inset,
+    0 0 18px rgba(245, 158, 11, 0.4);
+  animation: gaze-entity-pop 0.22s ease-out;
+  transition:
+    left 0.12s ease-out,
+    top 0.12s ease-out,
+    width 0.12s ease-out,
+    height 0.12s ease-out;
+}
+
+@keyframes gaze-entity-pop {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Gaze command chips (P5) ───────────────────────────────────────── */
+.gaze-chips {
+  position: fixed;
+  pointer-events: auto;
+  z-index: 9999;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 9999px;
+  background: rgba(15, 17, 22, 0.92);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  animation: gaze-chips-in 0.22s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+@keyframes gaze-chips-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.gaze-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(245, 245, 245, 0.92);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, border-color 0.15s;
+}
+
+.gaze-chip:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.gaze-chip:active {
+  transform: scale(0.96);
+}
+
+.gaze-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  opacity: 0.85;
+}
+
+.gaze-chip--primary {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.55);
+  color: #fef3c7;
+}
+
+.gaze-chip--busy {
+  opacity: 0.65;
+  cursor: progress;
 }

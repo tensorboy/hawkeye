@@ -6,6 +6,7 @@
 //! can render progress in real time.
 
 use anyhow::{anyhow, bail, Result};
+use async_trait::async_trait;
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -19,6 +20,30 @@ use crate::ai::types::{
 use crate::ai::AiProvider;
 use crate::event_sink::EventSink;
 use crate::events;
+
+/// Tools that *act on the desktop* (vs. read-only inspections). Calls to
+/// these may be gated behind a confirmation prompt depending on the
+/// `ConfirmGate` passed to [`run_user_turn`].
+pub const RISKY_TOOLS: &[&str] = &["click", "type_text", "press_key", "launch_app", "scroll"];
+
+/// Pluggable interactive gate that the runner consults before executing a
+/// risky tool. `true` ⇒ proceed, `false` ⇒ skip and tell the model the
+/// user rejected it.
+#[async_trait]
+pub trait ConfirmGate: Send + Sync {
+    async fn confirm(&self, call: &FunctionCall, round: usize) -> bool;
+}
+
+/// Default gate that auto-approves everything — keeps existing CLI / test
+/// paths working without a UI in the loop.
+pub struct AlwaysApprove;
+
+#[async_trait]
+impl ConfirmGate for AlwaysApprove {
+    async fn confirm(&self, _call: &FunctionCall, _round: usize) -> bool {
+        true
+    }
+}
 
 /// Maximum number of tool-call rounds in a single user turn.
 pub const MAX_TOOL_ROUNDS: usize = 8;
@@ -49,10 +74,14 @@ pub struct ToolCallRecord {
 /// `history` is the prior conversation (text-only roles); we append the new
 /// user input ourselves. `cua_driver` may be `None`, in which case the model
 /// will be given an empty tool list and forced to answer textually.
+///
+/// `gate` is consulted before any [`RISKY_TOOLS`] call. Pass
+/// [`AlwaysApprove`] to keep the old auto-execute behavior.
 pub async fn run_user_turn(
     sink: Arc<dyn EventSink>,
     provider: Arc<dyn AiProvider>,
     cua_driver: Option<CuaDriverClient>,
+    gate: Arc<dyn ConfirmGate>,
     history: Vec<ToolMessage>,
     user_input: String,
 ) -> Result<AgentTurnResult> {
@@ -105,8 +134,15 @@ pub async fn run_user_turn(
                 messages.push(ToolMessage::AssistantToolCalls(calls.clone()));
 
                 for call in calls {
-                    let record =
-                        execute_tool(sink.as_ref(), driver, &call, round, &mut messages).await;
+                    let record = execute_tool(
+                        sink.as_ref(),
+                        driver,
+                        gate.as_ref(),
+                        &call,
+                        round,
+                        &mut messages,
+                    )
+                    .await;
                     tool_calls.push(record);
                 }
             }
@@ -125,6 +161,7 @@ pub async fn run_user_turn(
 async fn execute_tool(
     sink: &dyn EventSink,
     driver: &CuaDriverClient,
+    gate: &dyn ConfirmGate,
     call: &FunctionCall,
     round: usize,
     messages: &mut Vec<ToolMessage>,
@@ -159,6 +196,37 @@ async fn execute_tool(
             ok: false,
             summary: err,
         };
+    }
+
+    // ── Risky-action gate ──────────────────────────────────────────────
+    // For tools that modify the desktop state, ask the gate before going to
+    // the daemon. Rejection is reported back to the model so it can adapt.
+    if RISKY_TOOLS.contains(&call.name.as_str()) {
+        let approved = gate.confirm(call, round).await;
+        if !approved {
+            let err = format!("user declined to run '{}'", call.name);
+            messages.push(ToolMessage::ToolResult(FunctionResult {
+                name: call.name.clone(),
+                response: json!({ "ok": false, "error": err, "userDeclined": true }),
+            }));
+            sink.emit(
+                events::AGENT_TOOL_CALL_END,
+                json!({
+                    "round": round,
+                    "name": call.name,
+                    "ok": false,
+                    "summary": err,
+                    "userDeclined": true,
+                }),
+            );
+            return ToolCallRecord {
+                round,
+                name: call.name.clone(),
+                args: call.args.clone(),
+                ok: false,
+                summary: err,
+            };
+        }
     }
 
     let args_map = match call.args.as_object() {

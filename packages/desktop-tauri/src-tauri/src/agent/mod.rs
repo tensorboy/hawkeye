@@ -15,4 +15,7 @@ pub mod runner;
 pub mod tools;
 
 pub use cua_driver::{CuaDriverClient, DaemonSupervisor};
-pub use runner::{run_user_turn, AgentTurnResult, ToolCallRecord, MAX_TOOL_ROUNDS};
+pub use runner::{
+    run_user_turn, AgentTurnResult, AlwaysApprove, ConfirmGate, ToolCallRecord, MAX_TOOL_ROUNDS,
+    RISKY_TOOLS,
+};

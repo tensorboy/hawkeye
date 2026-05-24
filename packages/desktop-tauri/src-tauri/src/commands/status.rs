@@ -1,39 +1,26 @@
-//! Status command
+//! Status commands — the only Tauri IPC commands React still uses (plus
+//! the updater plugin). After the unification everything else goes
+//! through the hawkeyed HTTP daemon.
 
-use serde::Serialize;
 use std::sync::Arc;
 use tauri::{command, State};
 
-use crate::state::AppState;
+use crate::state::TauriShellState;
 
-/// Application status
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct HawkeyeStatus {
-    pub initialized: bool,
-    pub ai_ready: bool,
-    pub ai_provider: Option<String>,
-    pub observe_running: bool,
+/// Get cached daemon info populated at app startup by `daemon::ensure_daemon`.
+/// The React app uses this to render the daemon banner in the Models tab.
+#[command]
+pub async fn get_daemon_info(
+    shell: State<'_, Arc<TauriShellState>>,
+) -> Result<Option<crate::daemon::DaemonInfo>, String> {
+    Ok(shell.daemon_info.read().await.clone())
 }
 
-/// Get application status
+/// Return the persisted hawkeyed API token. Called by the React app at
+/// startup so subsequent fetch requests can carry `Authorization: Bearer`.
+/// This is one of the only two IPC calls React makes after the
+/// unification — every other capability goes through HTTP.
 #[command]
-pub async fn get_status(state: State<'_, Arc<AppState>>) -> Result<HawkeyeStatus, String> {
-    let ai = state.ai_client.read().await;
-    let ai_ready = ai.is_some();
-    let active_provider = ai.as_ref().map(|c| c.provider_name().to_string());
-    drop(ai);
-
-    let config = state.config.read().await;
-    let provider = active_provider.unwrap_or_else(|| config.ai_provider.clone());
-    drop(config);
-
-    let observe_running = state.observe_loop.read().await.is_some();
-
-    Ok(HawkeyeStatus {
-        initialized: true,
-        ai_ready,
-        ai_provider: Some(provider),
-        observe_running,
-    })
+pub async fn get_daemon_token() -> Result<String, String> {
+    crate::daemon::auth::load_or_create_token().map_err(|e| e.to_string())
 }

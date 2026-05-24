@@ -575,8 +575,8 @@ export default function App() {
       {/* WebGazer.js 隐式校准 - 后台收集点击数据训练注视预测模型 */}
       <WebGazerGaze
         enabled={true}
-        showIndicator={true}  // 显示注视点指示器
-        showDebug={true}      // 显示调试面板
+        showIndicator={false}  // 全屏 overlay 负责显示注视点
+        showDebug={false}      // 全屏 overlay 负责显示鼠标点
       />
       <CurrentPage />
     </>

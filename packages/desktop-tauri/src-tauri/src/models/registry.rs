@@ -70,6 +70,17 @@ pub fn recommended_models() -> Vec<ModelInfo> {
             download_url: "https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf".to_string(),
             filename: "Phi-3.5-mini-instruct-Q4_K_M.gguf".to_string(),
         },
+        // Qwen 3.5 0.8B — target model for local fine-tuning
+        ModelInfo {
+            id: "qwen3.5-0.8b-q4".to_string(),
+            name: "Qwen 3.5 0.8B (Q4_K_M)".to_string(),
+            model_type: ModelType::TextLlm,
+            description: "Compact multilingual model, ideal for local fine-tuning on 16GB Mac"
+                .to_string(),
+            size_bytes: 600_000_000,
+            download_url: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf".to_string(),
+            filename: "qwen3.5-0.8b-instruct-q4_k_m.gguf".to_string(),
+        },
         // Whisper ASR
         ModelInfo {
             id: "whisper-large-v3-turbo-q5".to_string(),

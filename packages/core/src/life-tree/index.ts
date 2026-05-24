@@ -26,6 +26,13 @@ export type {
   StageClassification,
   GoalInference,
   ExperimentProposal,
+  // Knowledge layer
+  KnowledgeNodeType,
+  KnowledgeEntity,
+  KnowledgeEdge,
+  KnowledgeEntityRecord,
+  KnowledgeEdgeRecord,
+  EntityExtractionResult,
 } from './types';
 
 export {
@@ -33,6 +40,7 @@ export {
   LIFE_STAGE_LABELS,
   APP_STAGE_HEURISTICS,
   DEFAULT_LIFE_TREE_CONFIG,
+  KNOWLEDGE_NODE_COLORS,
 } from './types';
 
 // AI Prompts
@@ -49,3 +57,6 @@ export { LifeTreeBuilder } from './tree-builder';
 
 // Experiment Engine
 export { ExperimentEngine } from './experiment-engine';
+
+// Knowledge Extractor
+export { KnowledgeExtractor } from './knowledge-extractor';

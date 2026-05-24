@@ -123,12 +123,13 @@ async fn run_loop(
         // Get active window
         let window_info = perception::window::get_active_window().await.ok().flatten();
 
-        // Run OCR
-        let ocr_text = match perception::ocr::run_ocr(&base64_data).await {
-            Ok(result) => Some(result.text),
+        // Run OCR — keep both the joined text and the per-region bboxes.
+        // The regions feed gaze→entity hit-testing on the frontend.
+        let (ocr_text, ocr_regions) = match perception::ocr::run_ocr(&base64_data).await {
+            Ok(result) => (Some(result.text), Some(result.regions)),
             Err(e) => {
                 log::warn!("[Observe] OCR failed: {}", e);
-                None
+                (None, None)
             }
         };
 
@@ -148,6 +149,9 @@ async fn run_loop(
         let observation = ObservationResult {
             screenshot_base64: Some(base64_data),
             ocr_text,
+            ocr_regions,
+            screenshot_width: Some(width),
+            screenshot_height: Some(height),
             active_window: window_response,
             change_ratio,
             timestamp,

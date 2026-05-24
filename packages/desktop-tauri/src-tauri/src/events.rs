@@ -56,8 +56,20 @@ pub const GAZE_TRAINING_ERROR: &str = "gaze:training-error";
 pub const GAZE_MODEL_READY: &str = "gaze:model-ready";
 pub const GAZE_SAMPLE_ADDED: &str = "gaze:sample-added";
 
+/// Gaze deixis (the "this/that" the user is currently looking at)
+pub const GAZE_ENTITY_CHANGED: &str = "gaze:entity-changed";
+pub const GAZE_ENTITY_CLEARED: &str = "gaze:entity-cleared";
+
+/// Look-to-Explain events
+pub const EXPLAIN_REQUESTED: &str = "explain:requested";  // global shortcut fired (frontend → backend bridge)
+pub const EXPLAIN_READY: &str = "explain:ready";          // backend → overlay window with html
+pub const EXPLAIN_ERROR: &str = "explain:error";
+
 /// Agent (cua-driver tool-use) events
 pub const AGENT_TOOL_CALL_START: &str = "agent:tool-call-start";
 pub const AGENT_TOOL_CALL_END: &str = "agent:tool-call-end";
 pub const AGENT_DAEMON_READY: &str = "agent:daemon-ready";
 pub const AGENT_DAEMON_ERROR: &str = "agent:daemon-error";
+/// Risky tool wants confirmation. Payload: {confirm_id, name, args, summary}.
+/// The frontend MUST respond via the `agent_confirm` command.
+pub const AGENT_CONFIRM_NEEDED: &str = "agent:confirm-needed";

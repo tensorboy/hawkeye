@@ -1,11 +1,11 @@
-//! Auto-updater commands — check for updates, download, and install
+//! Auto-updater commands — check for updates, download, and install.
+//! The Tauri updater plugin requires `AppHandle`, so these stay on Tauri
+//! IPC. (`get_app_version` migrated to /v1/updater/version on the daemon.)
 
-use std::sync::Arc;
-use tauri::{command, AppHandle, Emitter, State};
+use tauri::{command, AppHandle, Emitter};
 use tauri_plugin_updater::UpdaterExt;
 
 use crate::events;
-use crate::state::AppState;
 
 /// Update check result
 #[derive(Debug, Clone, serde::Serialize)]

@@ -392,3 +392,43 @@
   cursor: pointer;
   z-index: 30;
 }
+
+/* ── Knowledge Layer ──────────────────────────────── */
+
+.life-tree-hud-btn.active {
+  background: rgba(189, 147, 249, 0.25);
+  border-color: rgba(189, 147, 249, 0.5);
+  color: #BD93F9;
+}
+
+.life-tree-detail-app-tag[style*="border-color"] {
+  border-left: 2px solid;
+  padding-left: 6px;
+}
+
+.life-tree-entity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  background: rgba(189, 147, 249, 0.12);
+  color: rgba(200, 200, 216, 0.85);
+  border: 1px solid rgba(189, 147, 249, 0.2);
+}
+
+.life-tree-entity-badge .entity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.life-tree-entity-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}

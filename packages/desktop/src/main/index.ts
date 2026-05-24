@@ -3,7 +3,7 @@
  * 模块化重构版本
  */
 
-import { app, BrowserWindow, Tray, Menu, globalShortcut, dialog, systemPreferences, shell, nativeImage } from 'electron';
+import { app, BrowserWindow, Tray, Menu, globalShortcut, dialog, systemPreferences, shell, nativeImage, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -21,6 +21,7 @@ import { AudioProcessorService } from './services/audio-processor-service';
 import { SherpaOnnxService } from './services/sherpa-onnx-service';
 import { WakeWordService } from './services/wake-word-service';
 import { TTSPlaybackService } from './services/tts-playback-service';
+import { GazeOverlayService } from './services/gaze-overlay-service';
 import { registerAllHandlers } from './ipc';
 import { initI18n, t } from './i18n';
 
@@ -33,6 +34,21 @@ function debugLog(msg: string) {
 }
 
 debugLog('Main process started (Modular Architecture)');
+
+ipcMain.on('renderer-error', (_event, payload: {
+  type: 'error' | 'unhandledrejection';
+  message: string;
+  stack?: string;
+  source?: string;
+  lineno?: number;
+  colno?: number;
+}) => {
+  const location = payload.source ? ` @ ${payload.source}:${payload.lineno ?? 0}:${payload.colno ?? 0}` : '';
+  debugLog(`[Renderer ${payload.type}] ${payload.message}${location}`);
+  if (payload.stack) {
+    debugLog(`[Renderer ${payload.type} stack] ${payload.stack}`);
+  }
+});
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -51,6 +67,7 @@ const audioProcessorService = new AudioProcessorService(() => mainWindow, debugL
 const sherpaOnnxService = new SherpaOnnxService(() => mainWindow, debugLog);
 const wakeWordService = new WakeWordService(() => mainWindow, debugLog);
 const ttsPlaybackService = new TTSPlaybackService(() => mainWindow, debugLog);
+const gazeOverlayService = new GazeOverlayService(debugLog);
 
 // Connect dependent services to SherpaOnnxService
 wakeWordService.setSherpaService(sherpaOnnxService);
@@ -124,6 +141,18 @@ function setupAutoUpdater() {
 }
 
 function createWindow() {
+  if (!app.isReady()) {
+    app.once('ready', () => createWindow());
+    return;
+  }
+
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+
   mainWindow = new BrowserWindow({
     width: 380,
     height: 480,
@@ -142,15 +171,30 @@ function createWindow() {
     },
   });
 
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5173');
-    mainWindow.once('ready-to-show', () => {
-      mainWindow?.show();
-      mainWindow?.focus();
-    });
+  if (process.env.ELECTRON_RENDERER_URL) {
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
+
+  // Show only after renderer has actually loaded to avoid white flash windows.
+  mainWindow.webContents.once('did-finish-load', () => {
+    mainWindow?.show();
+    mainWindow?.focus();
+  });
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    debugLog(`[Window] did-fail-load: ${errorCode} ${errorDescription}`);
+  });
+
+  // Forward renderer console messages to debug log (for debugging WebGazer etc.)
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    // Forward all warnings and errors, plus WebGazer/MediaPipe info messages
+    if (level >= 2 || message.includes('[WebGazer]') || message.includes('mediapipe') || message.includes('MediaPipe') || message.includes('facemesh') || message.includes('FaceMesh') || message.includes('tensorflow')) {
+      const levelStr = ['verbose', 'info', 'warn', 'error'][level] || 'unknown';
+      debugLog(`[RendererConsole:${levelStr}] ${message}`);
+    }
+  });
 
   mainWindow.on('close', (event) => {
     if (!isAppQuitting) {
@@ -234,6 +278,10 @@ app.on('window-all-closed', (e) => {
 
 app.whenReady().then(async () => {
   try {
+    if (process.platform === 'darwin') {
+      app.dock.show();
+    }
+
     // Register IPC handlers after app is ready
     registerAllHandlers({
       configService,
@@ -256,6 +304,9 @@ app.whenReady().then(async () => {
     createWindow();
     createTray();
     setupTrayStatusSync();
+
+    // Create gaze overlay (transparent fullscreen window for gaze visualization)
+    gazeOverlayService.createOverlay();
 
     globalShortcut.register('CommandOrControl+Shift+H', () => {
       mainWindow?.webContents.send('loading', true);
@@ -411,6 +462,7 @@ app.on('will-quit', async () => {
   wakeWordService.stop();
   ttsPlaybackService.stop();
   await sherpaOnnxService.shutdown();
+  gazeOverlayService.destroy();
   trayStatusService.destroy();
   lifeTreeService.destroy();
   await whisperService.shutdown();
@@ -418,5 +470,16 @@ app.on('will-quit', async () => {
 });
 
 app.on('activate', () => {
+  if (!app.isReady()) {
+    return;
+  }
+
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });

@@ -5,6 +5,18 @@ import { useLifeTree, ALL_STAGES } from '../hooks/useLifeTree';
 import type { LifeTreeNode, LifeStage } from '../hooks/useLifeTree';
 import './LifeTreePanel.css';
 
+const ENTITY_COLORS: Record<string, string> = {
+  person: '#00D4AA',
+  project: '#FF79C6',
+  technology: '#BD93F9',
+  concept: '#F1FA8C',
+  place: '#8BE9FD',
+};
+
+function getEntityColor(type: string): string {
+  return ENTITY_COLORS[type] || '#888';
+}
+
 const STAGE_COLORS: Record<LifeStage, string> = {
   career:        '#4A9EFF',
   learning:      '#50C878',
@@ -58,6 +70,7 @@ export function LifeTreePanel() {
 
   const [hoveredNode, setHoveredNode] = useState<LifeTreeNode | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [showKnowledge, setShowKnowledge] = useState(true);
 
   // Init renderer
   useEffect(() => {
@@ -85,6 +98,10 @@ export function LifeTreePanel() {
   useEffect(() => {
     rendererRef.current?.setData(snapshot, visibleStages);
   }, [snapshot, visibleStages]);
+
+  useEffect(() => {
+    rendererRef.current?.setShowKnowledgeLayer(showKnowledge);
+  }, [showKnowledge]);
 
   // Pan to selected node
   useEffect(() => {
@@ -142,6 +159,11 @@ export function LifeTreePanel() {
                 most active: <span className="value">{STAGE_LABELS[snapshot.stats.mostActiveStage]}</span>
               </span>
             )}
+            {snapshot?.knowledgeEntities && snapshot.knowledgeEntities.length > 0 && (
+              <span className="life-tree-hud-stat">
+                <span className="value">{snapshot.knowledgeEntities.length}</span> entities
+              </span>
+            )}
           </div>
           <div className="life-tree-hud-actions">
             <button
@@ -157,6 +179,13 @@ export function LifeTreePanel() {
               title="Rebuild tree"
             >
               Rebuild
+            </button>
+            <button
+              className={`life-tree-hud-btn ${showKnowledge ? 'active' : ''}`}
+              onClick={() => setShowKnowledge(v => !v)}
+              title="Toggle knowledge connections"
+            >
+              {showKnowledge ? 'KG On' : 'KG Off'}
             </button>
           </div>
         </div>
@@ -268,6 +297,28 @@ export function LifeTreePanel() {
                 <div className="life-tree-detail-label">Confidence</div>
                 <div className="life-tree-detail-value">{Math.round(selectedNode.confidence * 100)}%</div>
               </div>
+
+              {/* Knowledge Entities */}
+              {selectedNode.entityIds && selectedNode.entityIds.length > 0 && (
+                <div className="life-tree-detail-section">
+                  <div className="life-tree-detail-label">Knowledge Entities</div>
+                  <div className="life-tree-detail-apps-list">
+                    {selectedNode.entityIds.map((eid: string) => {
+                      const entity = snapshot?.knowledgeEntities?.find((e: any) => e.id === eid);
+                      return entity ? (
+                        <span
+                          key={eid}
+                          className="life-tree-detail-app-tag"
+                          style={{ borderColor: getEntityColor(entity.type) }}
+                          title={`${entity.type} · seen ${entity.frequency}x`}
+                        >
+                          {entity.label}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Related Apps */}
               {selectedNode.relatedApps.length > 0 && (

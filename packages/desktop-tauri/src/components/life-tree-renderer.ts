@@ -89,6 +89,13 @@ interface Edge {
   color: string;
 }
 
+interface KnowledgeCrossEdge {
+  fromNodeId: string;
+  toNodeId: string;
+  entityLabel: string;
+  strength: number; // 0-1
+}
+
 interface Particle {
   x: number;
   y: number;
@@ -140,6 +147,8 @@ export class LifeTreeRenderer {
   private nodes: Map<string, LayoutNode> = new Map();
   private edges: Edge[] = [];
   private particles: Particle[] = [];
+  private knowledgeEdges: KnowledgeCrossEdge[] = [];
+  private showKnowledgeLayer = true;
 
   // Camera
   private camX = 0;
@@ -267,6 +276,14 @@ export class LifeTreeRenderer {
     const wx = (sx - this.width / 2) / this.camZoom + this.camX;
     const wy = (sy - this.height / 2) / this.camZoom + this.camY;
     return [wx, wy];
+  }
+
+  setKnowledgeEdges(edges: KnowledgeCrossEdge[]): void {
+    this.knowledgeEdges = edges;
+  }
+
+  setShowKnowledgeLayer(show: boolean): void {
+    this.showKnowledgeLayer = show;
   }
 
   // ── Layout ─────────────────────────────────────────────
@@ -434,6 +451,9 @@ export class LifeTreeRenderer {
     // Draw edges
     this._drawEdges();
 
+    // Draw knowledge edges (cross-stage connections)
+    this._drawKnowledgeEdges();
+
     // Draw nodes
     this._drawNodes();
 
@@ -584,6 +604,55 @@ export class LifeTreeRenderer {
     ctx.setLineDash(status === 'paused' ? [4, 4] : []);
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  private _drawKnowledgeEdges(): void {
+    if (!this.showKnowledgeLayer || this.knowledgeEdges.length === 0) return;
+    const { ctx } = this;
+
+    for (const ke of this.knowledgeEdges) {
+      const from = this.nodes.get(ke.fromNodeId);
+      const to = this.nodes.get(ke.toNodeId);
+      if (!from || !to) continue;
+      if (from.scale < 0.3 || to.scale < 0.3) continue;
+
+      const alpha = Math.min(from.scale, to.scale) * ke.strength * 0.6;
+      if (alpha < 0.02) continue;
+
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist === 0) continue;
+
+      // Curved line with larger arc for visual distinction
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2;
+      const nx = -dy / dist;
+      const ny = dx / dist;
+      const curvature = dist * 0.25; // More pronounced curve than tree edges
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.quadraticCurveTo(mx + nx * curvature, my + ny * curvature, to.x, to.y);
+      ctx.strokeStyle = `rgba(189, 147, 249, ${alpha})`; // Purple (#BD93F9)
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Small label at midpoint if zoomed in
+      if (this.camZoom > 1.2 && ke.entityLabel) {
+        const lx = mx + nx * curvature * 0.5;
+        const ly = my + ny * curvature * 0.5;
+        ctx.fillStyle = `rgba(189, 147, 249, ${alpha * 0.8})`;
+        ctx.font = '400 7px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ke.entityLabel, lx, ly);
+      }
+      ctx.restore();
+    }
   }
 
   private _drawParticles(): void {

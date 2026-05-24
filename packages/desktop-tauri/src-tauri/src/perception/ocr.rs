@@ -34,13 +34,45 @@ pub struct OcrRegion {
     pub bbox: BoundingBox,
 }
 
-/// Bounding box from Vision API (normalized 0-1 coordinates)
+/// Bounding box from Vision API (normalized 0-1 coordinates, origin BOTTOM-LEFT).
+///
+/// This matches Apple Vision's `VNRecognizedTextObservation.boundingBox`. To
+/// convert into top-left screen pixels for UI hit-testing, use
+/// [`BoundingBox::to_screen_pixels`].
 #[derive(Debug, Clone, serde::Serialize, Deserialize)]
 pub struct BoundingBox {
     pub x: f64,
     pub y: f64,
     pub width: f64,
     pub height: f64,
+}
+
+/// Bounding box in screen pixel coordinates with origin TOP-LEFT — the form
+/// UI / gaze hit-testing expects.
+#[derive(Debug, Clone, serde::Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BoundingBoxPx {
+    pub x_px: f64,
+    pub y_px: f64,
+    pub width_px: f64,
+    pub height_px: f64,
+}
+
+impl BoundingBox {
+    /// Convert this Vision-normalized bbox into screen pixel coords with
+    /// origin at the top-left of the captured screenshot. `image_w` and
+    /// `image_h` are the screenshot dimensions in pixels.
+    pub fn to_screen_pixels(&self, image_w: u32, image_h: u32) -> BoundingBoxPx {
+        let w = image_w as f64;
+        let h = image_h as f64;
+        BoundingBoxPx {
+            x_px: self.x * w,
+            // Flip Y: Vision uses bottom-left origin
+            y_px: (1.0 - self.y - self.height) * h,
+            width_px: self.width * w,
+            height_px: self.height * h,
+        }
+    }
 }
 
 /// Run OCR on a base64-encoded image using macOS Vision API

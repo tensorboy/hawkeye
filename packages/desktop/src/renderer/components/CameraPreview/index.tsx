@@ -1184,7 +1184,7 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     // Skip if video not ready

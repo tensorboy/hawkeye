@@ -276,8 +276,8 @@ export class MenuBarPanelService extends EventEmitter {
     });
 
     // Load the renderer content
-    if (process.env.NODE_ENV === 'development') {
-      this.panelWindow.loadURL('http://localhost:5173/#/menu-bar-panel');
+    if (process.env.ELECTRON_RENDERER_URL) {
+      this.panelWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}#/menu-bar-panel`);
     } else {
       this.panelWindow.loadFile(path.join(__dirname, '../../renderer/index.html'), {
         hash: '/menu-bar-panel',

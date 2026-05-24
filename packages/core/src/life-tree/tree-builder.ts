@@ -15,6 +15,8 @@ import type {
   StageClassification,
   GoalInference,
   DataSource,
+  KnowledgeEntity,
+  KnowledgeEdge,
 } from './types';
 import { LIFE_STAGES, LIFE_STAGE_LABELS, APP_STAGE_HEURISTICS, DEFAULT_LIFE_TREE_CONFIG } from './types';
 import {
@@ -90,6 +92,8 @@ export class LifeTreeBuilder {
       createdAt: now,
       updatedAt: now,
       stats,
+      knowledgeEntities: [],
+      knowledgeEdges: [],
     };
   }
 
@@ -109,6 +113,8 @@ export class LifeTreeBuilder {
       createdAt: now,
       updatedAt: now,
       stats: this.computeStats(root),
+      knowledgeEntities: [],
+      knowledgeEdges: [],
     };
   }
 
@@ -289,7 +295,31 @@ export class LifeTreeBuilder {
     return JSON.stringify(tree);
   }
 
+  // ============ Knowledge Entity Management ============
+
+  /**
+   * Associate a knowledge entity with a tree node.
+   * Updates the node's entityIds metadata.
+   */
+  attachEntityToNode(tree: LifeTree, nodeId: string, entityId: string): void {
+    const node = this.findNodeById(tree.root, nodeId);
+    if (!node) return;
+    if (!node.metadata.entityIds) node.metadata.entityIds = [];
+    if (!node.metadata.entityIds.includes(entityId)) {
+      node.metadata.entityIds.push(entityId);
+    }
+  }
+
   // ============ Private Helpers ============
+
+  private findNodeById(node: LifeTreeNode, id: string): LifeTreeNode | null {
+    if (node.id === id) return node;
+    for (const child of node.children) {
+      const found = this.findNodeById(child, id);
+      if (found) return found;
+    }
+    return null;
+  }
 
   private createRootNode(): LifeTreeNode {
     const now = Date.now();

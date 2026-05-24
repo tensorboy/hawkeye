@@ -8,6 +8,11 @@ import { GazeOverlay } from './components/GazeOverlay';
 import { GesturePanel } from './components/GesturePanel';
 import { DebugTimeline } from './components/DebugTimeline';
 import { LifeTreePanel } from './components/LifeTreePanel';
+import { GazeTrainingPanel } from './components/GazeTrainingPanel';
+import { AiModelsPanel } from './components/AiModelsPanel';
+import { AgentConfirmModal } from './components/AgentConfirmModal';
+import { useTauriEvent } from './hooks/useEvents';
+import { useExplain } from './hooks/useExplain';
 import {
   getStatus,
   captureScreen,
@@ -17,9 +22,11 @@ import {
   saveConfig,
   initAi,
   type AppConfig,
+  type GazedEntity,
+  type ObservationResult,
 } from './hooks/useTauri';
 
-type TabId = 'status' | 'chat' | 'observe' | 'gaze' | 'gesture' | 'life-tree' | 'debug';
+type TabId = 'status' | 'chat' | 'models' | 'observe' | 'gaze' | 'gesture' | 'life-tree' | 'debug';
 
 const fadeIn = {
   initial: { opacity: 0 },
@@ -49,6 +56,10 @@ function App() {
     activeWindow,
     showSettings,
     showScreenshotPreview,
+    ocrRegions,
+    screenshotDims,
+    gazedEntity,
+    gazeChipResult,
     setIsRunning,
     setStatus,
     setConfig,
@@ -57,10 +68,40 @@ function App() {
     setActiveWindow,
     setShowSettings,
     setShowScreenshotPreview,
+    setOcrRegions,
+    setScreenshotDims,
+    setGazedEntity,
+    setGazeChipResult,
   } = useHawkeyeStore();
 
   const [activeTab, setActiveTab] = useState<TabId>('status');
   const [captureInterval, setCaptureInterval] = useState<number | null>(null);
+
+  // Mirror Rust's gaze:entity-changed / -cleared events into the store so
+  // any panel can react to "what is the user looking at right now".
+  useTauriEvent<GazedEntity>('gaze:entity-changed', (e) => setGazedEntity(e));
+  useTauriEvent<null>('gaze:entity-cleared', () => setGazedEntity(null));
+
+  // Look-to-Explain: bridges Tauri global-shortcut → daemon /v1/explain → overlay window.
+  // Mount once; hook handles all 3 hotkey modes (⌥E / ⌥⇧E / ⌥⌘E).
+  useExplain();
+
+  // The observe loop emits regions + screenshot dims. Capture them so
+  // GazeOverlay can hit-test gaze against them without re-running OCR.
+  useTauriEvent<ObservationResult>('observe:update', (obs) => {
+    if (obs.ocrRegions) setOcrRegions(obs.ocrRegions);
+    if (obs.screenshotWidth && obs.screenshotHeight) {
+      setScreenshotDims({ width: obs.screenshotWidth, height: obs.screenshotHeight });
+    }
+    if (obs.activeWindow) setActiveWindow(obs.activeWindow);
+  });
+
+  // Auto-dismiss chip result toast after 6s.
+  useEffect(() => {
+    if (!gazeChipResult) return;
+    const t = window.setTimeout(() => setGazeChipResult(null), 6000);
+    return () => window.clearTimeout(t);
+  }, [gazeChipResult, setGazeChipResult]);
 
   // Initialize on mount
   useEffect(() => {
@@ -111,21 +152,27 @@ function App() {
   // Capture loop
   const performCapture = useCallback(async () => {
     try {
-      const window = await getActiveWindow();
-      setActiveWindow(window);
+      const win = await getActiveWindow();
+      setActiveWindow(win);
 
       const screenshot = await captureScreen();
       setLastScreenshot(screenshot);
+      if (screenshot.success && screenshot.width && screenshot.height) {
+        setScreenshotDims({ width: screenshot.width, height: screenshot.height });
+      }
 
       if (screenshot.success && screenshot.dataUrl) {
         const base64Data = screenshot.dataUrl.replace(/^data:image\/\w+;base64,/, '');
         const ocrResult = await runOcr(base64Data);
         setLastOcr(ocrResult);
+        if (ocrResult.success && ocrResult.regions) {
+          setOcrRegions(ocrResult.regions);
+        }
       }
     } catch (error) {
       console.error('Capture error:', error);
     }
-  }, [setActiveWindow, setLastScreenshot, setLastOcr]);
+  }, [setActiveWindow, setLastScreenshot, setLastOcr, setScreenshotDims, setOcrRegions]);
 
   const toggleCapture = useCallback(() => {
     if (isRunning) {
@@ -175,6 +222,7 @@ function App() {
         {([
           { id: 'status' as TabId, label: 'Status' },
           { id: 'chat' as TabId, label: 'Chat' },
+          { id: 'models' as TabId, label: 'Models' },
           { id: 'observe' as TabId, label: 'Observe' },
           { id: 'gaze' as TabId, label: 'Gaze' },
           { id: 'gesture' as TabId, label: 'Gesture' },
@@ -279,10 +327,20 @@ function App() {
         )}
 
         {activeTab === 'chat' && <ChatPanel />}
+        {activeTab === 'models' && <AiModelsPanel />}
         {activeTab === 'observe' && <ObservePanel />}
         {activeTab === 'gaze' && (
           <div className="main-content">
-            <GazeOverlay enabled={true} showIndicator={true} showDebug={true} />
+            <GazeOverlay
+              enabled={true}
+              showIndicator={true}
+              showDebug={true}
+              regions={ocrRegions}
+              screenshotWidth={screenshotDims?.width}
+              screenshotHeight={screenshotDims?.height}
+              activeAppName={activeWindow?.appName}
+              onChipResult={(action, text) => setGazeChipResult({ action, text })}
+            />
             <motion.div
               className="card"
               initial={{ opacity: 0, y: 10 }}
@@ -292,9 +350,18 @@ function App() {
               <div className="card-title">Eye Tracking</div>
               <div className="card-content text-sm text-hawkeye-text-muted">
                 <p>WebGazer.js ridge regression with MediaPipe face mesh.</p>
-                <p className="mt-2">Click anywhere on screen to improve calibration accuracy. The blue dot shows your estimated gaze position.</p>
+                <p className="mt-2">Click anywhere on screen to improve calibration accuracy. The dot shows your estimated gaze position.</p>
+                <p className="mt-2">
+                  <strong>This / That:</strong> dwell on a text region for ~500ms — a highlighted bbox + voice-style command chips appear. Chips run through <code>chat_with_gaze_context</code>, which substitutes &ldquo;这个/that&rdquo; with the gazed text on the backend.
+                </p>
+                {gazedEntity && (
+                  <p className="mt-2" style={{ color: 'var(--hawkeye-primary, #f59e0b)' }}>
+                    Currently gazing: <code>{gazedEntity.text.slice(0, 80)}</code>
+                  </p>
+                )}
               </div>
             </motion.div>
+            <GazeTrainingPanel />
           </div>
         )}
         {activeTab === 'gesture' && <GesturePanel />}
@@ -321,6 +388,45 @@ function App() {
               }
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Agent risky-action confirmation modal — global, all tabs */}
+      <AgentConfirmModal />
+
+      {/* Gaze chip result toast */}
+      <AnimatePresence>
+        {gazeChipResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }}
+            transition={springTransition}
+            onClick={() => setGazeChipResult(null)}
+            style={{
+              position: 'fixed',
+              right: 20,
+              bottom: 20,
+              maxWidth: 360,
+              padding: '12px 16px',
+              borderRadius: 12,
+              background: 'rgba(15, 17, 22, 0.94)',
+              border: '1px solid rgba(245, 158, 11, 0.45)',
+              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.45)',
+              color: '#f5f5f5',
+              zIndex: 10010,
+              cursor: 'pointer',
+              backdropFilter: 'blur(14px)',
+            }}
+          >
+            <div style={{ fontSize: 11, color: 'rgba(245,158,11,0.8)', marginBottom: 6 }}>
+              gaze · {gazeChipResult.action}
+            </div>
+            <div style={{ fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {gazeChipResult.text}
+            </div>
+            <div style={{ fontSize: 10, opacity: 0.45, marginTop: 6 }}>tap to dismiss</div>
+          </motion.div>
         )}
       </AnimatePresence>
 

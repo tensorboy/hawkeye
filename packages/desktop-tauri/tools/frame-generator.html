@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hawkeye Life Tree Frame Generator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a1a; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; font-family: 'Inter', sans-serif; color: #ccc; }
+  h2 { font-size: 14px; color: rgba(200,200,216,0.7); margin-top: 20px; }
+  canvas { border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; }
+</style>
+</head>
+<body>
+<h2>First Frame (Seed)</h2>
+<canvas id="frame1" width="1920" height="1080"></canvas>
+<h2>Last Frame (Full Tree)</h2>
+<canvas id="frame2" width="1920" height="1080"></canvas>
+
+<script>
+// ── Constants ──
+const STAGE_COLORS = {
+  career:        '#4A9EFF',
+  learning:      '#50C878',
+  health:        '#FF6B6B',
+  relationships: '#FFB347',
+  creativity:    '#CB6CE6',
+  finance:       '#FFD700',
+  safety:        '#5BC0DE',
+};
+const STAGE_LABELS = {
+  career: 'Career', learning: 'Learning', health: 'Health',
+  relationships: 'Relations', creativity: 'Creative', finance: 'Finance', safety: 'Safety',
+};
+const ALL_STAGES = ['career','learning','health','relationships','creativity','finance','safety'];
+const ROOT_COLOR = '#e94560';
+const BG = '#0a0a1a';
+
+const STAGE_R = 160;
+const TASK_R = 290;
+const EXP_R = 380;
+const ROOT_NR = 28;
+const STAGE_NR = 18;
+const TASK_NR = 10;
+const EXP_NR = 7;
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+}
+
+// ── Mock Data ──
+
+function makeSeedData() {
+  // Just root + 7 stage nodes with 0 observations, no children below stages
+  const now = Date.now();
+  const root = { id: 'root', label: 'Life Goal', nodeType: 'root', stage: null, status: 'active', children: ALL_STAGES.map(s => `stage-${s}`), observationCount: 0, confidence: 1, relatedApps: [], updatedAt: now, description: '' };
+  const nodes = [root];
+  for (const s of ALL_STAGES) {
+    nodes.push({ id: `stage-${s}`, label: STAGE_LABELS[s], nodeType: 'stage', stage: s, status: 'active', children: [], observationCount: 0, confidence: 0.5, relatedApps: [], updatedAt: now, description: '' });
+  }
+  return { rootId: 'root', nodes, stats: { totalNodes: nodes.length, activeTasks: 0, experimentsCompleted: 0, mostActiveStage: null } };
+}
+
+function makeFullData() {
+  const now = Date.now();
+  let id = 0;
+  const nid = () => `n${id++}`;
+  const nodes = [];
+
+  const rootId = 'root';
+  const root = { id: rootId, label: 'Life Goal', nodeType: 'root', stage: null, status: 'active', children: [], observationCount: 42, confidence: 1, relatedApps: [], updatedAt: now, description: '' };
+  nodes.push(root);
+
+  // Rich data per stage
+  const stageData = {
+    career:        { tasks: ['Frontend Dev','Backend API','Team Lead','Product Design'], obs: [28,15,8,12], apps: ['VS Code','Cursor','Slack','Figma'] },
+    learning:      { tasks: ['Rust Mastery','AI/ML Course','Read Papers','TypeScript'], obs: [20,14,6,18], apps: ['Safari','Coursera','Zotero','MDN'] },
+    health:        { tasks: ['Daily Run','Sleep 8h','Meditation','Diet Tracking'], obs: [35,22,10,16], apps: ['Strava','Health','Headspace','MyFitnessPal'] },
+    relationships: { tasks: ['Family Time','Friend Meetups','Mentoring'], obs: [12,8,5], apps: ['Messages','FaceTime','Calendar'] },
+    creativity:    { tasks: ['Side Project','Music Practice','Writing','Pixel Art'], obs: [18,7,9,4], apps: ['Logic Pro','Notion','Aseprite','Procreate'] },
+    finance:       { tasks: ['Budget Review','Investments','Tax Filing'], obs: [10,6,3], apps: ['Numbers','Robinhood','TurboTax'] },
+    safety:        { tasks: ['Backup Data','Security Audit','Password Mgr'], obs: [8,4,5], apps: ['Time Machine','1Password','iCloud'] },
+  };
+
+  let totalTasks = 0;
+  let totalExps = 0;
+  let maxObs = 0;
+  let maxStage = null;
+
+  for (const stage of ALL_STAGES) {
+    const stageId = `stage-${stage}`;
+    const sd = stageData[stage];
+    const stageObs = sd.obs.reduce((a,b) => a+b, 0);
+    if (stageObs > maxObs) { maxObs = stageObs; maxStage = stage; }
+
+    const stageNode = { id: stageId, label: STAGE_LABELS[stage], nodeType: 'stage', stage, status: 'active', children: [], observationCount: stageObs, confidence: 0.7 + Math.random()*0.3, relatedApps: sd.apps, updatedAt: now - Math.random()*3600000, description: '' };
+    nodes.push(stageNode);
+    root.children.push(stageId);
+
+    sd.tasks.forEach((taskName, ti) => {
+      const taskId = nid();
+      totalTasks++;
+      const taskNode = { id: taskId, label: taskName, nodeType: 'task', stage, status: ti === 0 ? 'active' : (Math.random() > 0.3 ? 'active' : 'completed'), children: [], observationCount: sd.obs[ti], confidence: 0.5 + Math.random()*0.5, relatedApps: [sd.apps[ti % sd.apps.length]], updatedAt: now - Math.random()*86400000, description: `Working on ${taskName}` };
+      nodes.push(taskNode);
+      stageNode.children.push(taskId);
+
+      // Add 0-2 experiments per task
+      const expCount = Math.floor(Math.random()*3);
+      for (let e = 0; e < expCount; e++) {
+        const expId = nid();
+        totalExps++;
+        const statuses = ['active','completed','completed','failed'];
+        const expStatus = statuses[Math.floor(Math.random()*statuses.length)];
+        const expNode = { id: expId, label: `Exp: ${taskName} #${e+1}`, nodeType: 'experiment', stage, status: expStatus, children: [], observationCount: Math.floor(Math.random()*8), confidence: Math.random(), relatedApps: [], updatedAt: now - Math.random()*172800000, description: '' };
+        nodes.push(expNode);
+        taskNode.children.push(expId);
+      }
+    });
+  }
+
+  return { rootId, nodes, stats: { totalNodes: nodes.length, activeTasks: totalTasks, experimentsCompleted: totalExps, mostActiveStage: maxStage } };
+}
+
+// ── Layout & Render ──
+
+function layoutAndRender(canvas, snapshot, animTime, opts = {}) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  const cx = W / 2;
+  const cy = H / 2;
+  const scale = opts.scale || 1.0;
+  const seedMode = opts.seedMode || false;
+
+  // Clear
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid dots for depth
+  ctx.save();
+  for (let gx = 0; gx < W; gx += 40) {
+    for (let gy = 0; gy < H; gy += 40) {
+      ctx.fillStyle = 'rgba(255,255,255,0.015)';
+      ctx.beginPath();
+      ctx.arc(gx, gy, 0.5, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  // Build layout
+  const nodeMap = new Map();
+  for (const n of snapshot.nodes) nodeMap.set(n.id, n);
+  const root = nodeMap.get(snapshot.rootId);
+  if (!root) return;
+
+  const layoutNodes = [];
+  const edges = [];
+
+  // Root
+  const rootR = seedMode ? ROOT_NR : ROOT_NR + Math.log2(root.observationCount + 1) * 2;
+  layoutNodes.push({ ...root, x: 0, y: 0, r: rootR, color: ROOT_COLOR, depth: 0 });
+
+  // Stages
+  const stageIds = root.children.filter(cid => {
+    const c = nodeMap.get(cid);
+    return c && c.stage;
+  });
+  const angleStep = (Math.PI * 2) / stageIds.length;
+  const startAngle = -Math.PI / 2;
+
+  stageIds.forEach((sid, i) => {
+    const sn = nodeMap.get(sid);
+    if (!sn) return;
+    const angle = startAngle + i * angleStep;
+    const sx = Math.cos(angle) * STAGE_R * scale;
+    const sy = Math.sin(angle) * STAGE_R * scale;
+    const color = STAGE_COLORS[sn.stage] || '#888';
+    const nr = STAGE_NR + Math.min(Math.log2(sn.observationCount + 1) * 2, 12);
+    const alpha = seedMode ? 0.25 : 1.0;
+
+    layoutNodes.push({ ...sn, x: sx, y: sy, r: nr, color, depth: 1, alpha });
+    edges.push({ fx: 0, fy: 0, tx: sx, ty: sy, color, alpha });
+
+    if (seedMode) return; // No children in seed mode
+
+    // Tasks
+    const childIds = sn.children;
+    if (childIds.length === 0) return;
+    const wedge = angleStep * 0.8;
+    const cStep = childIds.length > 1 ? wedge / (childIds.length - 1) : 0;
+    const cStart = angle - wedge / 2;
+
+    childIds.forEach((cid, ci) => {
+      const cn = nodeMap.get(cid);
+      if (!cn) return;
+      const ca = childIds.length === 1 ? angle : cStart + ci * cStep;
+      const tcx = Math.cos(ca) * TASK_R * scale;
+      const tcy = Math.sin(ca) * TASK_R * scale;
+      const tnr = TASK_NR + Math.min(Math.log2(cn.observationCount + 1) * 2, 8);
+      const statusAlpha = cn.status === 'active' ? 1 : cn.status === 'completed' ? 0.6 : 0.35;
+
+      layoutNodes.push({ ...cn, x: tcx, y: tcy, r: tnr, color, depth: 2, alpha: statusAlpha });
+      edges.push({ fx: sx, fy: sy, tx: tcx, ty: tcy, color, alpha: statusAlpha * 0.8 });
+
+      // Experiments
+      const expIds = cn.children;
+      if (expIds.length === 0) return;
+      const eWedge = cStep * 0.6;
+      const eStep = expIds.length > 1 ? eWedge / (expIds.length - 1) : 0;
+      const eStart = ca - eWedge / 2;
+
+      expIds.forEach((eid, ei) => {
+        const en = nodeMap.get(eid);
+        if (!en) return;
+        const ea = expIds.length === 1 ? ca : eStart + ei * eStep;
+        const ecx = Math.cos(ea) * EXP_R * scale;
+        const ecy = Math.sin(ea) * EXP_R * scale;
+        const eColor = en.status === 'completed' ? '#50C878' : en.status === 'failed' ? '#FF4444' : color;
+        const eAlpha = en.status === 'active' ? 1 : en.status === 'completed' ? 0.6 : 0.25;
+
+        layoutNodes.push({ ...en, x: ecx, y: ecy, r: EXP_NR, color: eColor, depth: 3, alpha: eAlpha });
+        edges.push({ fx: tcx, fy: tcy, tx: ecx, ty: ecy, color: eColor, alpha: eAlpha * 0.6 });
+      });
+    });
+  });
+
+  // ── Draw ──
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // Edges
+  for (const e of edges) {
+    const [r,g,b] = hexToRgb(e.color);
+    const alpha = (e.alpha || 1) * 0.3;
+    const mx = (e.fx + e.tx) / 2;
+    const my = (e.fy + e.ty) / 2;
+    const dx = e.tx - e.fx;
+    const dy = e.ty - e.fy;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const nx = -dy / dist;
+    const ny = dx / dist;
+    const wobble = Math.sin(animTime * 0.5 + e.fx * 0.01) * 6;
+
+    ctx.beginPath();
+    ctx.moveTo(e.fx, e.fy);
+    ctx.quadraticCurveTo(mx + nx * wobble, my + ny * wobble, e.tx, e.ty);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.lineWidth = e.fy === 0 && e.fx === 0 ? 2.5 : 1.5;
+    ctx.stroke();
+  }
+
+  // Nodes (deeper first)
+  layoutNodes.sort((a,b) => b.depth - a.depth);
+  for (const n of layoutNodes) {
+    const r = n.r;
+    const [cr,cg,cb] = hexToRgb(n.color);
+    const alpha = n.alpha !== undefined ? n.alpha : 1;
+
+    // Glow halo
+    const glowR = r * 2.5;
+    const pulse = 1 + Math.sin(animTime * 3 + n.x * 0.1) * 0.08;
+    const grad = ctx.createRadialGradient(n.x, n.y, r * 0.5, n.x, n.y, glowR * pulse);
+    grad.addColorStop(0, `rgba(${cr},${cg},${cb},${0.15 * alpha})`);
+    grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, glowR * pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},${0.75 * alpha})`;
+    ctx.fill();
+
+    // Border
+    if (n.depth <= 1) {
+      ctx.strokeStyle = `rgba(${cr},${cg},${cb},${0.5 * alpha})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Status ring for experiments
+    if (n.nodeType === 'experiment') {
+      let rc;
+      switch (n.status) {
+        case 'completed': rc = 'rgba(80,200,120,0.8)'; break;
+        case 'failed': rc = 'rgba(255,68,68,0.8)'; break;
+        case 'paused': rc = 'rgba(255,179,71,0.5)'; break;
+        default: rc = 'rgba(255,255,255,0.3)';
+      }
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = rc;
+      ctx.lineWidth = 2;
+      ctx.setLineDash(n.status === 'paused' ? [4,4] : []);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Labels
+    if (n.depth === 0) {
+      ctx.fillStyle = `rgba(255,255,255,${0.95 * alpha})`;
+      ctx.font = 'bold 13px "JetBrains Mono", "SF Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Life', n.x, n.y - 6);
+      ctx.fillText('Goal', n.x, n.y + 8);
+    } else if (n.depth === 1) {
+      const lbl = n.stage ? STAGE_LABELS[n.stage] : n.label;
+      ctx.fillStyle = `rgba(200,200,216,${0.85 * alpha})`;
+      ctx.font = '500 10px "JetBrains Mono", "SF Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(lbl, n.x, n.y + r + 6);
+      if (n.observationCount > 0 && !seedMode) {
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${0.6 * alpha})`;
+        ctx.font = '400 8px "JetBrains Mono", "SF Mono", monospace';
+        ctx.fillText(`${n.observationCount}`, n.x, n.y + r + 18);
+      }
+    } else if (n.depth === 2 && !seedMode) {
+      // Show task labels
+      const maxLen = 16;
+      const lbl = n.label.length > maxLen ? n.label.slice(0, maxLen - 1) + '…' : n.label;
+      ctx.fillStyle = `rgba(200,200,216,${0.6 * alpha})`;
+      ctx.font = '400 8px "Inter", "SF Pro", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(lbl, n.x, n.y + r + 4);
+    }
+  }
+
+  ctx.restore();
+
+  // ── Overlay: Brand ──
+  // Subtle "Hawkeye" branding bottom-right
+  ctx.fillStyle = 'rgba(200,200,216,0.15)';
+  ctx.font = '400 14px "Inter", "SF Pro", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('Hawkeye — Expand & Guard Your Life', W - 24, H - 16);
+
+  // ── Overlay: Stats HUD (full frame only) ──
+  if (!seedMode && snapshot.stats) {
+    const s = snapshot.stats;
+    ctx.fillStyle = 'rgba(10,10,26,0.7)';
+    ctx.fillRect(0, 0, W, 36);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, 36); ctx.lineTo(W, 36); ctx.stroke();
+
+    ctx.font = '400 11px "JetBrains Mono", "SF Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const y = 18;
+    let xPos = 20;
+
+    ctx.fillStyle = 'rgba(233,233,244,0.95)';
+    ctx.fillText(`${s.totalNodes}`, xPos, y);
+    xPos += ctx.measureText(`${s.totalNodes}`).width + 4;
+    ctx.fillStyle = 'rgba(200,200,216,0.7)';
+    ctx.fillText('nodes', xPos, y);
+    xPos += ctx.measureText('nodes').width + 20;
+
+    ctx.fillStyle = 'rgba(233,233,244,0.95)';
+    ctx.fillText(`${s.activeTasks}`, xPos, y);
+    xPos += ctx.measureText(`${s.activeTasks}`).width + 4;
+    ctx.fillStyle = 'rgba(200,200,216,0.7)';
+    ctx.fillText('tasks', xPos, y);
+    xPos += ctx.measureText('tasks').width + 20;
+
+    ctx.fillStyle = 'rgba(233,233,244,0.95)';
+    ctx.fillText(`${s.experimentsCompleted}`, xPos, y);
+    xPos += ctx.measureText(`${s.experimentsCompleted}`).width + 4;
+    ctx.fillStyle = 'rgba(200,200,216,0.7)';
+    ctx.fillText('experiments', xPos, y);
+
+    if (s.mostActiveStage) {
+      xPos += ctx.measureText('experiments').width + 20;
+      ctx.fillStyle = 'rgba(200,200,216,0.7)';
+      ctx.fillText('most active:', xPos, y);
+      xPos += ctx.measureText('most active:').width + 6;
+      ctx.fillStyle = STAGE_COLORS[s.mostActiveStage];
+      ctx.fillText(STAGE_LABELS[s.mostActiveStage], xPos, y);
+    }
+  }
+
+  // ── Overlay: Stage filter chips (full frame only) ──
+  if (!seedMode) {
+    let chipX = 16;
+    const chipY = H - 42;
+    for (const stage of ALL_STAGES) {
+      const color = STAGE_COLORS[stage];
+      const [r,g,b] = hexToRgb(color);
+      const label = STAGE_LABELS[stage];
+
+      // Chip background
+      const tw = ctx.measureText(label).width;
+      ctx.font = '400 10px "Inter", "SF Pro", sans-serif';
+      const cw = 8 + 5 + ctx.measureText(label).width + 10 + 10;
+      ctx.fillStyle = 'rgba(10,10,26,0.7)';
+      ctx.beginPath();
+      ctx.roundRect(chipX, chipY, cw, 24, 12);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.4)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Dot
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(chipX + 14, chipY + 12, 4, 0, Math.PI*2);
+      ctx.fill();
+
+      // Label
+      ctx.fillStyle = 'rgba(200,200,216,0.8)';
+      ctx.font = '400 10px "Inter", "SF Pro", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, chipX + 23, chipY + 12);
+
+      chipX += cw + 6;
+    }
+  }
+
+  // ── Seed mode: tagline ──
+  if (seedMode) {
+    ctx.fillStyle = 'rgba(233,69,96,0.6)';
+    ctx.font = '300 20px "Inter", "SF Pro", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Plant your life seed. Watch it grow.', cx, cy + 180);
+  }
+}
+
+// ── Generate ──
+const seed = makeSeedData();
+const full = makeFullData();
+
+layoutAndRender(document.getElementById('frame1'), seed, 1.5, { scale: 1.0, seedMode: true });
+layoutAndRender(document.getElementById('frame2'), full, 2.8, { scale: 1.0 });
+</script>
+</body>
+</html>

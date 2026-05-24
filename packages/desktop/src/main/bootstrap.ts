@@ -11,29 +11,55 @@ if (process.env.ELECTRON_RUN_AS_NODE) {
   delete process.env.ELECTRON_RUN_AS_NODE;
 }
 
-// Handle EPIPE on stdout/stderr to prevent crashes when terminal closes
+function isIgnorableIoError(error: NodeJS.ErrnoException | Error): boolean {
+  const code = (error as NodeJS.ErrnoException).code;
+  const message = String(error?.message || '');
+  return code === 'EPIPE' || code === 'EIO' || message.includes('write EIO');
+}
+
+// Handle terminal stream errors to prevent dev-process crashes
 // This is especially important when running in dev mode with electron-vite
 process.stdout?.on?.('error', (err: NodeJS.ErrnoException) => {
-  if (err.code !== 'EPIPE') throw err;
+  if (!isIgnorableIoError(err)) throw err;
 });
 process.stderr?.on?.('error', (err: NodeJS.ErrnoException) => {
-  if (err.code !== 'EPIPE') throw err;
+  if (!isIgnorableIoError(err)) throw err;
 });
 
 console.log('BOOTSTRAP: Starting...');
+
+function persistCrashLog(kind: string, message: string, stack?: string) {
+  try {
+    const fs = require('node:fs');
+    const os = require('node:os');
+    const path = require('node:path');
+    const file = path.join(os.tmpdir(), 'hawkeye_uncaught.log');
+    const payload = [
+      `\n[${new Date().toISOString()}] ${kind}`,
+      `message: ${message}`,
+      stack ? `stack: ${stack}` : 'stack: <none>',
+      `pid: ${process.pid}`,
+      ''
+    ].join('\n');
+    fs.appendFileSync(file, payload, 'utf8');
+  } catch {
+    // Ignore logging failures to avoid recursive crashes
+  }
+}
 
 // Set up global error handlers BEFORE anything else
 process.on('uncaughtException', (error) => {
   // EPIPE errors are harmless - they occur when writing to a closed pipe
   // (e.g., terminal closed, console.log to closed stdout)
   // We should NOT crash the app or show a dialog for these
-  if ((error as NodeJS.ErrnoException).code === 'EPIPE') {
-    // Silently ignore EPIPE - it's expected when terminal closes
+  if (isIgnorableIoError(error)) {
+    // Silently ignore terminal I/O errors (e.g. EPIPE / EIO)
     return;
   }
 
   console.error('UNCAUGHT EXCEPTION:', error.message);
   console.error('Stack:', error.stack);
+  persistCrashLog('uncaughtException', error.message, error.stack);
   try {
     const { dialog } = require('electron');
     dialog.showErrorBox('Uncaught Exception', `${error.message}\n\nCheck console for details.`);
@@ -48,6 +74,7 @@ process.on('unhandledRejection', (reason: any) => {
   if (reason?.stack) {
     console.error('Stack:', reason.stack);
   }
+  persistCrashLog('unhandledRejection', String(reason?.message || reason), reason?.stack);
 });
 
 // Now try to load the main module

@@ -58,6 +58,8 @@ export interface LifeTreeNodeMetadata {
   source: DataSource;
   description?: string;
   tags: string[];
+  /** Knowledge entity IDs associated with this node */
+  entityIds?: string[];
   // Experiment-specific
   experimentStatus?: ExperimentStatus;
   experimentPhase?: ExperimentPhase;
@@ -101,6 +103,10 @@ export interface LifeTree {
   createdAt: number;
   updatedAt: number;
   stats: LifeTreeStats;
+  /** Knowledge layer: extracted entities */
+  knowledgeEntities: KnowledgeEntity[];
+  /** Knowledge layer: entity relationships */
+  knowledgeEdges: KnowledgeEdge[];
 }
 
 export interface LifeTreeStats {
@@ -189,6 +195,91 @@ export const DEFAULT_LIFE_TREE_CONFIG: LifeTreeConfig = {
   phase2UnlockThreshold: 3,
   phase3UnlockThreshold: 2,
 };
+
+// ============ Knowledge Layer ============
+
+export type KnowledgeNodeType = 'person' | 'project' | 'technology' | 'concept' | 'place';
+
+export const KNOWLEDGE_NODE_COLORS: Record<KnowledgeNodeType, string> = {
+  person:     '#00D4AA',
+  project:    '#FF79C6',
+  technology: '#BD93F9',
+  concept:    '#F1FA8C',
+  place:      '#8BE9FD',
+};
+
+export interface KnowledgeEntity {
+  id: string;
+  label: string;
+  type: KnowledgeNodeType;
+  aliases: string[];
+  /** IDs of LifeTreeNodes where this entity was observed */
+  sourceNodeIds: string[];
+  firstSeen: number;
+  lastSeen: number;
+  frequency: number;
+  /**
+   * Gaze attention history: each entry is one fixation/dwell on this
+   * entity, captured when the gaze→entity coupling promoted a region.
+   * Useful for ordering Life Tree relevance by *actually looked at* rather
+   * than just "appeared on screen".
+   */
+  gazeHistory?: Array<{
+    timestamp: number;
+    dwellMs: number;
+    appName?: string;
+  }>;
+  /** Sum of dwell times across all gaze fixations (ms). */
+  totalAttentionMs?: number;
+}
+
+export interface KnowledgeEdge {
+  id: string;
+  sourceEntityId: string;
+  targetEntityId: string;
+  relation: string;
+  /** 0-1, derived from co-occurrence frequency */
+  strength: number;
+  /** LifeTreeNode IDs where these entities co-occurred */
+  sourceNodeIds: string[];
+}
+
+export interface KnowledgeEntityRecord {
+  id: string;
+  label: string;
+  labelLower: string;
+  type: KnowledgeNodeType;
+  aliases: string;       // JSON array
+  aliasesLower: string;  // JSON array (lowercase)
+  sourceNodeIds: string; // JSON array
+  firstSeen: number;
+  lastSeen: number;
+  frequency: number;
+}
+
+export interface KnowledgeEdgeRecord {
+  id: string;
+  sourceEntityId: string;
+  targetEntityId: string;
+  relation: string;
+  strength: number;
+  sourceNodeIds: string; // JSON array
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface EntityExtractionResult {
+  entities: Array<{
+    label: string;
+    type: KnowledgeNodeType;
+    aliases: string[];
+  }>;
+  relations: Array<{
+    sourceLabel: string;
+    targetLabel: string;
+    relation: string;
+  }>;
+}
 
 // ============ AI Classification Types ============
 

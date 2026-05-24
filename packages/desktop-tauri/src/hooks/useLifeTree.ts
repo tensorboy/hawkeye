@@ -11,6 +11,10 @@ import {
   type LifeStage,
   type ExperimentPhase,
   type ExperimentProposal,
+  type KnowledgeEntity,
+  type KnowledgeEdge,
+  type KnowledgeCrossEdge,
+  type KnowledgeNodeType,
 } from './useTauri';
 import { useTauriEvent } from './useEvents';
 
@@ -131,6 +135,9 @@ export function useLifeTree() {
 
   const clearError = useCallback(() => setError(null), []);
 
+  // Compute cross-edges for renderer from knowledge entities
+  const crossEdges = snapshot?.crossEdges ?? [];
+
   return {
     snapshot,
     selectedNode,
@@ -150,8 +157,9 @@ export function useLifeTree() {
     handleConcludeExperiment,
     handleRebuild,
     refreshTree,
+    crossEdges,
   };
 }
 
 export { ALL_STAGES };
-export type { LifeTreeNode, LifeTreeSnapshot, LifeStage, ExperimentPhase, ExperimentProposal };
+export type { LifeTreeNode, LifeTreeSnapshot, LifeStage, ExperimentPhase, ExperimentProposal, KnowledgeEntity, KnowledgeEdge, KnowledgeCrossEdge, KnowledgeNodeType };

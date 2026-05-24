@@ -10,7 +10,7 @@ use std::sync::Arc;
 use clap::{Parser, Subcommand};
 
 use hawkeye_lib::{
-    agent::{run_user_turn, CuaDriverClient, DaemonSupervisor},
+    agent::{run_user_turn, AlwaysApprove, ConfirmGate, CuaDriverClient, DaemonSupervisor},
     ai::{AiProvider, ChatMessage, GeminiClient, OpenAiClient},
     config,
     event_sink::{EventSink, SharedSink, StdoutSink},
@@ -55,6 +55,29 @@ enum Cmd {
 
     /// Verify cua-driver daemon connectivity.
     AgentStatus,
+
+    /// Run the hawkeyed HTTP daemon — exposes every Hawkeye capability
+    /// over a localhost REST + SSE API. The Tauri GUI can attach to this
+    /// instead of running its own backend.
+    Daemon {
+        /// Override the listening port (default: `config.syncPort` =
+        /// 23789 unless changed in ~/.config/hawkeye/config.json).
+        #[arg(long)]
+        port: Option<u16>,
+    },
+
+    /// Print the persisted API token (generating one if it doesn't exist).
+    /// Useful for shell pipelines: `TOKEN=$(hawkeye-cli print-token)`.
+    PrintToken,
+
+    /// Print copy-pasteable curl examples for the most common daemon
+    /// endpoints. Pipe through `bash` to actually run them (after starting
+    /// `hawkeye-cli daemon` in another terminal).
+    Examples {
+        /// Host:port to use in the printed examples.
+        #[arg(long, default_value = "127.0.0.1:23789")]
+        host: String,
+    },
 }
 
 #[tokio::main]
@@ -100,11 +123,26 @@ async fn main() -> anyhow::Result<()> {
             supervisor.ensure_running().await?;
 
             let sink: SharedSink = Arc::new(StdoutSink);
-            let result = run_user_turn(sink, provider, Some(driver), Vec::new(), text).await?;
+            let gate: Arc<dyn ConfirmGate> = Arc::new(AlwaysApprove);
+            let result =
+                run_user_turn(sink, provider, Some(driver), gate, Vec::new(), text).await?;
 
             // Tool-call audit on stderr (so callers can pipe stdout = answer)
             eprintln!("{}", serde_json::to_string_pretty(&result.tool_calls)?);
             println!("{}", result.text);
+        }
+
+        Cmd::Daemon { port } => {
+            hawkeye_lib::daemon::run_daemon(port).await?;
+        }
+
+        Cmd::PrintToken => {
+            let token = hawkeye_lib::daemon::auth::load_or_create_token()?;
+            println!("{}", token);
+        }
+
+        Cmd::Examples { host } => {
+            print_examples(&host);
         }
 
         Cmd::AgentStatus => {
@@ -171,3 +209,54 @@ async fn build_provider(state: &Arc<AppState>) -> anyhow::Result<Arc<dyn AiProvi
 // the compiler may warn under `--no-default-features` profiles.
 #[allow(dead_code)]
 fn _trait_in_scope(_: &dyn EventSink) {}
+
+fn print_examples(host: &str) {
+    let token = hawkeye_lib::daemon::auth::load_or_create_token()
+        .unwrap_or_else(|_| "$(hawkeye-cli print-token)".to_string());
+
+    println!("# Hawkeyed quickstart — copy-paste into your terminal");
+    println!("# Start the daemon first:  hawkeye-cli daemon");
+    println!();
+    println!("export TOKEN={}", token);
+    println!("export HAWK=http://{}", host);
+    println!();
+    println!("# ─── Health (no auth) ───");
+    println!("curl -s $HAWK/v1/health | jq");
+    println!();
+    println!("# ─── Status ───");
+    println!("curl -sH \"Authorization: Bearer $TOKEN\" $HAWK/v1/status | jq");
+    println!();
+    println!("# ─── Initialize the configured AI provider ───");
+    println!("curl -sH \"Authorization: Bearer $TOKEN\" -X POST $HAWK/v1/ai/init | jq");
+    println!();
+    println!("# ─── One-turn chat ───");
+    println!("curl -sH \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\");
+    println!("    -d '{{\"messages\":[{{\"role\":\"user\",\"content\":\"hello\"}}]}}' \\");
+    println!("    $HAWK/v1/ai/chat | jq -r .text");
+    println!();
+    println!("# ─── Capture screen → OCR (with bbox) ───");
+    println!("SHOT=$(curl -sH \"Authorization: Bearer $TOKEN\" -X POST $HAWK/v1/perception/screenshot)");
+    println!("B64=$(echo $SHOT | jq -r .dataUrl | sed 's|^data:image/png;base64,||')");
+    println!("curl -sH \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\");
+    println!("    -d \"{{\\\"image_base64\\\":\\\"$B64\\\"}}\" \\");
+    println!("    $HAWK/v1/perception/ocr | jq '.regions[:3]'");
+    println!();
+    println!("# ─── Start observe loop (background screen monitoring) ───");
+    println!("curl -sH \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\");
+    println!("    -d '{{\"interval_ms\":3000,\"change_threshold\":0.05}}' \\");
+    println!("    -X POST $HAWK/v1/observe/start | jq");
+    println!();
+    println!("# ─── Subscribe to live events (SSE — Ctrl-C to stop) ───");
+    println!("curl -NH \"Authorization: Bearer $TOKEN\" \"$HAWK/v1/events\"");
+    println!();
+    println!("# ─── Filtered events (only gaze + agent) ───");
+    println!("curl -NH \"Authorization: Bearer $TOKEN\" \"$HAWK/v1/events?filter=gaze:,agent:\"");
+    println!();
+    println!("# ─── Life tree snapshot ───");
+    println!("curl -sH \"Authorization: Bearer $TOKEN\" $HAWK/v1/life-tree | jq '.stats'");
+    println!();
+    println!("# ─── Agent: chat + tool use (requires cua-driver installed) ───");
+    println!("curl -sH \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" \\");
+    println!("    -d '{{\"history\":[],\"user_input\":\"open Calculator\",\"require_confirmation\":false}}' \\");
+    println!("    $HAWK/v1/agent/chat | jq");
+}

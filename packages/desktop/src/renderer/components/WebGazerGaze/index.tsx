@@ -7,7 +7,7 @@
  * - 越用越准确
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useWebGazer, GazePoint, CalibrationSample } from '../../hooks/useWebGazer';
 import './WebGazerGaze.css';
 
@@ -37,6 +37,41 @@ export const WebGazerGaze: React.FC<WebGazerGazeProps> = ({
   const [indicatorVisible, setIndicatorVisible] = useState(true);
   const [globalClickEnabled, setGlobalClickEnabled] = useState(enableGlobalClick);
   const [globalClickRunning, setGlobalClickRunning] = useState(false);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [mousePosLocal, setMousePosLocal] = useState<{ x: number; y: number } | null>(null);
+
+  // 追踪全局鼠标屏幕坐标（debug 数字显示）
+  useEffect(() => {
+    if (!showDebug) return;
+    const getCursorPos = window.hawkeye?.globalClick?.getCursorPosition;
+    if (!getCursorPos) return;
+    let active = true;
+    const poll = async () => {
+      while (active) {
+        try {
+          const pos = await getCursorPos();
+          if (active) setMousePos(pos);
+        } catch {}
+        await new Promise(r => setTimeout(r, 33));
+      }
+    };
+    poll();
+    return () => { active = false; };
+  }, [showDebug]);
+
+  // 追踪窗口内鼠标位置（可视化指示器定位）
+  useEffect(() => {
+    if (!showDebug) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosLocal({ x: e.clientX, y: e.clientY });
+      // 没有全局 API 时也更新 mousePos
+      if (!window.hawkeye?.globalClick?.getCursorPosition) {
+        setMousePos({ x: e.clientX, y: e.clientY });
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [showDebug]);
 
   const handleGaze = useCallback((point: GazePoint) => {
     onGaze?.(point);
@@ -60,6 +95,24 @@ export const WebGazerGaze: React.FC<WebGazerGazeProps> = ({
     saveAcrossSessions: true,
     useKalmanFilter: true,
   });
+
+  // 将注视点数据发送到全屏覆盖窗口
+  const overlayLogCountRef = useRef(0);
+  useEffect(() => {
+    if (!gazePoint || !isReady) {
+      window.hawkeye?.gazeOverlay?.updateGaze(null);
+      return;
+    }
+    // 将窗口内坐标转换为屏幕坐标
+    const titleBarHeight = window.outerHeight - window.innerHeight;
+    const screenGazeX = Math.round(gazePoint.x + window.screenX);
+    const screenGazeY = Math.round(gazePoint.y + window.screenY + titleBarHeight);
+    window.hawkeye?.gazeOverlay?.updateGaze({ x: screenGazeX, y: screenGazeY });
+    if (overlayLogCountRef.current < 3) {
+      overlayLogCountRef.current++;
+      console.log(`[WebGazerGaze] Sent gaze to overlay #${overlayLogCountRef.current}: (${screenGazeX}, ${screenGazeY})`);
+    }
+  }, [gazePoint, isReady]);
 
   const [showSamples, setShowSamples] = useState(true);
 
@@ -138,7 +191,7 @@ export const WebGazerGaze: React.FC<WebGazerGazeProps> = ({
         </div>
       )}
 
-      {/* 注视点指示器 */}
+      {/* 注视点指示器（蓝色） */}
       {isReady && showIndicator && indicatorVisible && gazePoint && (
         <div
           className="webgazer-indicator"
@@ -152,6 +205,46 @@ export const WebGazerGaze: React.FC<WebGazerGazeProps> = ({
           <div className="webgazer-indicator-inner" />
           <div className="webgazer-indicator-ring" />
         </div>
+      )}
+
+      {/* 鼠标位置指示器（绿色） */}
+      {isReady && showDebug && indicatorVisible && mousePosLocal && (
+        <div
+          className="webgazer-mouse-indicator"
+          style={{
+            left: mousePosLocal.x - 8,
+            top: mousePosLocal.y - 8,
+            width: 16,
+            height: 16,
+          }}
+        />
+      )}
+
+      {/* 偏差连线 */}
+      {isReady && showDebug && indicatorVisible && gazePoint && mousePosLocal && (
+        <svg className="webgazer-deviation-line" style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9998 }}>
+          <line
+            x1={gazePoint.x}
+            y1={gazePoint.y}
+            x2={mousePosLocal.x}
+            y2={mousePosLocal.y}
+            stroke="rgba(255, 255, 0, 0.5)"
+            strokeWidth="1"
+            strokeDasharray="4 4"
+          />
+          <text
+            x={(gazePoint.x + mousePosLocal.x) / 2 + 8}
+            y={(gazePoint.y + mousePosLocal.y) / 2 - 8}
+            fill="rgba(255, 255, 0, 0.8)"
+            fontSize="11"
+            fontFamily="SF Mono, Monaco, monospace"
+          >
+            {Math.round(Math.sqrt(
+              Math.pow(gazePoint.x - mousePosLocal.x, 2) +
+              Math.pow(gazePoint.y - mousePosLocal.y, 2)
+            ))}px
+          </text>
+        </svg>
       )}
 
       {/* 调试信息 */}
@@ -177,20 +270,37 @@ export const WebGazerGaze: React.FC<WebGazerGazeProps> = ({
           {gazePoint && (
             <>
               <div className="webgazer-debug-row">
-                <span>X:</span>
+                <span>👁 注视 X:</span>
                 <span className="webgazer-debug-value">{gazePoint.x.toFixed(0)}px</span>
               </div>
               <div className="webgazer-debug-row">
-                <span>Y:</span>
+                <span>👁 注视 Y:</span>
                 <span className="webgazer-debug-value">{gazePoint.y.toFixed(0)}px</span>
               </div>
+            </>
+          )}
+          {mousePos && (
+            <>
               <div className="webgazer-debug-row">
-                <span>归一化:</span>
-                <span className="webgazer-debug-value">
-                  ({gazePoint.normalizedX.toFixed(2)}, {gazePoint.normalizedY.toFixed(2)})
-                </span>
+                <span>🖱 鼠标 X:</span>
+                <span className="webgazer-debug-value">{mousePos.x}px</span>
+              </div>
+              <div className="webgazer-debug-row">
+                <span>🖱 鼠标 Y:</span>
+                <span className="webgazer-debug-value">{mousePos.y}px</span>
               </div>
             </>
+          )}
+          {gazePoint && mousePos && (
+            <div className="webgazer-debug-row">
+              <span>偏差:</span>
+              <span className="webgazer-debug-value">
+                {Math.round(Math.sqrt(
+                  Math.pow(gazePoint.x - mousePos.x, 2) +
+                  Math.pow(gazePoint.y - mousePos.y, 2)
+                ))}px
+              </span>
+            </div>
           )}
           <div className="webgazer-debug-actions">
             <button onClick={() => setIndicatorVisible(!indicatorVisible)}>

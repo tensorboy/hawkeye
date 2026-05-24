@@ -60,25 +60,40 @@ export class TrayStatusService extends EventEmitter {
   }
 
   /**
-   * Create a simple colored circle icon
+   * Create a simple colored circle icon using raw pixel buffer (PNG-safe for macOS tray)
    */
   private createColoredIcon(color: string): NativeImage {
-    // Create a simple 18x18 icon with the specified color
-    // Using a data URL for a colored circle
-    const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
-        <circle cx="9" cy="9" r="7" fill="${color}" stroke="#333" stroke-width="1"/>
-        <circle cx="9" cy="9" r="4" fill="white" opacity="0.3"/>
-      </svg>
-    `;
-    const base64 = Buffer.from(svg).toString('base64');
-    const icon = nativeImage.createFromDataURL(`data:image/svg+xml;base64,${base64}`);
+    // Parse hex color to RGB
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
 
-    // On macOS, set as template image for proper dark/light mode support
-    if (process.platform === 'darwin') {
-      icon.setTemplateImage(false); // We want colored icons
+    // Create a 36x36 pixel RGBA buffer (18pt @2x for macOS retina)
+    const size = 36;
+    const center = size / 2;
+    const outerRadius = 14;
+    const buffer = Buffer.alloc(size * size * 4);
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const dx = x - center;
+        const dy = y - center;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const offset = (y * size + x) * 4;
+
+        if (dist <= outerRadius) {
+          // Anti-aliased edge
+          const alpha = Math.min(1, outerRadius - dist + 0.5);
+          buffer[offset] = r;
+          buffer[offset + 1] = g;
+          buffer[offset + 2] = b;
+          buffer[offset + 3] = Math.round(alpha * 255);
+        }
+      }
     }
 
+    const icon = nativeImage.createFromBuffer(buffer, { width: size, height: size, scaleFactor: 2.0 });
     return icon;
   }
 
@@ -303,20 +318,40 @@ export class TrayStatusService extends EventEmitter {
     const baseColor = this.currentStatus === 'analyzing' ? '#2196F3' : '#FF9800';
     const frames = 4;
 
+    // Parse base color
+    const hex = baseColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
     this.animationInterval = setInterval(() => {
       this.animationFrame = (this.animationFrame + 1) % frames;
       const opacity = 0.5 + (Math.sin(this.animationFrame * Math.PI / 2) * 0.5);
 
-      // Create animated icon
-      const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
-          <circle cx="9" cy="9" r="7" fill="${baseColor}" opacity="${opacity}" stroke="#333" stroke-width="1"/>
-          <circle cx="9" cy="9" r="4" fill="white" opacity="0.3"/>
-        </svg>
-      `;
-      const base64 = Buffer.from(svg).toString('base64');
-      const icon = nativeImage.createFromDataURL(`data:image/svg+xml;base64,${base64}`);
+      // Create animated icon with pixel buffer
+      const size = 36;
+      const center = size / 2;
+      const outerRadius = 14;
+      const buffer = Buffer.alloc(size * size * 4);
 
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const dx = x - center;
+          const dy = y - center;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const offset = (y * size + x) * 4;
+
+          if (dist <= outerRadius) {
+            const edgeAlpha = Math.min(1, outerRadius - dist + 0.5);
+            buffer[offset] = r;
+            buffer[offset + 1] = g;
+            buffer[offset + 2] = b;
+            buffer[offset + 3] = Math.round(edgeAlpha * opacity * 255);
+          }
+        }
+      }
+
+      const icon = nativeImage.createFromBuffer(buffer, { width: size, height: size, scaleFactor: 2.0 });
       this.tray?.setImage(icon);
     }, 250);
   }

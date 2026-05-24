@@ -72,6 +72,15 @@ interface RecommendedModel {
 }
 
 interface HawkeyeAPI {
+  reportRendererError: (payload: {
+    type: 'error' | 'unhandledrejection';
+    message: string;
+    stack?: string;
+    source?: string;
+    lineno?: number;
+    colno?: number;
+  }) => void;
+
   // Core API
   observe: () => Promise<any>;
   generatePlan: (intentId: string) => Promise<any>;
@@ -236,6 +245,7 @@ interface HawkeyeAPI {
     start: () => Promise<{ success: boolean }>;
     stop: () => Promise<any>;
     status: () => Promise<any>;
+    getCursorPosition: () => Promise<{ x: number; y: number }>;
     onEvent: (callback: (event: {
       x: number;
       y: number;
@@ -243,6 +253,12 @@ interface HawkeyeAPI {
       timestamp: number;
       isInsideApp: boolean;
     }) => void) => (() => void);
+  };
+
+  // Gaze Overlay API (全屏注视点覆盖)
+  gazeOverlay: {
+    updateGaze: (data: { x: number; y: number } | null) => void;
+    toggle: (visible: boolean) => Promise<{ success: boolean }>;
   };
 
   // Audio Processor API

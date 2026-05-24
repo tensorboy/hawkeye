@@ -27,6 +27,15 @@ export type {
 
 // 暴露给渲染进程的 API
 contextBridge.exposeInMainWorld('hawkeye', {
+  reportRendererError: (payload: {
+    type: 'error' | 'unhandledrejection';
+    message: string;
+    stack?: string;
+    source?: string;
+    lineno?: number;
+    colno?: number;
+  }) => ipcRenderer.send('renderer-error', payload),
+
   // ============ 核心 API ============
 
   // 观察屏幕并识别意图
@@ -516,6 +525,9 @@ contextBridge.exposeInMainWorld('hawkeye', {
     // 获取全局点击状态
     status: () => ipcRenderer.invoke('global-click:status'),
 
+    // 获取当前鼠标屏幕坐标（全局，app内外都能用）
+    getCursorPosition: () => ipcRenderer.invoke('global-click:cursor-position') as Promise<{ x: number; y: number }>,
+
     // 监听全局点击事件
     onEvent: (callback: (event: {
       x: number;
@@ -534,6 +546,18 @@ contextBridge.exposeInMainWorld('hawkeye', {
       ipcRenderer.on('global-click:event', handler);
       return () => ipcRenderer.removeListener('global-click:event', handler);
     },
+  },
+
+  // ============ Gaze Overlay API (全屏注视点覆盖) ============
+
+  gazeOverlay: {
+    // 发送注视点数据到覆盖窗口
+    updateGaze: (data: { x: number; y: number } | null) =>
+      ipcRenderer.send('gaze-overlay:update-gaze', data),
+
+    // 切换覆盖窗口显示/隐藏
+    toggle: (visible: boolean) =>
+      ipcRenderer.invoke('gaze-overlay:toggle', visible) as Promise<{ success: boolean }>,
   },
 
   // ============ Audio Processor API (Core Audio VPIO / AEC) ============

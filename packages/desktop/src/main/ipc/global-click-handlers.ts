@@ -3,7 +3,7 @@
  * Handles global mouse click capture for WebGazer calibration
  */
 
-import { ipcMain, BrowserWindow } from 'electron';
+import { ipcMain, BrowserWindow, screen } from 'electron';
 import { GlobalClickService, GlobalClickEvent } from '../services/global-click-service';
 
 // Module-level state
@@ -66,6 +66,12 @@ export function registerGlobalClickHandlers(
     return {
       running: globalClickService?.getIsRunning() ?? false,
     };
+  });
+
+  // Get current cursor screen position
+  ipcMain.handle('global-click:cursor-position', () => {
+    const point = screen.getCursorScreenPoint();
+    return { x: point.x, y: point.y };
   });
 
   debugLog?.('[GlobalClick] Handlers registered');

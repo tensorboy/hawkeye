@@ -33,12 +33,15 @@ interface WebGazerInstance {
   clearData: () => void;
   // 校准相关
   recordScreenPosition: (x: number, y: number, type?: string) => void;
+  getTracker: () => { getPositions: () => any[] | null };
+  getCurrentPrediction: () => Promise<WebGazerData | null>;
   params: {
     imgWidth: number;
     imgHeight: number;
     showVideo: boolean;
     showFaceOverlay: boolean;
     showFaceFeedbackBox: boolean;
+    faceMeshSolutionPath: string;
   };
 }
 
@@ -141,8 +144,6 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
       setError(null);
 
       try {
-        // 动态导入 webgazer
-        // 注意：webgazer 在 ESM 中可能通过 default export 导出，也可能挂载到 window
         const webgazerModule = await import('webgazer');
 
         if (!mounted) return;
@@ -151,11 +152,6 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
         const wg = (webgazerModule.default || webgazerModule || window.webgazer) as WebGazerInstance;
 
         if (!wg || typeof wg.begin !== 'function') {
-          console.error('[WebGazer] Module loaded but invalid:', {
-            hasDefault: !!webgazerModule.default,
-            moduleKeys: Object.keys(webgazerModule),
-            windowWebgazer: !!window.webgazer
-          });
           throw new Error('WebGazer failed to load - invalid module structure');
         }
 
@@ -166,12 +162,20 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
 
         webgazerRef.current = wg;
 
+        // 设置 MediaPipe WASM 本地路径（v3.5.2 使用 MediaPipe 替代 TFHub）
+        wg.params.faceMeshSolutionPath = '/mediapipe/face_mesh';
+
         // 配置 WebGazer
+        let gazeStarted = false;
         wg.setRegression('ridge') // 岭回归
           .setGazeListener((data: WebGazerData | null, clock: number) => {
             if (!mounted || isPausedRef.current) return;
 
             if (data) {
+              if (!gazeStarted) {
+                gazeStarted = true;
+                console.log(`[WebGazer] Gaze tracking active: first prediction at (${data.x.toFixed(0)}, ${data.y.toFixed(0)})`);
+              }
               const point: GazePoint = {
                 x: data.x,
                 y: data.y,
@@ -194,20 +198,98 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
         // 开始追踪
         wg.begin();
 
-        // 检查就绪状态
+        // 检查就绪状态（timeout after 30s）
+        let readyCheckCount = 0;
         checkReadyInterval = setInterval(() => {
+          readyCheckCount++;
+          if (readyCheckCount > 300) {
+            // 30 seconds timeout
+            console.error('[WebGazer] Timed out waiting for ready after 30s');
+            if (checkReadyInterval) clearInterval(checkReadyInterval);
+            if (mounted) {
+              setError('WebGazer timed out during initialization');
+              setIsLoading(false);
+            }
+            return;
+          }
           if (wg.isReady()) {
             if (mounted) {
               setIsReady(true);
               setIsLoading(false);
               console.log('[WebGazer] Ready for gaze tracking');
 
+              // Force-hide WebGazer's built-in UI elements now that DOM exists
+              wg.showVideo(false);
+              wg.showFaceOverlay(false);
+              wg.showFaceFeedbackBox(false);
+              wg.showPredictionPoints(false);
+
+              // Also force-hide via DOM as backup (fixes green circle issue)
+              // NOTE: Do NOT hide videoContainer — the video feed must stay active
+              // for face detection to work. Use opacity: 0 + position off-screen instead.
+              const videoContainer = document.getElementById('webgazerVideoContainer');
+              if (videoContainer) {
+                videoContainer.style.opacity = '0';
+                videoContainer.style.position = 'fixed';
+                videoContainer.style.top = '-9999px';
+                videoContainer.style.left = '-9999px';
+                videoContainer.style.pointerEvents = 'none';
+              }
+              const faceOverlayEl = document.getElementById('webgazerFaceOverlay');
+              if (faceOverlayEl) faceOverlayEl.style.display = 'none';
+              const feedbackBox = document.getElementById('webgazerFaceFeedbackBox');
+              if (feedbackBox) feedbackBox.style.display = 'none';
+              const gazeDotEl = document.getElementById('webgazerGazeDot');
+              if (gazeDotEl) gazeDotEl.style.display = 'none';
+              console.log('[WebGazer] Built-in UI elements hidden');
+
               // 获取 WebGazer 的视频元素引用
               const videoEl = document.getElementById('webgazerVideoFeed') as HTMLVideoElement;
               if (videoEl) {
                 videoElementRef.current = videoEl;
-                console.log('[WebGazer] Video element captured for snapshots');
               }
+
+              // Auto-seed calibration: wait for face detection then add initial points
+              // Ridge regression needs at least 1 click sample to predict.
+              // Seed a few points across the screen so predictions can start immediately.
+              let seedAttempts = 0;
+              const seedInterval = setInterval(() => {
+                if (!mounted || seedAttempts >= 15) {
+                  clearInterval(seedInterval);
+                  console.warn(`[WebGazer] Auto-calibration: no face detected after ${seedAttempts} attempts`);
+                  return;
+                }
+                seedAttempts++;
+
+                // Check if face is detected
+                try {
+                  const tracker = wg.getTracker();
+                  const positions = tracker?.getPositions?.();
+                  if (!positions || positions.length === 0) {
+                    return;
+                  }
+
+                  // Face detected! Seed calibration points at screen corners and center
+                  const w = window.innerWidth;
+                  const h = window.innerHeight;
+                  const seedPoints = [
+                    { x: w * 0.5, y: h * 0.5 },   // center
+                    { x: w * 0.2, y: h * 0.2 },   // top-left area
+                    { x: w * 0.8, y: h * 0.2 },   // top-right area
+                    { x: w * 0.2, y: h * 0.8 },   // bottom-left area
+                    { x: w * 0.8, y: h * 0.8 },   // bottom-right area
+                  ];
+
+                  for (const point of seedPoints) {
+                    wg.recordScreenPosition(Math.round(point.x), Math.round(point.y), 'click');
+                  }
+
+                  console.log(`[WebGazer] Auto-calibration seeded ${seedPoints.length} points`);
+                  clearInterval(seedInterval);
+                } catch (e) {
+                  console.warn(`[WebGazer] Seed calibration error:`, e);
+                }
+              }, 500);
             }
             if (checkReadyInterval) {
               clearInterval(checkReadyInterval);
@@ -224,7 +306,7 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
             const canvas = document.createElement('canvas');
             canvas.width = videoEl.videoWidth || 320;
             canvas.height = videoEl.videoHeight || 240;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             if (!ctx) return null;
 
             ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
@@ -313,7 +395,7 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
       const canvas = document.createElement('canvas');
       canvas.width = videoEl.videoWidth || 320;
       canvas.height = videoEl.videoHeight || 240;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) return null;
 
       ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);

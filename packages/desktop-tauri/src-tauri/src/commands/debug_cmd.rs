@@ -1,13 +1,9 @@
 //! Debug timeline commands — in-memory event stream for debugging
 
 use std::collections::VecDeque;
-use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
-use tauri::{command, State};
-
-use crate::state::AppState;
 
 /// Debug event types matching the Electron implementation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -162,6 +158,13 @@ impl DebugTimeline {
         self.events.clear();
     }
 
+    /// External-visible setter for the pause flag; needed by the HTTP
+    /// daemon (which lives outside this module) to drive
+    /// `POST /v1/debug/{pause,resume}`.
+    pub fn set_paused(&mut self, p: bool) {
+        self.paused = p;
+    }
+
     pub fn status(&self) -> DebugStatus {
         DebugStatus {
             paused: self.paused,
@@ -171,87 +174,3 @@ impl DebugTimeline {
     }
 }
 
-// --- Tauri Commands ---
-
-/// Get debug events (newest first)
-#[command]
-pub async fn get_debug_events(
-    state: State<'_, Arc<AppState>>,
-    event_types: Option<Vec<DebugEventType>>,
-    limit: Option<usize>,
-) -> Result<Vec<DebugEvent>, String> {
-    let timeline = state.debug_timeline.read().await;
-    Ok(timeline.get_events(event_types.as_deref(), limit))
-}
-
-/// Get events since a timestamp (for polling)
-#[command]
-pub async fn get_debug_events_since(
-    state: State<'_, Arc<AppState>>,
-    since_ms: u64,
-) -> Result<Vec<DebugEvent>, String> {
-    let timeline = state.debug_timeline.read().await;
-    Ok(timeline.get_since(since_ms))
-}
-
-/// Search debug events by label
-#[command]
-pub async fn search_debug_events(
-    state: State<'_, Arc<AppState>>,
-    query: String,
-) -> Result<Vec<DebugEvent>, String> {
-    let timeline = state.debug_timeline.read().await;
-    Ok(timeline.search(&query))
-}
-
-/// Push a debug event (from frontend or other commands)
-#[command]
-pub async fn push_debug_event(
-    state: State<'_, Arc<AppState>>,
-    event_type: DebugEventType,
-    label: String,
-    data: serde_json::Value,
-    duration_ms: Option<u64>,
-) -> Result<Option<DebugEvent>, String> {
-    let mut timeline = state.debug_timeline.write().await;
-    Ok(timeline.push(event_type, label, data, duration_ms, None))
-}
-
-/// Get debug timeline status
-#[command]
-pub async fn get_debug_status(
-    state: State<'_, Arc<AppState>>,
-) -> Result<DebugStatus, String> {
-    let timeline = state.debug_timeline.read().await;
-    Ok(timeline.status())
-}
-
-/// Pause debug event collection
-#[command]
-pub async fn pause_debug(
-    state: State<'_, Arc<AppState>>,
-) -> Result<bool, String> {
-    let mut timeline = state.debug_timeline.write().await;
-    timeline.paused = true;
-    Ok(true)
-}
-
-/// Resume debug event collection
-#[command]
-pub async fn resume_debug(
-    state: State<'_, Arc<AppState>>,
-) -> Result<bool, String> {
-    let mut timeline = state.debug_timeline.write().await;
-    timeline.paused = false;
-    Ok(true)
-}
-
-/// Clear all debug events
-#[command]
-pub async fn clear_debug_events(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), String> {
-    let mut timeline = state.debug_timeline.write().await;
-    timeline.clear();
-    Ok(())
-}

@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Hawkeye",
         "width": 420,
         "height": 600,
@@ -25,6 +26,21 @@
         "skipTaskbar": false,
         "center": true,
         "visible": true
+      },
+      {
+        "label": "explain-overlay",
+        "url": "explain.html",
+        "title": "Hawkeye Explain",
+        "width": 380,
+        "height": 220,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": true,
+        "focus": false,
+        "visible": false,
+        "shadow": true
       }
     ],
     "trayIcon": {

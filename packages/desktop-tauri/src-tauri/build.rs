@@ -4,6 +4,7 @@ fn main() {
     {
         compile_swift_ocr();
         compile_swift_speech();
+        compile_swift_ane();
     }
 
     tauri_build::build()
@@ -98,6 +99,50 @@ fn compile_swift_speech() {
         }
         Err(e) => {
             println!("cargo:warning=Failed to run swiftc for speech: {} (is Xcode installed?)", e);
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn compile_swift_ane() {
+    use std::path::Path;
+    use std::process::Command;
+
+    let swift_src = "swift-ane/Sources/main.swift";
+    let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "target".to_string());
+    let output_path = Path::new(&out_dir).join("hawkeye-ane");
+
+    println!("cargo:rerun-if-changed={}", swift_src);
+
+    if !Path::new(swift_src).exists() {
+        println!("cargo:warning=Swift ANE source not found at {}, skipping compilation", swift_src);
+        return;
+    }
+
+    println!("cargo:warning=Compiling Swift ANE helper...");
+
+    let status = Command::new("swiftc")
+        .args([
+            "-O",
+            "-whole-module-optimization",
+            swift_src,
+            "-o",
+            output_path.to_str().unwrap(),
+            "-framework", "Foundation",
+            "-framework", "Accelerate",
+        ])
+        .status();
+
+    match status {
+        Ok(s) if s.success() => {
+            println!("cargo:warning=Swift ANE helper compiled successfully at {:?}", output_path);
+            println!("cargo:rustc-env=HAWKEYE_ANE_PATH={}", output_path.display());
+        }
+        Ok(s) => {
+            println!("cargo:warning=Swift ANE compilation failed with status: {}", s);
+        }
+        Err(e) => {
+            println!("cargo:warning=Failed to run swiftc for ANE: {} (is Xcode installed?)", e);
         }
     }
 }

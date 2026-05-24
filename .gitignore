@@ -43,3 +43,22 @@ life-tree-*.png
 
 # Native build artifacts
 packages/desktop/native/.build/
+
+# Rust / Tauri build artifacts
+target/
+packages/desktop-tauri/src-tauri/target/
+packages/desktop-tauri/src-tauri/gen/
+
+# Generated knowledge graph & dashboard output (regenerable via build-graph.mjs)
+.understand-anything/
+.understand/
+
+# Local agent / session config (not portable across machines)
+.CLAUDE.md
+.claude/
+.sisyphus/
+
+# Test/dev screenshots
+frame-check.png
+hawkeye-graph-initial.png
+*.screenshot.png

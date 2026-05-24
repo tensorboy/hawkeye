@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { submitGazeSample, predictGaze, type GazeSample } from './useTauri';
 
 interface WebGazerData {
   x: number;
@@ -58,11 +59,14 @@ export interface GazePoint {
   timestamp: number;
 }
 
+export type GazeMode = 'webgazer' | 'ane';
+
 export interface UseWebGazerOptions {
   enabled?: boolean;
   showPredictionPoint?: boolean;
   saveAcrossSessions?: boolean;
   useKalmanFilter?: boolean;
+  gazeMode?: GazeMode;
   onGaze?: (point: GazePoint) => void;
 }
 
@@ -76,6 +80,53 @@ export interface UseWebGazerReturn {
   clearCalibrationData: () => void;
   addCalibrationPoint: (x: number, y: number) => void;
   sampleCount: number;
+  gazeMode: GazeMode;
+}
+
+// MediaPipe Face Mesh landmark indices for eye features
+// Left eye: 10 landmarks, Right eye: 10 landmarks → 20 points × 2 (x,y) = 40 floats
+const LEFT_EYE_INDICES = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173];
+const RIGHT_EYE_INDICES = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466];
+
+/**
+ * Extract 40 eye feature floats from WebGazer's face mesh positions.
+ * Landmarks are normalized relative to the face bounding box.
+ */
+function extractEyeFeatures(positions: any[]): number[] | null {
+  if (!positions || positions.length < 468) return null;
+
+  // Compute face bounding box for normalization
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
+  for (const p of positions) {
+    if (!p || typeof p[0] !== 'number') continue;
+    if (p[0] < minX) minX = p[0];
+    if (p[0] > maxX) maxX = p[0];
+    if (p[1] < minY) minY = p[1];
+    if (p[1] > maxY) maxY = p[1];
+  }
+
+  const rangeX = maxX - minX;
+  const rangeY = maxY - minY;
+  if (rangeX < 1 || rangeY < 1) return null;
+
+  const features: number[] = [];
+
+  for (const idx of LEFT_EYE_INDICES) {
+    const p = positions[idx];
+    if (!p || typeof p[0] !== 'number') return null;
+    features.push((p[0] - minX) / rangeX);
+    features.push((p[1] - minY) / rangeY);
+  }
+
+  for (const idx of RIGHT_EYE_INDICES) {
+    const p = positions[idx];
+    if (!p || typeof p[0] !== 'number') return null;
+    features.push((p[0] - minX) / rangeX);
+    features.push((p[1] - minY) / rangeY);
+  }
+
+  return features.length === 40 ? features : null;
 }
 
 export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn {
@@ -84,6 +135,7 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
     showPredictionPoint = false,
     saveAcrossSessions = true,
     useKalmanFilter = true,
+    gazeMode: requestedMode = 'webgazer',
     onGaze,
   } = options;
 
@@ -92,14 +144,21 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sampleCount, setSampleCount] = useState(0);
+  const [gazeMode, setGazeMode] = useState<GazeMode>(requestedMode);
 
   const webgazerRef = useRef<WebGazerInstance | null>(null);
   const onGazeRef = useRef(onGaze);
   const isPausedRef = useRef(false);
+  const gazeModeRef = useRef(gazeMode);
 
   useEffect(() => {
     onGazeRef.current = onGaze;
   }, [onGaze]);
+
+  useEffect(() => {
+    gazeModeRef.current = requestedMode;
+    setGazeMode(requestedMode);
+  }, [requestedMode]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -136,6 +195,44 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
         wg.setRegression('ridge')
           .setGazeListener((data: WebGazerData | null, clock: number) => {
             if (!mounted || isPausedRef.current) return;
+
+            // In ANE mode, try backend prediction using eye features
+            if (gazeModeRef.current === 'ane') {
+              try {
+                const tracker = wg.getTracker();
+                const positions = tracker?.getPositions?.();
+                const features = positions ? extractEyeFeatures(positions) : null;
+                if (features) {
+                  predictGaze(features).then((pred) => {
+                    if (!mounted || isPausedRef.current) return;
+                    const point: GazePoint = {
+                      x: pred.x * window.innerWidth,
+                      y: pred.y * window.innerHeight,
+                      normalizedX: pred.x,
+                      normalizedY: pred.y,
+                      timestamp: clock,
+                    };
+                    setGazePoint(point);
+                    onGazeRef.current?.(point);
+                  }).catch(() => {
+                    // Fallback to WebGazer data on ANE error
+                    if (data) {
+                      const point: GazePoint = {
+                        x: data.x, y: data.y,
+                        normalizedX: data.x / window.innerWidth,
+                        normalizedY: data.y / window.innerHeight,
+                        timestamp: clock,
+                      };
+                      setGazePoint(point);
+                      onGazeRef.current?.(point);
+                    }
+                  });
+                  return;
+                }
+              } catch {
+                // Fall through to WebGazer
+              }
+            }
 
             if (data) {
               if (!gazeStarted) {
@@ -241,9 +338,31 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
           }
         }, 100);
 
-        // Track clicks for calibration
-        const handleClick = () => {
+        // Track clicks for calibration + submit samples for ANE training
+        const handleClick = (e: MouseEvent) => {
           setSampleCount(prev => prev + 1);
+
+          // Extract eye features and submit to backend for ANE training
+          if (wg && wg.isReady()) {
+            try {
+              const tracker = wg.getTracker();
+              const positions = tracker?.getPositions?.();
+              const features = positions ? extractEyeFeatures(positions) : null;
+              if (features) {
+                const sample: GazeSample = {
+                  features,
+                  targetX: e.clientX / window.innerWidth,
+                  targetY: e.clientY / window.innerHeight,
+                  timestamp: Date.now(),
+                };
+                submitGazeSample(sample).catch((err: unknown) => {
+                  console.warn('[WebGazer] Failed to submit gaze sample:', err);
+                });
+              }
+            } catch {
+              // Ignore feature extraction errors
+            }
+          }
         };
         window.addEventListener('click', handleClick);
 
@@ -303,6 +422,7 @@ export function useWebGazer(options: UseWebGazerOptions = {}): UseWebGazerReturn
     clearCalibrationData,
     addCalibrationPoint,
     sampleCount,
+    gazeMode,
   };
 }
 

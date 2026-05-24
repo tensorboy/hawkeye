@@ -22,6 +22,21 @@ pub struct AppConfig {
     pub openai_api_key: Option<String>,
     pub openai_model: Option<String>,
 
+    /// Local model settings (llama.cpp)
+    pub local_model_id: Option<String>,
+    pub collect_training_data: Option<bool>,
+
+    /// Speech recognition source: "apple" (built-in SFSpeechRecognizer),
+    /// "whisper" (local whisper.cpp), "openai" (Whisper API), or
+    /// "gemini" (Gemini audio input).
+    pub speech_provider: Option<String>,
+    /// Filename of the local whisper.cpp GGML model (when speech_provider == "whisper")
+    pub whisper_model_id: Option<String>,
+
+    /// Vision/OCR source: "apple" (built-in Vision.framework — fast, local),
+    /// "gemini" (cloud multimodal), or "openai" (gpt-4o vision).
+    pub vision_provider: Option<String>,
+
     /// Sync settings
     pub sync_port: u16,
     pub auto_start_sync: bool,
@@ -41,7 +56,12 @@ impl Default for AppConfig {
             gemini_base_url: None,
             openai_base_url: None,
             openai_api_key: None,
-            openai_model: Some("gemini-3-flash-preview".to_string()),
+            openai_model: Some("gpt-4o-mini".to_string()),
+            local_model_id: None,
+            collect_training_data: Some(false),
+            speech_provider: Some("apple".to_string()),
+            whisper_model_id: None,
+            vision_provider: Some("apple".to_string()),
             sync_port: 23789,
             auto_start_sync: false,
             auto_update: true,
