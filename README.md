@@ -1,14 +1,10 @@
 <div align="center">
 
-<img src="./logo.png" alt="Hawkeye Logo" width="120" height="120" />
+<img src="./assets/hawkeye-hero.svg" alt="Hawkeye — The First Proactive AI Assistant for Desktop. Press Cmd+Shift+H to observe your screen instantly." width="100%" />
 
 # Hawkeye
 
-### 🦅 The First Proactive AI Assistant for Desktop
-
 **AI that enhances your story. Watch keenly. Act thoughtfully. 10x your productivity.**
-
-<kbd>⌘</kbd> + <kbd>⇧</kbd> + <kbd>H</kbd> to observe your screen instantly
 
 [![GitHub Stars](https://img.shields.io/github/stars/tensorboy/hawkeye?style=for-the-badge&logo=github&color=yellow)](https://github.com/tensorboy/hawkeye)
 [![License](https://img.shields.io/github/license/tensorboy/hawkeye?style=for-the-badge&color=blue)](LICENSE)
@@ -44,6 +40,8 @@ The AI behind Hawkeye is designed to **enhance your own story** — turning your
 | **Control** | AI executes | **You decide** what to execute |
 
 <br/>
+
+<p align="center"><img src="./assets/hawkeye-divider.svg" alt="" width="100%" /></p>
 
 ## ✨ Key Features
 
@@ -201,6 +199,8 @@ Select "Ollama" in Hawkeye settings.
 </details>
 
 <br/>
+
+<p align="center"><img src="./assets/hawkeye-divider.svg" alt="" width="100%" /></p>
 
 ## 🏗️ Architecture
 
@@ -429,6 +429,8 @@ All AI providers declare their capabilities (chat, vision, streaming, function c
 
 <br/>
 
+<p align="center"><img src="./assets/hawkeye-divider.svg" alt="" width="100%" /></p>
+
 ## 🗺️ Roadmap
 
 - [x] Core perception engine
@@ -517,3 +519,5 @@ If you find Hawkeye useful, consider buying me a coffee!
 **If Hawkeye helps you, please consider giving it a ⭐**
 
 </div>
+
+<p align="center"><img src="./assets/hawkeye-footer.svg" alt="" width="100%" /></p>

@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace" role="img" aria-label="Hawkeye — the first proactive AI assistant for desktop">
+  <defs>
+    <radialGradient id="hkIris" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#a5d6ff"/>
+      <stop offset="55%" stop-color="#1f6feb"/>
+      <stop offset="100%" stop-color="#0a1525"/>
+    </radialGradient>
+    <linearGradient id="hkScan" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%"  stop-color="#39d353" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#39d353" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#39d353" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="hkWord" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%"  stop-color="#58a6ff"/>
+      <stop offset="50%" stop-color="#79c0ff"/>
+      <stop offset="100%" stop-color="#39d353"/>
+    </linearGradient>
+    <pattern id="hkDots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#1f2937"/>
+    </pattern>
+    <filter id="hkGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- canvas -->
+  <rect width="1200" height="440" fill="#0d1117"/>
+  <rect width="1200" height="440" fill="url(#hkDots)" opacity="0.55"/>
+
+  <!-- terminal chrome -->
+  <line x1="0" y1="42"  x2="1200" y2="42"  stroke="#21262d"/>
+  <line x1="0" y1="398" x2="1200" y2="398" stroke="#21262d"/>
+  <g font-size="11" fill="#6e7681">
+    <text x="22" y="28">~/hawkeye</text>
+    <text x="1108" y="28">● ● ●</text>
+    <text x="22" y="422">▸ <tspan fill="#39d353">ready</tspan> · observing 0 screens</text>
+    <text x="1110" y="422" text-anchor="end">v1.0.0</text>
+  </g>
+
+  <!-- corner brackets -->
+  <g stroke="#30363d" stroke-width="1" fill="none">
+    <path d="M 22 60 h 14 M 22 60 v 14"/>
+    <path d="M 1178 60 h -14 M 1178 60 v 14"/>
+    <path d="M 22 384 h 14 M 22 384 v -14"/>
+    <path d="M 1178 384 h -14 M 1178 384 v -14"/>
+  </g>
+
+  <!-- animated hawkeye, centered (600, 180) -->
+  <g transform="translate(600 180)">
+    <!-- three pulse rings staggered -->
+    <g fill="none" stroke="#58a6ff" stroke-width="1.6" filter="url(#hkGlow)">
+      <circle r="80" opacity="0.5">
+        <animate attributeName="r" values="80;130;80" dur="3.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0;0.6" dur="3.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="80" opacity="0.5">
+        <animate attributeName="r" values="80;130;80" begin="1.27s" dur="3.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0;0.6" begin="1.27s" dur="3.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle r="80" opacity="0.5">
+        <animate attributeName="r" values="80;130;80" begin="2.54s" dur="3.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0;0.6" begin="2.54s" dur="3.8s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- iris ring -->
+    <circle r="75" fill="none" stroke="#58a6ff" stroke-width="2"/>
+
+    <!-- rotating tick marks -->
+    <g stroke="#58a6ff" stroke-width="2" opacity="0.75">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="24s" repeatCount="indefinite"/>
+      <line x1="-75" y1="0"  x2="-62" y2="0"/>
+      <line x1="62"  y1="0"  x2="75"  y2="0"/>
+      <line x1="0"   y1="-75" x2="0"   y2="-62"/>
+      <line x1="0"   y1="62"  x2="0"   y2="75"/>
+      <line x1="-53" y1="-53" x2="-44" y2="-44"/>
+      <line x1="53"  y1="-53" x2="44"  y2="-44"/>
+      <line x1="-53" y1="53"  x2="-44" y2="44"/>
+      <line x1="53"  y1="53"  x2="44"  y2="44"/>
+    </g>
+
+    <!-- almond eye -->
+    <path d="M -80 0 Q 0 -60 80 0 Q 0 60 -80 0 Z" fill="#0a1525" stroke="#58a6ff" stroke-width="2"/>
+
+    <!-- iris -->
+    <circle r="32" fill="url(#hkIris)"/>
+
+    <!-- pupil scanning -->
+    <g>
+      <animateTransform attributeName="transform" type="translate"
+        values="-14 0; -14 0; 14 0; 14 0; -14 0"
+        keyTimes="0; 0.18; 0.48; 0.82; 1"
+        dur="5s" repeatCount="indefinite"/>
+      <circle r="13" fill="#0a1525"/>
+      <circle cx="-4" cy="-4" r="4" fill="#e6edf3" opacity="0.95"/>
+    </g>
+
+    <!-- crosshair -->
+    <g stroke="#39d353" stroke-width="0.8" opacity="0.55">
+      <line x1="-105" y1="0" x2="-40"  y2="0"/>
+      <line x1="40"   y1="0" x2="105"  y2="0"/>
+      <line x1="0" y1="-75" x2="0" y2="-40"/>
+      <line x1="0" y1="40"  x2="0" y2="75"/>
+    </g>
+  </g>
+
+  <!-- HAWKEYE wordmark (with letter-by-letter fade-in pulse) -->
+  <g font-size="44" font-weight="800" letter-spacing="14" text-anchor="middle">
+    <text x="600" y="310" fill="url(#hkWord)">HAWKEYE</text>
+  </g>
+
+  <!-- subtitle -->
+  <text x="600" y="338" text-anchor="middle" font-size="13" fill="#7d8590" letter-spacing="2">
+    THE FIRST <tspan fill="#39d353" font-weight="700">PROACTIVE</tspan> AI ASSISTANT FOR DESKTOP
+  </text>
+
+  <!-- shortcut chips: ⌘ + ⇧ + H -->
+  <g transform="translate(600 372)" font-size="14" font-weight="700">
+    <!-- ⌘ -->
+    <g transform="translate(-90 0)">
+      <rect x="-22" y="-16" width="44" height="32" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1.2">
+        <animate attributeName="fill" values="#161b22;#1f6feb;#161b22" dur="2.4s" begin="0s" repeatCount="indefinite" keyTimes="0;0.1;0.4"/>
+        <animate attributeName="y" values="-16;-13;-16" dur="2.4s" begin="0s" repeatCount="indefinite" keyTimes="0;0.1;0.25"/>
+      </rect>
+      <text y="6" text-anchor="middle" fill="#e6edf3">⌘</text>
+    </g>
+    <!-- plus -->
+    <text x="-45" y="6" text-anchor="middle" fill="#6e7681">+</text>
+    <!-- ⇧ -->
+    <g transform="translate(0 0)">
+      <rect x="-22" y="-16" width="44" height="32" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1.2">
+        <animate attributeName="fill" values="#161b22;#1f6feb;#161b22" dur="2.4s" begin="0.25s" repeatCount="indefinite" keyTimes="0;0.1;0.4"/>
+        <animate attributeName="y" values="-16;-13;-16" dur="2.4s" begin="0.25s" repeatCount="indefinite" keyTimes="0;0.1;0.25"/>
+      </rect>
+      <text y="6" text-anchor="middle" fill="#e6edf3">⇧</text>
+    </g>
+    <!-- plus -->
+    <text x="45" y="6" text-anchor="middle" fill="#6e7681">+</text>
+    <!-- H -->
+    <g transform="translate(90 0)">
+      <rect x="-22" y="-16" width="44" height="32" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1.2">
+        <animate attributeName="fill" values="#161b22;#39d353;#161b22" dur="2.4s" begin="0.5s" repeatCount="indefinite" keyTimes="0;0.1;0.4"/>
+        <animate attributeName="y" values="-16;-13;-16" dur="2.4s" begin="0.5s" repeatCount="indefinite" keyTimes="0;0.1;0.25"/>
+      </rect>
+      <text y="6" text-anchor="middle" fill="#e6edf3">H</text>
+    </g>
+    <!-- caption -->
+    <text x="160" y="6" font-size="11" fill="#7d8590" font-weight="400">observe screen ›</text>
+  </g>
+
+  <!-- vertical scanline -->
+  <rect x="0" y="-28" width="1200" height="28" fill="url(#hkScan)" opacity="0.55">
+    <animate attributeName="y" values="-28;440;-28" dur="8s" repeatCount="indefinite"/>
+  </rect>
+</svg>

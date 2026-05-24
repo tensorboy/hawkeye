@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 160" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" role="img" aria-label="hawkeye gaze trail">
+  <defs>
+    <linearGradient id="fwTrail" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%"   stop-color="#39d353" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#58a6ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#39d353" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="fwDots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#1f2937"/>
+    </pattern>
+    <filter id="fwGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="160" fill="#0d1117"/>
+  <rect width="1200" height="160" fill="url(#fwDots)" opacity="0.55"/>
+  <line x1="0" y1="6" x2="1200" y2="6" stroke="#21262d"/>
+
+  <!-- gaze path -->
+  <path id="fwPath"
+        d="M 0 80 C 100 36, 200 124, 300 80 S 500 36, 600 80 S 800 124, 900 80 S 1100 36, 1200 80"
+        fill="none" stroke="url(#fwTrail)" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+
+  <!-- dashed echo -->
+  <path d="M 0 80 C 100 36, 200 124, 300 80 S 500 36, 600 80 S 800 124, 900 80 S 1100 36, 1200 80"
+        fill="none" stroke="#1f6feb" stroke-width="0.6" opacity="0.3" stroke-dasharray="3 6"/>
+
+  <g filter="url(#fwGlow)">
+    <circle r="5" fill="#39d353">
+      <animateMotion dur="10s" repeatCount="indefinite"><mpath href="#fwPath"/></animateMotion>
+      <animate attributeName="r" values="3;6;3" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="3" fill="#58a6ff" opacity="0.6">
+      <animateMotion dur="10s" begin="-0.55s" repeatCount="indefinite"><mpath href="#fwPath"/></animateMotion>
+    </circle>
+    <circle r="2" fill="#a5d6ff" opacity="0.5">
+      <animateMotion dur="10s" begin="-1.1s" repeatCount="indefinite"><mpath href="#fwPath"/></animateMotion>
+    </circle>
+  </g>
+
+  <text x="600" y="135" text-anchor="middle" font-size="11" fill="#6e7681" letter-spacing="4">
+    WATCH KEENLY · ACT THOUGHTFULLY · <tspan fill="#58a6ff" font-weight="700">⌘⇧H</tspan>
+  </text>
+</svg>

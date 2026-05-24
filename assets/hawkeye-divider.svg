@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 24" role="img" aria-label="section divider">
+  <defs>
+    <linearGradient id="dvLine" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%"   stop-color="#58a6ff" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#58a6ff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#58a6ff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="dvGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <line x1="0" y1="12" x2="880" y2="12" stroke="url(#dvLine)" stroke-width="1"/>
+
+  <!-- moving dot -->
+  <g filter="url(#dvGlow)">
+    <circle cy="12" r="3.5" fill="#39d353">
+      <animate attributeName="cx" values="0;880;0" dur="6s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2.5;4.5;2.5" dur="6s" repeatCount="indefinite"/>
+    </circle>
+    <circle cy="12" r="2" fill="#58a6ff" opacity="0.7">
+      <animate attributeName="cx" values="0;880;0" begin="-0.4s" dur="6s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>
