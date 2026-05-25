@@ -470,6 +470,470 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 <br/>
 
+## 🏗️ Architecture & Flow
+
+> All diagrams are written in [Mermaid](https://mermaid.js.org/) and render natively on GitHub. For a renderer that also outputs ASCII (great for terminals & LLM prompts) see [beautiful-mermaid](https://github.com/lukilabs/beautiful-mermaid). The standalone [HAWKEYE_FLOW.md](HAWKEYE_FLOW.md) keeps every diagram in one place.
+
+### Top-level component map
+
+After the *HAWKEYED unification*, Tauri is a thin shell (window / tray / global shortcuts) and every backend capability lives in a standalone `hawkeyed` HTTP daemon. Any frontend — GUI, CLI, MCP server, VSCode / Chrome extensions — talks to the same `AppState` over `localhost:<port>` REST + SSE.
+
+```mermaid
+graph TD
+  subgraph Hosts["Frontends / Hosts"]
+    GUI["Tauri React GUI<br/>(packages/desktop-tauri/src)"]
+    CLI["hawkeye-cli<br/>(src-tauri/src/bin/cli.rs)"]
+    MCP["MCP server<br/>(src-tauri/src/bin/mcp.rs)"]
+    VSC["VSCode extension<br/>(packages/vscode-extension)"]
+    CHX["Chrome extension<br/>(packages/chrome-extension)"]
+  end
+
+  subgraph Shell["Tauri shell"]
+    SH["lib.rs::run()<br/>window + tray + global shortcuts"]
+    TS["TauriShellState<br/>(daemon_child + daemon_info)"]
+  end
+
+  subgraph Daemon["hawkeyed (axum HTTP)"]
+    SRV["server.rs<br/>build_router /v1/*"]
+    AUTH["Bearer token middleware<br/>~/.config/hawkeye/api-token"]
+    APP["AppState<br/>(state.rs)"]
+    BUS["EventBus<br/>tokio broadcast"]
+    SINK["SharedSink<br/>(event_sink.rs)"]
+  end
+
+  subgraph Backends["AppState subsystems"]
+    AI["AI Provider<br/>Gemini / OpenAI / Local"]
+    OBS["Observe Loop"]
+    GAZE["Gaze Buffer + Model"]
+    AGT["Agent Supervisor<br/>+ cua-driver"]
+    LT["Life Tree"]
+    AL["Activity Log"]
+    IR["Intent Recognizer"]
+    MM["Model Manager"]
+    TC["Training Collector"]
+    DT["Debug Timeline"]
+  end
+
+  GUI -->|HTTP + SSE| AUTH
+  CLI -->|HTTP| AUTH
+  MCP -->|HTTP| AUTH
+  VSC -->|HTTP| AUTH
+  CHX -->|HTTP| AUTH
+
+  GUI <-->|IPC: status / updater| SH
+  SH --> TS
+  SH -.spawn.-> SRV
+
+  AUTH --> SRV
+  SRV --> APP
+  SRV --> BUS
+  SRV --> SINK
+  SINK --> BUS
+
+  APP --> AI
+  APP --> OBS
+  APP --> GAZE
+  APP --> AGT
+  APP --> LT
+  APP --> AL
+  APP --> IR
+  APP --> MM
+  APP --> TC
+  APP --> DT
+```
+
+### Boot & daemon handshake
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant T as Tauri (lib.rs)
+  participant D as hawkeyed
+  participant FS as ~/.config/hawkeye
+  participant R as React UI
+
+  U->>T: Launch Hawkeye.app
+  T->>T: env_logger init
+  T->>T: register ⌥E / ⌥⇧E / ⌥⌘E
+  T->>T: app.manage(TauriShellState::default())
+  T-)+D: tauri::async_runtime::spawn → ensure_daemon(port)
+  alt port already has hawkeyed
+    D-->>T: probe /v1/health 200
+    T->>T: shell.daemon_info = {running, spawned_by_gui:false}
+  else port empty
+    T->>D: spawn child(hawkeye-cli daemon)
+    D->>FS: read/write api-token
+    D->>D: build_router + bind 127.0.0.1:port
+    D-->>T: probe /v1/health 200
+    T->>T: shell.daemon_child = Some(child)
+  end
+  T->>R: load index.html (always_on_top)
+  R->>T: invoke get_daemon_info()
+  T-->>R: { url, token, spawnedByGui }
+  R->>D: GET /v1/status (Bearer token)
+  R->>D: GET /v1/events?filter=...&token=... (SSE)
+  D--)R: SSE: AI_INITIALIZED / OBSERVE_UPDATE / GAZE_* / ...
+```
+
+### Observe loop (adaptive + perception fan-in)
+
+```mermaid
+flowchart TD
+  Start([POST /v1/observe/start]) --> Spawn[tokio::spawn run_loop]
+  Spawn --> AdaptInt[read adaptive_refresh.current_interval_ms]
+  AdaptInt --> Sleep{select! sleep | stop_rx}
+  Sleep -- stop --> Emit0[sink.emit OBSERVE_STOPPED] --> End([return])
+  Sleep -- tick --> Cap[perception::screen::capture_screenshot]
+  Cap -->|Err| AdaptInt
+  Cap --> Decode[base64 → PNG → RGBA]
+  Decode --> Hash[change_detector::compute_phash 8x8 avg]
+  Hash --> Cmp{change_ratio ≥ threshold?}
+  Cmp -- no --> AdaptInt
+  Cmp -- yes --> EmitChg[sink.emit OBSERVE_CHANGE]
+  EmitChg --> Rec[adaptive_refresh.record_activity ScreenChange]
+  Rec --> Win[perception::window::get_active_window]
+  Win --> OCR[perception::ocr::run_ocr<br/>Vision API via swift-ocr]
+  OCR --> Build[assemble ObservationResult<br/>+ ocr_regions for gaze hit-test]
+  Build --> Log[activity_log.push ActivityEntry]
+  Log --> Intent[intent_recognizer.recognize]
+  Intent --> IntentE{any intents?}
+  IntentE -- yes --> EmitInt[sink.emit INTENT_RECOGNIZED]
+  IntentE -- no --> Tree
+  EmitInt --> Tree
+  Tree[life_tree.process_activity] --> Store[state.last_observation = obs]
+  Store --> EmitObs[sink.emit OBSERVE_UPDATE]
+  EmitObs --> AdaptInt
+```
+
+### Look-to-Explain (`⌥E` / `⌥⇧E` / `⌥⌘E`)
+
+Hawkeye's signature interaction: hold your gaze on something, press one of the three explain hotkeys, and a card pops up with a *dictionary* / *troubleshoot* / *scene* explanation rendered as inline HTML.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant OS as macOS GlobalShortcut
+  participant T as Tauri lib.rs
+  participant W as Main Window (React)
+  participant H as useExplain.ts
+  participant ST as zustand store
+  participant D as hawkeyed
+  participant SC as perception::screen
+  participant OCR as perception::ocr
+  participant AI as AiProvider
+
+  U->>OS: press ⌥E (or ⌥⇧E / ⌥⌘E)
+  OS->>T: shortcut event Pressed
+  T->>T: pick mode = dictionary/troubleshoot/scene
+  T->>W: window.emit("explain:requested", {mode})
+  W->>H: useExplain listener fires
+  H->>ST: read gazedEntity (from GazeOverlay hit-test)
+  alt no gazedEntity
+    H-->>U: toast "look at something first"
+  else has gazedEntity
+    H->>D: POST /v1/explain {x, y, mode, half_size?}
+    D->>SC: capture_region(x, y, half=200) → 400×400 PNG
+    SC-->>D: base64 + (w,h)
+    D->>OCR: run_ocr(cropped_b64)
+    OCR-->>D: text
+    alt OCR text empty
+      D-->>H: 200 {html: "<em>no text recognised…</em>"}
+    else
+      D->>D: pick system prompt (mode)
+      D->>AI: chat([system, user])
+      AI-->>D: HTML fragment
+      D-->>H: 200 {ok, html, mode, anchor, cropSize, ocrText, durationMs}
+    end
+    H->>W: setExplainCard({html, anchor})
+    W-->>U: explain-overlay card fades in
+  end
+```
+
+### Gaze tracking & online training
+
+```mermaid
+graph LR
+  subgraph FE[React frontend]
+    WG[WebGazer<br/>MediaPipe WASM]
+    HG[useWebGazer.ts]
+    HE[useGazedEntity.ts]
+    OV[GazeOverlay.tsx]
+  end
+
+  subgraph D[hawkeyed]
+    SB[POST /v1/gaze/sample<br/>→ GazeDataBuffer]
+    PR[POST /v1/gaze/predict<br/>→ GazeModel.predict_timed]
+    TR[POST /v1/gaze/train<br/>→ tokio::spawn run_training]
+    AR[ane_runner.rs<br/>ANE > CPU fallback]
+    GM[GazeModel<br/>(state.gaze_model)]
+    ENT[PUT /v1/gaze/entity<br/>state.current_gazed_entity]
+    CCG[POST /v1/ai/chat-with-gaze-context]
+    OBS[state.last_observation<br/>ocr_regions]
+  end
+
+  WG -->|40-d features| HG
+  HG -->|continuous stream| SB
+  HG -->|each frame| PR
+  PR -->|(x,y)| OV
+  OBS -.snapshot.-> HE
+  OV --> HE
+  HE -->|hit OCR region| ENT
+  ENT --> CCG
+  CCG -. rewrite "this/that" .- ENT
+
+  SB -. enough samples .- TR
+  TR --> AR
+  AR --> GM
+  GM --> PR
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> Empty: first launch
+  Empty --> Buffering: POST /v1/gaze/sample
+  Buffering --> Buffering: sample_count < 10
+  Buffering --> Ready: ≥10 and not training
+  Ready --> Training: POST /v1/gaze/train
+  Training --> Ready: ANE done, model updated
+  Training --> Ready: failure (log::error, old model kept)
+  Ready --> Predicting: POST /v1/gaze/predict
+  Predicting --> Ready
+  Ready --> Empty: DELETE /v1/gaze/model
+```
+
+### Agent tool loop (cua-driver, multi-round)
+
+`run_user_turn` orchestrates a single user turn through `chat_with_tools`. Risky tools (`click`, `type_text`, `press_key`, `launch_app`, `scroll`) go through a `ConfirmGate`; in the GUI that fires `agent:confirm-needed` on the SSE bus and waits up to 30 s for the user to click in `AgentConfirmModal`. Tool results are fed back to the model up to `MAX_TOOL_ROUNDS = 8`.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant R as React (useAgent)
+  participant D as hawkeyed /v1/agent/chat
+  participant M as AiProvider
+  participant G as ConfirmGate
+  participant C as CuaDriverClient
+  participant BUS as EventBus (SSE)
+
+  U->>R: agent prompt
+  R->>D: POST /v1/agent/chat {history, user_input, require_confirmation:true}
+  D->>D: build ToolMessage history + pick Gate
+  loop ≤ MAX_TOOL_ROUNDS (=8)
+    D->>M: chat_with_tools(history, function_decls)
+    alt model returns final text
+      M-->>D: AssistantText
+      D-->>R: 200 {text, rounds, toolCalls[], usage}
+      R-->>U: render answer
+    else model requests tool call
+      M-->>D: FunctionCall{name, args}
+      alt name ∈ RISKY_TOOLS
+        D->>BUS: emit AGENT_CONFIRM_NEEDED {confirmId, name, args}
+        BUS--)R: SSE
+        R-->>U: AgentConfirmModal
+        U->>R: allow / reject
+        R->>D: POST /v1/agent/confirm {confirmId, accept}
+        D->>G: wake oneshot
+        G-->>D: bool
+      else read-only tool
+        D->>G: AlwaysApprove
+        G-->>D: true
+      end
+      alt allowed
+        D->>C: cua-driver.call(name, args) over UDS
+        C-->>D: ToolResult (text / image)
+        D->>D: append FunctionResult to history
+      else rejected
+        D->>D: write "user rejected" to history
+      end
+    end
+  end
+```
+
+### AI Provider abstraction
+
+```mermaid
+stateDiagram-v2
+  [*] --> Uninitialized
+  Uninitialized --> Initializing: POST /v1/ai/init
+  state Initializing {
+    [*] --> Choose
+    Choose --> Gemini: config.ai_provider = "gemini"
+    Choose --> OpenAI: config.ai_provider = "openai"
+    Choose --> Local: config.ai_provider ∈ {"local","llama-cpp"}
+    Gemini --> Validate
+    OpenAI --> Validate
+    Local --> CheckModel
+    CheckModel --> Validate: model downloaded
+    CheckModel --> [*]: error "model not downloaded"
+    Validate --> [*]: provider.validate() ok
+    Validate --> [*]: failure → 500
+  }
+  Initializing --> Ready: AppState.ai_client = Some(provider)<br/>BUS.emit AI_INITIALIZED
+  Ready --> Ready: /v1/ai/chat<br/>/v1/ai/chat-with-gaze-context<br/>/v1/explain<br/>/v1/perception/analyze<br/>/v1/agent/chat
+  Ready --> Uninitialized: user switches provider → /v1/ai/init again
+```
+
+### End-to-end: from pixels to answer
+
+```mermaid
+flowchart TD
+  subgraph Sense[Sense]
+    SCR[screen capture] --> PH[perceptual hash]
+    PH -->|changed| OCR2[OCR + regions]
+    SCR --> CROP[capture_region<br/>fixed 400×400]
+  end
+
+  subgraph Track[Track]
+    EYE[WebGazer features] --> SAM[/v1/gaze/sample]
+    SAM --> BUF[GazeBuffer]
+    BUF --> TRN[/v1/gaze/train<br/>ANE]
+    TRN --> GM2[GazeModel]
+    EYE --> PRED[/v1/gaze/predict]
+    PRED --> XY[(x, y)]
+  end
+
+  subgraph Fuse[Fuse]
+    OCR2 --> REG[ocr_regions]
+    XY --> HIT[frontend hit-test]
+    REG --> HIT
+    HIT --> ENT[GazedEntity<br/>{text, type, bbox}]
+  end
+
+  subgraph Act[Act]
+    ENT --> CHAT["/v1/ai/chat-with-gaze-context<br/>rewrite this/that"]
+    ENT --> EXP["⌥E → /v1/explain<br/>crop + OCR + AI"]
+    ENT --> AGT2["/v1/agent/chat<br/>screen-aware tools"]
+    CHAT --> OUT[(answer)]
+    EXP --> OUT
+    AGT2 --> OUT
+  end
+```
+
+### Event bus (SSE) topics
+
+```mermaid
+mindmap
+  root((events.rs))
+    AI
+      ai:initialized
+    Observe
+      observe:change
+      observe:update
+      observe:stopped
+    Intent
+      intent:recognized
+    Gaze
+      gaze:entity-changed
+      gaze:entity-cleared
+      gaze:training-progress
+    Agent
+      agent:confirm-needed
+      agent:tool-called
+    Gesture
+      gesture:event
+      gesture:screenshot
+      gesture:pause
+      gesture:confirm
+      gesture:cancel
+      gesture:quick-menu
+    Models
+      model:download-progress
+    Training
+      training:sample-saved
+      training:export-complete
+    Explain
+      explain:requested (Tauri IPC only)
+```
+
+### One picture: all entries → all exits
+
+```mermaid
+graph TB
+  classDef ent fill:#3b82f6,color:#fff
+  classDef daemon fill:#10b981,color:#fff
+  classDef store fill:#f59e0b,color:#fff
+  classDef out fill:#ef4444,color:#fff
+
+  subgraph IN[Entries]
+    K1["⌥E / ⌥⇧E / ⌥⌘E"]:::ent
+    K2[Tray menu]:::ent
+    K3[React chat box]:::ent
+    K4[Agent input]:::ent
+    K5[GazeOverlay focus]:::ent
+    K6[hawkeye-cli ask]:::ent
+    K7[MCP client]:::ent
+    K8[Chrome ext]:::ent
+  end
+
+  subgraph DA[hawkeyed]
+    R1[/v1/explain]:::daemon
+    R2[/v1/ai/chat]:::daemon
+    R3[/v1/ai/chat-with-gaze-context]:::daemon
+    R4[/v1/agent/chat]:::daemon
+    R5[/v1/observe/*]:::daemon
+    R6[/v1/gaze/*]:::daemon
+    R7[/v1/perception/*]:::daemon
+    R8[/v1/life-tree/*]:::daemon
+    R9[/v1/summary/generate]:::daemon
+    R10[/v1/events SSE]:::daemon
+  end
+
+  subgraph ST[AppState]
+    S1[ai_client]:::store
+    S2[observe_loop]:::store
+    S3[gaze_model + buffer]:::store
+    S4[current_gazed_entity]:::store
+    S5[activity_log]:::store
+    S6[life_tree]:::store
+    S7[debug_timeline]:::store
+    S8[agent_supervisor]:::store
+  end
+
+  subgraph OUT[Exits]
+    O1[explain-overlay HTML]:::out
+    O2[Chat bubble]:::out
+    O3[Agent tool exec + answer]:::out
+    O4[Life Tree viz]:::out
+    O5[Activity Summary]:::out
+    O6[SSE event stream]:::out
+    O7[Training samples JSONL]:::out
+  end
+
+  K1 --> R1
+  K2 --> R5
+  K3 --> R2
+  K3 --> R3
+  K4 --> R4
+  K5 --> R6
+  K6 --> R2
+  K7 --> R2
+  K7 --> R4
+  K8 --> R7
+
+  R1 --> S1 --> O1
+  R2 --> S1 --> O2
+  R3 --> S4
+  R3 --> S1 --> O2
+  R4 --> S1
+  R4 --> S8 --> O3
+  R5 --> S2 --> S5
+  R5 --> S6
+  R6 --> S3
+  R6 --> S4
+  R7 --> S1
+  R8 --> S6 --> O4
+  R9 --> S5 --> O5
+  R5 -. emit .-> R10 --> O6
+  R4 -. tool_called .-> R10
+  R6 -. training-progress .-> R10
+  R4 -. save .-> O7
+```
+
+<br/>
+
 ## ⭐ Star History
 
 <a href="https://star-history.com/#tensorboy/hawkeye&Date">
