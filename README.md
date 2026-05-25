@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/hawkeye-hero.svg" alt="Hawkeye — The First Proactive AI Assistant for Desktop. Press Cmd+Shift+H to observe your screen instantly." width="100%" />
+<img src="./assets/hawkeye-hero.svg" alt="Hawkeye — The first proactive AI desktop assistant you control with your eyes, voice, and gestures. No mouse, no keyboard. Press Cmd+Shift+H to observe your screen." width="100%" />
 
 # Hawkeye
 
@@ -26,18 +26,74 @@
 
 ## 🎯 What is Hawkeye?
 
-> **Traditional AI waits for your commands. Hawkeye watches and helps proactively.**
+> **Other AIs wait for your keyboard. Hawkeye watches your eyes, hears your voice, reads your gestures — the first proactive AI desktop assistant you don't have to *touch*.**
 
-Hawkeye is an **AI-powered desktop assistant** that observes your work environment—screen, clipboard, files—and proactively offers intelligent suggestions. No prompts needed.
+Hawkeye is the **first proactive AI desktop assistant that runs fully hands-free**. It observes your screen, follows your gaze, listens to your voice, and reads in-air gestures — all on-device. Mouse and keyboard become *optional accelerators*, not required input. No prompts needed.
 
 The AI behind Hawkeye is designed to **enhance your own story** — turning your screen time into meaningful personal growth by automatically mapping your goals, habits, and progress into a living **Life Tree**.
 
-| Feature | Copilot / Cursor / Claude Code | **Hawkeye** |
-|---------|-------------------------------|-------------|
-| **Mode** | Reactive (you ask) | **Proactive** (it watches) |
-| **Scope** | Code only | Everything: coding, browsing, writing |
-| **Privacy** | Cloud-based | **Local-first**, your data stays local |
-| **Control** | AI executes | **You decide** what to execute |
+| Feature | Copilot / Cursor / Claude Code | Recall / Rewind | **Hawkeye** |
+|---------|-------------------------------|------------------|-------------|
+| **Mode** | Reactive (you ask) | Passive (it records) | **Proactive** (it watches & acts) |
+| **Input** | Mouse & keyboard | Mouse & keyboard | **Eyes, voice & gesture** — hands-free |
+| **Scope** | Code only | Activity history | **Everything**: coding, browsing, writing, living |
+| **Privacy** | Cloud-based | Local index, cloud sync | **100% local-first**, no server to leak from |
+| **Control** | AI executes silently | You search later | **You decide** every action, in real time |
+
+<sub>Plenty of AI tools "watch the screen." Hawkeye is the first one where you can stop reaching for the mouse — your eyes <em>are</em> the pointer.</sub>
+
+<br/>
+
+### 🛡️ Built to be Loyal — Only to You
+
+> **Hawkeye has one user, one allegiance: you.** No advertiser, no cloud provider, no shareholder sits between Hawkeye and the person it serves.
+
+<table>
+<tr>
+<td width="50%">
+
+#### 🔒 Local-first by default
+Screen capture, OCR (Apple Vision), gaze tracking, intent recognition, perceptual hashing — **everything sensory runs on your machine**. Cloud AI is *opt-in* and *per-request*; flip a switch in settings and the network turns off.
+
+</td>
+<td width="50%">
+
+#### 🚫 No telemetry, no profiling
+We don't ship your activity log, prompts, screenshots, or keystrokes to any server we control. There is **no "we" server**. Your data never leaves your laptop unless *you* asked an external AI provider a *specific* question.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+#### ✋ You hold the kill switch
+Risky agent actions (`click`, `type_text`, `press_key`, `launch_app`, `scroll`) go through an **explicit confirm gate** with a 30-second timeout. The agent can never touch your desktop without you tapping ✓ first. Cancel anytime with `⌥⌘.`.
+
+</td>
+<td width="50%">
+
+#### 🧱 Open & auditable
+**MIT licensed.** Every event is visible on the SSE debug timeline, every model call is logged for you to inspect, every prompt template is in the repo. If Hawkeye ever does something you didn't expect, you can read the exact line of code that did it.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+#### 🧠 Your own model, your own metal
+Run a local LLM via `llama-cpp-2` on **Apple Metal / ANE**. Weights live in `~/Library/Application Support/com.hawkeye.desktop/models/`. Delete a model with one click; uninstall Hawkeye and **zero bytes of your data persist anywhere else**.
+
+</td>
+<td width="50%">
+
+#### 🛡️ Safety guardrails, not gates
+A built-in safety analyzer flags destructive shell commands, credential leaks in clipboard, and prompts that would exfiltrate sensitive context — before they ever reach a model. Defaults err toward *refusing to act*, not *acting silently*.
+
+</td>
+</tr>
+</table>
+
+<p align="center"><sub><em>If Hawkeye ever loses your trust, it has lost its purpose.</em></sub></p>
 
 <br/>
 
