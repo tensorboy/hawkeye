@@ -759,6 +759,53 @@ stateDiagram-v2
   Ready --> Empty: DELETE /v1/gaze/model
 ```
 
+### Future: foundation-model gaze (R&D in [`hawkeye-gaze`](https://github.com/tensorboy/hawkeye-gaze))
+
+The Phase 1 pipeline above relies on **WebGazer** in the renderer (ridge regression on 6×10
+grayscale eye patches, 50-sample sliding window) and a tiny 40-dim ANE MLP in the daemon.
+This works but has two architectural ceilings:
+
+1. **WebGazer is not end-to-end trainable.** Its `dataWindow = 50` ring buffer
+   (`webgazer/src/util_regression.mjs:12`) caps the model to the last 50 clicks — extra
+   user data is overwritten, not accumulated. Confirmed in source.
+2. **The 40-dim ANE MLP** is too small to make use of long-horizon user data.
+
+The deepening research (full notes in `~/.claude/projects/.../memory/project_gaze_research.md`)
+landed on a different paradigm: **freeze a vision foundation model encoder, train a small
+gaze-specific head, then personalize on-device.** This is now being prototyped in a
+separate repo to keep the main project clean:
+
+```mermaid
+graph LR
+  CAM[webcam<br/>face crop 256×256]
+  SIG[SigLIP 2 ViT-B/16<br/>86M params, Apache 2.0]
+  L2CS[L2CS head<br/>yaw bins + pitch bins + regression]
+  GAZE[3D gaze<br/>yaw, pitch]
+  MAP[ScreenMappingHead<br/>~50K params, per-user]
+  XY[screen x, y]
+
+  CAM --> SIG --> L2CS --> GAZE --> MAP --> XY
+
+  classDef trainable fill:#10b981,color:#fff,stroke:#065f46
+  class SIG,L2CS,MAP trainable
+```
+
+**Key choices, briefly justified:**
+
+| Decision | Rationale |
+|---|---|
+| **First-person gaze direction** (not gaze target heatmap) | Hawkeye looks at the user's face and needs screen coordinates. Gaze-LLE / GazeMoE solve a different problem (third-person heatmap inside the input image). |
+| **SigLIP 2 Base** backbone | Apache 2.0, non-gated, empirically stronger downstream features than MobileCLIP2 in our hands. |
+| **L2CS head** (Abdelrahman et al., arXiv:2203.03339) | yaw/pitch bin classification + regression refinement is more stable than naive angle regression. |
+| **All ~86M params trainable** | Lets user data compound: backbone, head, and screen mapping all benefit from accumulated click samples. |
+| **Cold-start defense in depth** | (a) ship population-average weights, (b) 9-point calibration on first launch, (c) implicit click-as-label refinement, (d) reservoir sampling + nightly retrain on idle/charging. |
+| **No GazeCapture** | License explicitly forbids commercial use including any derived model. Commercial training data path = self-collect / synthetic / negotiated license. |
+| **CoreML export with attention fast-path disabled** | coremltools cannot trace `_native_multi_head_attention`; we set the math SDP backend before `torch.jit.trace` (coremltools issue #2311). |
+
+Repo: [github.com/tensorboy/hawkeye-gaze](https://github.com/tensorboy/hawkeye-gaze).
+The only artifact that flows back into this `hawkeye` project is a single
+`.mlpackage` file — no source coupling between repos.
+
 ### Agent tool loop (cua-driver, multi-round)
 
 `run_user_turn` orchestrates a single user turn through `chat_with_tools`. Risky tools (`click`, `type_text`, `press_key`, `launch_app`, `scroll`) go through a `ConfirmGate`; in the GUI that fires `agent:confirm-needed` on the SSE bus and waits up to 30 s for the user to click in `AgentConfirmModal`. Tool results are fed back to the model up to `MAX_TOOL_ROUNDS = 8`.
