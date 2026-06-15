@@ -2,7 +2,7 @@
   "name": "@hawkeye/demo-video",
   "version": "1.0.0",
   "private": true,
-  "description": "Hawkeye demo video created with Remotion",
+  "description": "Shadow demo video created with Remotion",
   "scripts": {
     "dev": "remotion studio",
     "build": "remotion render HawkeyeDemo out/demo.mp4",

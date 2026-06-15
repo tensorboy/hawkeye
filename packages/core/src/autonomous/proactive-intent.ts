@@ -137,7 +137,7 @@ const createIdleTimeoutHandler = (detector: ProactiveIntentDetector): TriggerHan
       title: '休息提醒',
       description: '你已经工作了一段时间，需要休息一下吗？',
       suggestedPlan: createSimplePlan('休息提醒', [
-        { actionType: 'notification', params: { title: 'Hawkeye', message: '该休息一下了！' }, description: '显示休息提醒' },
+        { actionType: 'notification', params: { title: 'Shadow', message: '该休息一下了！' }, description: '显示休息提醒' },
       ]),
       autoExecute: false,
       requiresConfirmation: true,

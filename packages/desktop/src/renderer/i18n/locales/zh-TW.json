@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Hawkeye",
+    "title": "Shadow",
     "loading": "正在分析螢幕...",
     "empty": "暫無檢測到意圖",
     "observeScreen": "觀察螢幕",
@@ -94,21 +94,21 @@
     "showSuggestions": "顯示建議",
     "settings": "設定",
     "quit": "結束",
-    "tooltip": "Hawkeye - 智慧任務助手"
+    "tooltip": "Shadow - 智慧任務助手"
   },
   "error": {
     "configureApiKey": "請先設定 API 金鑰",
     "engineNotInitialized": "引擎未初始化",
-    "notInitialized": "Hawkeye 未初始化",
+    "notInitialized": "Shadow 未初始化",
     "intentNotFound": "未找到意圖",
     "planNotFound": "未找到計畫"
   },
   "onboarding": {
-    "title": "歡迎使用 Hawkeye",
+    "title": "歡迎使用 Shadow",
     "subtitle": "請選擇一個 AI 模型來開始",
     "selectModel": "選擇模型",
     "noModelAvailable": "沒有可用的模型",
-    "noModelDesc": "請先下載一個模型才能使用 Hawkeye 的全部功能",
+    "noModelDesc": "請先下載一個模型才能使用 Shadow 的全部功能",
     "downloadFirst": "請先下載模型",
     "downloading": "正在下載模型...",
     "downloadComplete": "下載完成！",

@@ -260,7 +260,7 @@ export class HeartbeatService extends EventEmitter {
     // Show notification if tasks need attention
     if (!noActionNeeded && this.showNotificationCallback) {
       this.showNotificationCallback({
-        title: '📋 Hawkeye Heartbeat',
+        title: '📋 Shadow Heartbeat',
         body: `You have ${tasks.length} task(s) that need attention`,
       });
     }

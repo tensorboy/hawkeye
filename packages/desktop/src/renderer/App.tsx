@@ -1,5 +1,5 @@
 /**
- * Hawkeye Desktop - A2UI Main App Component
+ * Shadow Desktop - A2UI Main App Component
  * Thin router that delegates to page components
  */
 

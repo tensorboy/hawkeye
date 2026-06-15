@@ -1,5 +1,5 @@
 /**
- * Hawkeye VS Code Extension - Sync Client
+ * Shadow VS Code Extension - Sync Client
  * WebSocket client for communicating with Desktop app
  */
 
@@ -75,7 +75,7 @@ export class SyncClient {
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
-          console.log('[Hawkeye] Connected to Desktop');
+          console.log('[Shadow] Connected to Desktop');
           this._connected = true;
           this._desktopAvailable = true;
           this.reconnectAttempts = 0;
@@ -93,19 +93,19 @@ export class SyncClient {
             const message = JSON.parse(data) as SyncMessage;
             this.handleMessage(message);
           } catch (error) {
-            console.error('[Hawkeye] Failed to parse message:', error);
+            console.error('[Shadow] Failed to parse message:', error);
           }
         };
 
         this.ws.onclose = () => {
-          console.log('[Hawkeye] Disconnected from Desktop');
+          console.log('[Shadow] Disconnected from Desktop');
           this._connected = false;
           this.emit('disconnected', {});
           this.scheduleReconnect();
         };
 
         this.ws.onerror = (error) => {
-          console.error('[Hawkeye] WebSocket error:', error);
+          console.error('[Shadow] WebSocket error:', error);
           this._connected = false;
           this._desktopAvailable = false;
           this.emit('error', { error });
@@ -139,7 +139,7 @@ export class SyncClient {
    */
   send(type: string, payload: unknown): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('[Hawkeye] Not connected to Desktop');
+      console.warn('[Shadow] Not connected to Desktop');
       return;
     }
 
@@ -329,14 +329,14 @@ export class SyncClient {
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts!) {
-      console.log('[Hawkeye] Max reconnect attempts reached');
+      console.log('[Shadow] Max reconnect attempts reached');
       this._desktopAvailable = false;
       this.emit('max_reconnect_reached', {});
       return;
     }
 
     this.reconnectAttempts++;
-    console.log(`[Hawkeye] Reconnecting in ${this.config.reconnectDelay}ms (attempt ${this.reconnectAttempts})`);
+    console.log(`[Shadow] Reconnecting in ${this.config.reconnectDelay}ms (attempt ${this.reconnectAttempts})`);
 
     this.reconnectTimer = setTimeout(() => {
       this.connect().catch(() => {

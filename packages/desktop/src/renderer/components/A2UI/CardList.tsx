@@ -34,7 +34,7 @@ export const CardList: React.FC<CardListProps> = ({
   onDismiss,
   autoScroll = true,
   maxVisible,
-  emptyMessage = '暂无建议，Hawkeye 正在观察您的工作环境...',
+  emptyMessage = '暂无建议，Shadow 正在观察您的工作环境...',
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const prevCardsLengthRef = useRef(cards.length);
@@ -189,7 +189,7 @@ export const CardList: React.FC<CardListProps> = ({
     <div className="a2ui-card-list" ref={listRef}>
       {visibleCards.length === 0 ? (
         <div className="a2ui-empty-state">
-          <img src={logoIcon} alt="Hawkeye" className="empty-icon" />
+          <img src={logoIcon} alt="Shadow" className="empty-icon" />
           <p className="empty-message">{emptyMessage}</p>
           <div className="empty-hint">
             <span className="pulse-dot" />

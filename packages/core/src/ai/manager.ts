@@ -331,7 +331,7 @@ export class AIManager extends EventEmitter {
     const messages: AIMessage[] = [
       {
         role: 'system',
-        content: `你是 Hawkeye 智能助手，负责分析用户当前的工作上下文。
+        content: `你是 Shadow 智能助手，负责分析用户当前的工作上下文。
 请根据提供的信息，简洁地描述：
 1. 用户正在做什么
 2. 可能需要什么帮助

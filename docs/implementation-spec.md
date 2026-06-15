@@ -1,4 +1,4 @@
-# Hawkeye 实现规格文档
+# Shadow 实现规格文档
 
 **版本**: 1.0
 **最后更新**: 2026-01-20
@@ -1444,7 +1444,7 @@ interface DatabaseConfig {
   busyTimeout: number;
 }
 
-class HawkeyeDatabase {
+class ShadowDatabase {
   private db: Database.Database;
   private config: DatabaseConfig;
 
@@ -1810,16 +1810,16 @@ class VectorStore {
 // packages/desktop/src/main/index.ts
 
 import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage } from 'electron';
-import { HawkeyeCore } from '@hawkeye/core';
+import { ShadowCore } from '@hawkeye/core';
 
-class HawkeyeDesktop {
+class ShadowDesktop {
   private mainWindow: BrowserWindow | null = null;
   private tray: Tray | null = null;
-  private core: HawkeyeCore;
+  private core: ShadowCore;
   private isQuitting = false;
 
   constructor() {
-    this.core = new HawkeyeCore({
+    this.core = new ShadowCore({
       platform: 'desktop',
       storagePath: app.getPath('userData')
     });
@@ -1853,7 +1853,7 @@ class HawkeyeDesktop {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: '🦅 Hawkeye 运行中',
+        label: '🦅 Shadow 运行中',
         enabled: false
       },
       { type: 'separator' },
@@ -1881,7 +1881,7 @@ class HawkeyeDesktop {
       }
     ]);
 
-    this.tray.setToolTip('Hawkeye - AI 智能助手');
+    this.tray.setToolTip('Shadow - AI 智能助手');
     this.tray.setContextMenu(contextMenu);
 
     // 点击托盘图标显示/隐藏主窗口
@@ -1960,7 +1960,7 @@ class HawkeyeDesktop {
     if (process.platform === 'darwin') {
       // macOS 原生通知
       new Notification({
-        title: '🦅 Hawkeye',
+        title: '🦅 Shadow',
         body: suggestion.summary,
         silent: true
       }).show();
@@ -2027,7 +2027,7 @@ class HawkeyeDesktop {
 }
 
 // 启动应用
-const hawkeye = new HawkeyeDesktop();
+const hawkeye = new ShadowDesktop();
 hawkeye.initialize().catch(console.error);
 ```
 
@@ -2036,14 +2036,14 @@ hawkeye.initialize().catch(console.error);
 ```typescript
 // packages/chrome-extension/src/background/index.ts
 
-import { HawkeyeCore } from '@hawkeye/core';
+import { ShadowCore } from '@hawkeye/core';
 
-class HawkeyeChromeExtension {
-  private core: HawkeyeCore;
+class ShadowChromeExtension {
+  private core: ShadowCore;
   private desktopConnection: WebSocket | null = null;
 
   constructor() {
-    this.core = new HawkeyeCore({
+    this.core = new ShadowCore({
       platform: 'chrome',
       storagePath: 'indexedDB'
     });
@@ -2115,13 +2115,13 @@ class HawkeyeChromeExtension {
   private setupContextMenu(): void {
     chrome.contextMenus.create({
       id: 'hawkeye-analyze',
-      title: '🦅 Hawkeye: 分析选中内容',
+      title: '🦅 Shadow: 分析选中内容',
       contexts: ['selection']
     });
 
     chrome.contextMenus.create({
       id: 'hawkeye-save',
-      title: '🦅 Hawkeye: 保存到知识库',
+      title: '🦅 Shadow: 保存到知识库',
       contexts: ['selection', 'page']
     });
 
@@ -2166,7 +2166,7 @@ class HawkeyeChromeExtension {
       this.desktopConnection = new WebSocket('ws://localhost:31337');
 
       this.desktopConnection.onopen = () => {
-        console.log('Connected to Hawkeye Desktop');
+        console.log('Connected to Shadow Desktop');
         this.syncWithDesktop();
       };
 
@@ -2176,13 +2176,13 @@ class HawkeyeChromeExtension {
       };
 
       this.desktopConnection.onclose = () => {
-        console.log('Disconnected from Hawkeye Desktop');
+        console.log('Disconnected from Shadow Desktop');
         // 5秒后重连
         setTimeout(() => this.connectToDesktop(), 5000);
       };
     } catch (error) {
       // Desktop 未运行，独立工作
-      console.log('Hawkeye Desktop not available, running standalone');
+      console.log('Shadow Desktop not available, running standalone');
     }
   }
 
@@ -2201,7 +2201,7 @@ class HawkeyeChromeExtension {
 }
 
 // 初始化扩展
-const extension = new HawkeyeChromeExtension();
+const extension = new ShadowChromeExtension();
 extension.initialize().catch(console.error);
 ```
 
@@ -2211,16 +2211,16 @@ extension.initialize().catch(console.error);
 // packages/vscode-extension/src/extension.ts
 
 import * as vscode from 'vscode';
-import { HawkeyeCore } from '@hawkeye/core';
+import { ShadowCore } from '@hawkeye/core';
 
-class HawkeyeVSCodeExtension {
-  private core: HawkeyeCore;
+class ShadowVSCodeExtension {
+  private core: ShadowCore;
   private statusBarItem: vscode.StatusBarItem;
   private diagnosticCollection: vscode.DiagnosticCollection;
   private desktopConnection: WebSocket | null = null;
 
   constructor(private context: vscode.ExtensionContext) {
-    this.core = new HawkeyeCore({
+    this.core = new ShadowCore({
       platform: 'vscode',
       storagePath: context.globalStorageUri.fsPath
     });
@@ -2257,13 +2257,13 @@ class HawkeyeVSCodeExtension {
   }
 
   private setupStatusBar(): void {
-    this.statusBarItem.text = '$(eye) Hawkeye';
-    this.statusBarItem.tooltip = 'Hawkeye AI 助手';
+    this.statusBarItem.text = '$(eye) Shadow';
+    this.statusBarItem.tooltip = 'Shadow AI 助手';
     this.statusBarItem.command = 'hawkeye.showPanel';
   }
 
   private registerCommands(): void {
-    // 显示 Hawkeye 面板
+    // 显示 Shadow 面板
     this.context.subscriptions.push(
       vscode.commands.registerCommand('hawkeye.showPanel', () => {
         this.showPanel();
@@ -2392,7 +2392,7 @@ class HawkeyeVSCodeExtension {
     // 显示 CodeLens
     // 或者显示通知
     const action = await vscode.window.showInformationMessage(
-      `🦅 Hawkeye: ${suggestion.summary}`,
+      `🦅 Shadow: ${suggestion.summary}`,
       '查看方案',
       '忽略'
     );
@@ -2405,7 +2405,7 @@ class HawkeyeVSCodeExtension {
   private showSuggestionPanel(suggestion: TaskSuggestion): void {
     const panel = vscode.window.createWebviewPanel(
       'hawkeyeSuggestion',
-      '🦅 Hawkeye 建议',
+      '🦅 Shadow 建议',
       vscode.ViewColumn.Beside,
       {
         enableScripts: true
@@ -2459,16 +2459,16 @@ class HawkeyeVSCodeExtension {
   private updateStatusBar(status: 'connected' | 'disconnected' | 'standalone'): void {
     switch (status) {
       case 'connected':
-        this.statusBarItem.text = '$(eye) Hawkeye ✓';
-        this.statusBarItem.tooltip = 'Hawkeye - 已连接到 Desktop';
+        this.statusBarItem.text = '$(eye) Shadow ✓';
+        this.statusBarItem.tooltip = 'Shadow - 已连接到 Desktop';
         break;
       case 'disconnected':
-        this.statusBarItem.text = '$(eye) Hawkeye';
-        this.statusBarItem.tooltip = 'Hawkeye - 独立运行';
+        this.statusBarItem.text = '$(eye) Shadow';
+        this.statusBarItem.tooltip = 'Shadow - 独立运行';
         break;
       case 'standalone':
-        this.statusBarItem.text = '$(eye) Hawkeye';
-        this.statusBarItem.tooltip = 'Hawkeye - 独立运行';
+        this.statusBarItem.text = '$(eye) Shadow';
+        this.statusBarItem.tooltip = 'Shadow - 独立运行';
         break;
     }
   }
@@ -2482,10 +2482,10 @@ class HawkeyeVSCodeExtension {
 }
 
 // 导出激活和停用函数
-let extension: HawkeyeVSCodeExtension;
+let extension: ShadowVSCodeExtension;
 
 export function activate(context: vscode.ExtensionContext): void {
-  extension = new HawkeyeVSCodeExtension(context);
+  extension = new ShadowVSCodeExtension(context);
   extension.activate().catch(console.error);
 }
 
@@ -2751,7 +2751,7 @@ class AIManager {
 
 import { WebSocket, WebSocketServer } from 'ws';
 
-interface HawkeyeMessage {
+interface ShadowMessage {
   type: 'context' | 'suggestion' | 'execution' | 'sync' | 'ping' | 'pong';
   source: 'desktop' | 'chrome' | 'vscode';
   payload: any;
@@ -2759,10 +2759,10 @@ interface HawkeyeMessage {
   messageId: string;
 }
 
-class HawkeyeCommunicationServer {
+class ShadowCommunicationServer {
   private wss: WebSocketServer;
   private clients: Map<string, WebSocket> = new Map();
-  private messageHandlers: Map<string, (message: HawkeyeMessage, client: WebSocket) => void> = new Map();
+  private messageHandlers: Map<string, (message: ShadowMessage, client: WebSocket) => void> = new Map();
 
   constructor(port: number = 31337) {
     this.wss = new WebSocketServer({ port });
@@ -2779,7 +2779,7 @@ class HawkeyeCommunicationServer {
 
       ws.on('message', (data) => {
         try {
-          const message: HawkeyeMessage = JSON.parse(data.toString());
+          const message: ShadowMessage = JSON.parse(data.toString());
           this.handleMessage(message, ws);
         } catch (error) {
           console.error('Invalid message:', error);
@@ -2847,7 +2847,7 @@ class HawkeyeCommunicationServer {
     });
   }
 
-  private handleMessage(message: HawkeyeMessage, client: WebSocket): void {
+  private handleMessage(message: ShadowMessage, client: WebSocket): void {
     const handler = this.messageHandlers.get(message.type);
     if (handler) {
       handler(message, client);
@@ -2856,7 +2856,7 @@ class HawkeyeCommunicationServer {
     }
   }
 
-  private broadcast(message: HawkeyeMessage, exclude?: WebSocket): void {
+  private broadcast(message: ShadowMessage, exclude?: WebSocket): void {
     const data = JSON.stringify(message);
     this.clients.forEach((client) => {
       if (client !== exclude && client.readyState === WebSocket.OPEN) {
@@ -2865,8 +2865,8 @@ class HawkeyeCommunicationServer {
     });
   }
 
-  sendToAll(message: Omit<HawkeyeMessage, 'timestamp' | 'messageId'>): void {
-    const fullMessage: HawkeyeMessage = {
+  sendToAll(message: Omit<ShadowMessage, 'timestamp' | 'messageId'>): void {
+    const fullMessage: ShadowMessage = {
       ...message,
       timestamp: Date.now(),
       messageId: generateId()
@@ -3075,7 +3075,7 @@ class SensitiveDataFilter {
 
 ## 参考
 
-此文档详细描述了 Hawkeye 各层的实现细节，作为 PRD 的技术补充文档。
+此文档详细描述了 Shadow 各层的实现细节，作为 PRD 的技术补充文档。
 
 **相关文档**:
 - [PRD.md](./PRD.md) - 产品需求文档

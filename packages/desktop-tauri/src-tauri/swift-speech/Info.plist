@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Embedded into the hawkeye-speech CLI via -sectcreate __TEXT __info_plist.
+     Without these usage descriptions, macOS SIGABRTs the process the moment
+     it calls SFSpeechRecognizer.requestAuthorization / touches the mic. -->
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.hawkeye.speech-helper</string>
+	<key>CFBundleName</key>
+	<string>hawkeye-speech</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Hawkeye uses on-device speech recognition to transcribe your voice commands.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Hawkeye listens through the microphone to hear your voice commands.</string>
+</dict>
+</plist>

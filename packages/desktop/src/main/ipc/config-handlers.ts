@@ -19,14 +19,14 @@ export function registerConfigHandlers(
   ipcMain.handle('save-config', async (_event, newConfig: Partial<AppConfig>) => {
     const updatedConfig = configService.saveConfig(newConfig);
 
-    // Re-initialize Hawkeye in background
+    // Re-initialize Shadow in background
     setImmediate(async () => {
       try {
         await hawkeyeService.shutdown();
         await hawkeyeService.initialize(updatedConfig);
-        console.log('[Config] Hawkeye re-initialized');
+        console.log('[Config] Shadow re-initialized');
       } catch (err) {
-        console.error('[Config] Hawkeye re-init failed:', err);
+        console.error('[Config] Shadow re-init failed:', err);
       }
     });
 

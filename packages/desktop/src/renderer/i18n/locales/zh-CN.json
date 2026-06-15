@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Hawkeye",
+    "title": "Shadow",
     "loading": "正在分析屏幕...",
     "empty": "暂无检测到意图",
     "observeScreen": "观察屏幕",
@@ -108,17 +108,17 @@
     "showSuggestions": "显示建议",
     "settings": "设置",
     "quit": "退出",
-    "tooltip": "Hawkeye - 智能任务助手"
+    "tooltip": "Shadow - 智能任务助手"
   },
   "error": {
     "configureApiKey": "请先配置 API 密钥",
     "engineNotInitialized": "引擎未初始化",
-    "notInitialized": "Hawkeye 未初始化",
+    "notInitialized": "Shadow 未初始化",
     "intentNotFound": "未找到意图",
     "planNotFound": "未找到计划"
   },
   "onboarding": {
-    "title": "欢迎使用 Hawkeye",
+    "title": "欢迎使用 Shadow",
     "subtitle": "请选择一个 AI 模型来开始",
     "chooseMode": "请选择 AI 运行方式",
     "localMode": "本地模式",
@@ -136,7 +136,7 @@
     "geminiDesc": "免费额度，功能强大",
     "selectModel": "选择模型",
     "noModelAvailable": "没有可用的模型",
-    "noModelDesc": "请先下载一个模型才能使用 Hawkeye 的全部功能",
+    "noModelDesc": "请先下载一个模型才能使用 Shadow 的全部功能",
     "downloadFirst": "请先下载模型",
     "downloading": "正在下载模型...",
     "downloadComplete": "下载完成！",

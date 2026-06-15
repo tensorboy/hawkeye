@@ -521,7 +521,7 @@ export class PlanExecutor extends EventEmitter {
 
         case 'notification':
           return this.automation.showNotification(
-            params.title as string || 'Hawkeye',
+            params.title as string || 'Shadow',
             params.message as string
           );
 

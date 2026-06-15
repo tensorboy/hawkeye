@@ -1,5 +1,5 @@
 /**
- * Hawkeye CLI entry point.
+ * Shadow CLI entry point.
  *
  * Wires up commander and dispatches to the per-subcommand modules.
  */
@@ -20,7 +20,7 @@ async function main(): Promise<void> {
 
   program
     .name('hawkeye')
-    .description('Hawkeye CLI — perception, planning, and execution from your shell')
+    .description('Shadow CLI — perception, planning, and execution from your shell')
     .version('0.1.0', '-v, --version', 'print the CLI version')
     .option('--json', 'emit machine-readable NDJSON output instead of pretty text')
     .hook('preAction', (thisCommand) => {

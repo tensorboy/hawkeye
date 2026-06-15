@@ -1,7 +1,7 @@
 {
-  "Connected to Hawkeye Desktop": "Hawkeye 데스크톱에 연결됨",
+  "Connected to Shadow Desktop": "Shadow 데스크톱에 연결됨",
   "Not connected to Desktop": "데스크톱에 연결되지 않음",
-  "Cannot connect to Hawkeye Desktop. Is it running?": "Hawkeye 데스크톱에 연결할 수 없습니다. 실행 중인가요?",
+  "Cannot connect to Shadow Desktop. Is it running?": "Shadow 데스크톱에 연결할 수 없습니다. 실행 중인가요?",
   "Retry": "재시도",
   "Settings": "설정",
   "Found {0} intent(s)": "{0}개의 의도를 발견했습니다",

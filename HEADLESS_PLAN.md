@@ -1,4 +1,4 @@
-# Hawkeye 无 UI 运行能力 —— 执行计划
+# Shadow 无 UI 运行能力 —— 执行计划
 
 > **状态（2026-04-26）**：✅ Phase 1 完成 · ✅ Phase 2 完成 · 📋 Phase 3 待启动
 > 完整使用文档见 [`HEADLESS.md`](HEADLESS.md)；cua-driver agent 集成见 [`packages/desktop-tauri/AGENT_INTEGRATION.md`](packages/desktop-tauri/AGENT_INTEGRATION.md)。
@@ -14,7 +14,7 @@
 | `@hawkeye/core` 完全 UI-agnostic | ✅ 真 | 零 `electron/react/@tauri-apps/document` 引用 |
 | 已发布为双格式 (ESM+CJS+types) 库 | ✅ 真 | `package.json:5-29` 完整 `exports` map |
 | 子路径导入可用 | ✅ 真 | `/perception` `/reasoning` `/execution` 都已 export |
-| `createHawkeye()` 工厂 + 核心方法 | ✅ 真 | `hawkeye.ts:1554-1557` 工厂；`initialize/perceiveAndRecognize/generatePlan/executePlan` 全部 `hawkeye.ts:265-562` |
+| `createShadow()` 工厂 + 核心方法 | ✅ 真 | `hawkeye.ts:1554-1557` 工厂；`initialize/perceiveAndRecognize/generatePlan/executePlan` 全部 `hawkeye.ts:265-562` |
 | `~/.hawkeye/` 存储惯例可被 config 覆盖 | ✅ 真 | `storage/storage.ts:19` `config.dataDir \|\| os.homedir()/.hawkeye` |
 | Tauri Cargo.toml 已是库形式 | ✅ 真 | `crate-type = ["staticlib","cdylib","rlib"]` 已声明 |
 | 现有 `bin` CLI 入口 | ❌ **缺** | `package.json` 无 `bin` 字段；需要新建 |
@@ -230,7 +230,7 @@ use hawkeye_lib::{config, event_sink::StdoutSink, init_core, observe};
 use std::sync::Arc;
 
 #[derive(Parser)]
-#[command(version, about = "Hawkeye headless CLI")]
+#[command(version, about = "Shadow headless CLI")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,

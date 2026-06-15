@@ -1,6 +1,6 @@
-# Hawkeye 流程图（用 beautiful-mermaid 渲染）
+# Shadow 流程图（用 beautiful-mermaid 渲染）
 
-本文件用 [beautiful-mermaid](https://github.com/lukilabs/beautiful-mermaid) 兼容的 Mermaid 语法画出 Hawkeye 当前所有关键流程。每张图都对应 `packages/desktop-tauri/` 下的真实代码路径。
+本文件用 [beautiful-mermaid](https://github.com/lukilabs/beautiful-mermaid) 兼容的 Mermaid 语法画出 Shadow 当前所有关键流程。每张图都对应 `packages/desktop-tauri/` 下的真实代码路径。
 
 > 渲染方式：
 > ```ts
@@ -13,7 +13,7 @@
 
 ## 0. 顶层组件全景
 
-Hawkeye 经过 *HAWKEYED 统一* 之后：Tauri 只剩薄壳（窗口/托盘/快捷键），所有后端能力都搬到独立的 `hawkeyed` HTTP 守护进程，任何前端（GUI / CLI / MCP / VSCode 扩展 / Chrome 扩展）都通过 `localhost:<port>` 的 REST + SSE 接同一份 `AppState`。
+Shadow 经过 *HAWKEYED 统一* 之后：Tauri 只剩薄壳（窗口/托盘/快捷键），所有后端能力都搬到独立的 `hawkeyed` HTTP 守护进程，任何前端（GUI / CLI / MCP / VSCode 扩展 / Chrome 扩展）都通过 `localhost:<port>` 的 REST + SSE 接同一份 `AppState`。
 
 ```mermaid
 graph TD
@@ -94,7 +94,7 @@ sequenceDiagram
   participant FS as ~/.config/hawkeye
   participant R as React UI
 
-  U->>T: 启动 Hawkeye.app
+  U->>T: 启动 Shadow.app
   T->>T: env_logger init
   T->>T: 注册 ⌥E / ⌥⇧E / ⌥⌘E 全局快捷键
   T->>T: app.manage(TauriShellState::default())
@@ -157,7 +157,7 @@ flowchart TD
 
 ## 3. Look-to-Explain（注视即解释）
 
-Hawkeye 的招牌交互：用户盯着屏幕某处，按 `⌥E / ⌥⇧E / ⌥⌘E` 切换 *词典 / 排错 / 场景* 三种 prompt，AI 返回纯 HTML 片段直接渲染在 explain-overlay 卡片里。
+Shadow 的招牌交互：用户盯着屏幕某处，按 `⌥E / ⌥⇧E / ⌥⌘E` 切换 *词典 / 排错 / 场景* 三种 prompt，AI 返回纯 HTML 片段直接渲染在 explain-overlay 卡片里。
 
 ```mermaid
 sequenceDiagram
@@ -378,7 +378,7 @@ graph TD
 
 ## 7. 从屏幕到回答：端到端数据流
 
-把第 2 节 Observe 产生的 `ObservationResult.ocr_regions` 当作 *屏幕语义索引*，把第 4 节 Gaze 的 (x, y) 当作 *用户当前焦点*，第 3/5 节再把焦点带进 prompt — 这是 Hawkeye 的核心闭环。
+把第 2 节 Observe 产生的 `ObservationResult.ocr_regions` 当作 *屏幕语义索引*，把第 4 节 Gaze 的 (x, y) 当作 *用户当前焦点*，第 3/5 节再把焦点带进 prompt — 这是 Shadow 的核心闭环。
 
 ```mermaid
 flowchart TD
@@ -575,4 +575,4 @@ for (const [i, src] of blocks.entries()) {
 }
 ```
 
-ASCII 输出可以直接贴进 README / 终端 / Hawkeye 自己的 Look-to-Explain 卡片里 — 这正是 `beautiful-mermaid` 为 AI 时代准备的能力。
+ASCII 输出可以直接贴进 README / 终端 / Shadow 自己的 Look-to-Explain 卡片里 — 这正是 `beautiful-mermaid` 为 AI 时代准备的能力。

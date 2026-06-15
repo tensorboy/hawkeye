@@ -182,7 +182,7 @@ export class PlannerAgent {
     };
   }
 
-  /** Plan via desktop proxy (send to Hawkeye Desktop for AI-powered planning) */
+  /** Plan via desktop proxy (send to Shadow Desktop for AI-powered planning) */
   private async planViaDesktop(input: PlannerInput): Promise<AgentPlan> {
     try {
       const response = await chrome.runtime.sendMessage({

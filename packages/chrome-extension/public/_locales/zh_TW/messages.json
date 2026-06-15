@@ -1,12 +1,12 @@
 {
   "extensionName": {
-    "message": "Hawkeye"
+    "message": "Shadow"
   },
   "extensionDescription": {
     "message": "智慧任務感知與執行助手"
   },
   "actionTitle": {
-    "message": "Hawkeye"
+    "message": "Shadow"
   },
   "commandObservePage": {
     "message": "觀察當前頁面"
@@ -18,7 +18,7 @@
     "message": "桌面端未連接"
   },
   "desktopNotConnected": {
-    "message": "請確保 Hawkeye 桌面端正在執行並已連接"
+    "message": "請確保 Shadow 桌面端正在執行並已連接"
   },
   "settings": {
     "message": "設定"
@@ -116,10 +116,10 @@
     }
   },
   "contextMenuAnalyzeSelection": {
-    "message": "Hawkeye: 分析選取內容"
+    "message": "Shadow: 分析選取內容"
   },
   "contextMenuAnalyzePage": {
-    "message": "Hawkeye: 分析頁面"
+    "message": "Shadow: 分析頁面"
   },
   "foundIntents": {
     "message": "發現 $count$ 個意圖",
@@ -130,6 +130,6 @@
     }
   },
   "notificationError": {
-    "message": "Hawkeye 錯誤"
+    "message": "Shadow 錯誤"
   }
 }

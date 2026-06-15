@@ -1,7 +1,7 @@
 //! `hawkeye-mcp` — Model Context Protocol stdio server.
 //!
 //! Wraps the local hawkeyed daemon so AI tools that speak MCP (Claude Code,
-//! Cursor, Continue, etc.) can call into Hawkeye for live screen context,
+//! Cursor, Continue, etc.) can call into Shadow for live screen context,
 //! gaze targets, and the user's life-tree knowledge graph.
 //!
 //! Wire format: line-delimited JSON-RPC 2.0 on stdin/stdout (per the MCP
@@ -133,7 +133,7 @@ fn tool_catalog() -> Value {
         },
         {
             "name": "hawkeye_gazed_entity",
-            "description": "Get the specific text region the user is currently looking at (via eye tracking). Returns the text content + bounding box + dwell time. Use this when the user says 'this', 'that', 'this thing', '这个', '那个' — Hawkeye knows exactly what their eyes are on.",
+            "description": "Get the specific text region the user is currently looking at (via eye tracking). Returns the text content + bounding box + dwell time. Use this when the user says 'this', 'that', 'this thing', '这个', '那个' — Shadow knows exactly what their eyes are on.",
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
@@ -148,12 +148,12 @@ fn tool_catalog() -> Value {
         },
         {
             "name": "hawkeye_observe_status",
-            "description": "Get the latest observation from Hawkeye's background screen monitor — last app, last OCR text, change rate. Cheaper than hawkeye_current_view because it returns the cached frame.",
+            "description": "Get the latest observation from Shadow's background screen monitor — last app, last OCR text, change rate. Cheaper than hawkeye_current_view because it returns the cached frame.",
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
             "name": "hawkeye_set_gazed_entity",
-            "description": "Tell Hawkeye to treat a specific text + bbox as the 'this/that' target. Use sparingly — normally the user's actual gaze sets this automatically.",
+            "description": "Tell Shadow to treat a specific text + bbox as the 'this/that' target. Use sparingly — normally the user's actual gaze sets this automatically.",
             "inputSchema": {
                 "type": "object",
                 "required": ["text", "bboxPx"],

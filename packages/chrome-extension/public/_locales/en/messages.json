@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Hawkeye",
+    "message": "Shadow",
     "description": "Extension name"
   },
   "extensionDescription": {
@@ -8,7 +8,7 @@
     "description": "Extension description"
   },
   "actionTitle": {
-    "message": "Hawkeye",
+    "message": "Shadow",
     "description": "Action button tooltip"
   },
   "commandObservePage": {
@@ -24,7 +24,7 @@
     "description": "Connection status when disconnected"
   },
   "desktopNotConnected": {
-    "message": "Please ensure Hawkeye Desktop is running and connected",
+    "message": "Please ensure Shadow Desktop is running and connected",
     "description": "Alert when desktop is not connected"
   },
   "settings": {
@@ -154,11 +154,11 @@
     }
   },
   "contextMenuAnalyzeSelection": {
-    "message": "Hawkeye: Analyze Selection",
+    "message": "Shadow: Analyze Selection",
     "description": "Context menu for selection"
   },
   "contextMenuAnalyzePage": {
-    "message": "Hawkeye: Analyze Page",
+    "message": "Shadow: Analyze Page",
     "description": "Context menu for page"
   },
   "foundIntents": {
@@ -172,7 +172,7 @@
     }
   },
   "notificationError": {
-    "message": "Hawkeye Error",
+    "message": "Shadow Error",
     "description": "Error notification title"
   },
   "eyeTracking": {

@@ -1,5 +1,5 @@
 /**
- * Hawkeye Chrome Extension - Background Service Worker
+ * Shadow Chrome Extension - Background Service Worker
  * Communicates with Desktop app via WebSocket
  */
 
@@ -70,7 +70,7 @@ async function initialize() {
   // Initialize agent chat DB
   agentChatDB = new ChatDB();
 
-  console.log('Hawkeye extension initialized');
+  console.log('Shadow extension initialized');
 }
 
 // Setup context menus
@@ -101,12 +101,12 @@ async function initSyncClient() {
 
   // Setup event handlers
   syncClient.on('connected', () => {
-    console.log('Connected to Hawkeye Desktop');
+    console.log('Connected to Shadow Desktop');
     notifyPopup('connection_status', { connected: true });
   });
 
   syncClient.on('disconnected', () => {
-    console.log('Disconnected from Hawkeye Desktop');
+    console.log('Disconnected from Shadow Desktop');
     notifyPopup('connection_status', { connected: false });
   });
 
@@ -120,7 +120,7 @@ async function initSyncClient() {
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon48.png',
-        title: 'Hawkeye',
+        title: 'Shadow',
         message: getMessage('foundIntents', currentIntents.length.toString()),
       });
     }
@@ -144,7 +144,7 @@ async function initSyncClient() {
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon48.png',
-        title: 'Hawkeye',
+        title: 'Shadow',
         message: getMessage('executionCompleted'),
       });
     }
@@ -495,7 +495,7 @@ async function handleMessage(
         chrome.notifications.create({
           type: 'basic',
           iconUrl: 'icons/icon48.png',
-          title: 'Hawkeye Update Available',
+          title: 'Shadow Update Available',
           message: `New version ${updateInfo.latestVersion} is available!`,
         });
       }
@@ -734,11 +734,11 @@ async function handleSidePanelMessage(message: AgentMessage) {
 // ============ Lifecycle ============
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Hawkeye extension installed');
+  console.log('Shadow extension installed');
   initialize();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  console.log('Hawkeye extension starting');
+  console.log('Shadow extension starting');
   initialize();
 });

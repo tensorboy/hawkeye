@@ -180,7 +180,7 @@ export class TrayStatusService extends EventEmitter {
    * Get tooltip text based on current status
    */
   private getTooltip(): string {
-    const baseText = 'Hawkeye';
+    const baseText = 'Shadow';
     const statusText: Record<TrayStatus, string> = {
       idle: 'Ready',
       observing: 'Observing screen...',
@@ -301,7 +301,7 @@ export class TrayStatusService extends EventEmitter {
     }
 
     menuItems.push({
-      label: 'Quit Hawkeye',
+      label: 'Quit Shadow',
       click: () => app.quit(),
     });
 

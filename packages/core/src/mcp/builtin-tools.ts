@@ -1,5 +1,5 @@
 /**
- * MCP Built-in Tools - Hawkeye 内置 MCP 工具集
+ * MCP Built-in Tools - Shadow 内置 MCP 工具集
  * 参考 claude-code-mcp / macos-automator-mcp 的工具暴露模式
  *
  * 工具分类:

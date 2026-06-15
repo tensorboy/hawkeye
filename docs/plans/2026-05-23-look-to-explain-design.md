@@ -5,8 +5,8 @@
 
 ## Summary
 
-Add a feature to Hawkeye: user looks at any region of the screen, presses a
-hotkey, Hawkeye captures that region, OCRs it, asks the configured AI provider
+Add a feature to Shadow: user looks at any region of the screen, presses a
+hotkey, Shadow captures that region, OCRs it, asks the configured AI provider
 for an explanation, and pops a floating HTML card next to the gaze point.
 
 Three modes via three hotkeys:

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Hawkeye",
+    "title": "Shadow",
     "loading": "Analyzing screen...",
     "empty": "No intents detected",
     "observeScreen": "Observe Screen",
@@ -108,17 +108,17 @@
     "showSuggestions": "Show Suggestions",
     "settings": "Settings",
     "quit": "Quit",
-    "tooltip": "Hawkeye - Intelligent Task Assistant"
+    "tooltip": "Shadow - Intelligent Task Assistant"
   },
   "error": {
     "configureApiKey": "Please configure API key first",
     "engineNotInitialized": "Engine not initialized",
-    "notInitialized": "Hawkeye not initialized",
+    "notInitialized": "Shadow not initialized",
     "intentNotFound": "Intent not found",
     "planNotFound": "Plan not found"
   },
   "onboarding": {
-    "title": "Welcome to Hawkeye",
+    "title": "Welcome to Shadow",
     "subtitle": "Please select an AI model to get started",
     "chooseMode": "Choose AI Mode",
     "localMode": "Local Mode",
@@ -136,7 +136,7 @@
     "geminiDesc": "Free tier available, powerful",
     "selectModel": "Select Model",
     "noModelAvailable": "No models available",
-    "noModelDesc": "Please download a model first to use Hawkeye's full features",
+    "noModelDesc": "Please download a model first to use Shadow's full features",
     "downloadFirst": "Download a model first",
     "downloading": "Downloading model...",
     "downloadComplete": "Download complete!",

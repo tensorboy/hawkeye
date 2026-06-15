@@ -1,4 +1,4 @@
-# Hawkeye 原型搭建计划 (1个月全端覆盖)
+# Shadow 原型搭建计划 (1个月全端覆盖)
 
 **目标**: 在1个月内完成 Desktop + Chrome Extension + VS Code Extension 三端原型
 **开始时间**: 2026-01-20
@@ -12,7 +12,7 @@
 | **Desktop** | [Jan](https://github.com/janhq/jan) | 40K | Tauri + TypeScript + Rust | 最成熟、三平台支持、本地优先 |
 | **Chrome** | [Page-Assist](https://github.com/n4ze3m/page-assist) | 3K+ | React + IndexedDB | 本地存储、侧边栏UI、支持Ollama |
 | **VS Code** | [Continue](https://github.com/continuedev/continue) | 20K+ | TypeScript | 1.6M安装、支持Claude/Ollama |
-| **核心引擎** | Hawkeye Core (现有) | - | TypeScript | 感知+推理+执行 |
+| **核心引擎** | Shadow Core (现有) | - | TypeScript | 感知+推理+执行 |
 
 ---
 
@@ -53,7 +53,7 @@ npm run dev
 ### Day 3-4: 品牌替换
 
 修改以下内容：
-- [ ] App 名称: Jan → Hawkeye
+- [ ] App 名称: Jan → Shadow
 - [ ] Logo 和 Icon
 - [ ] 主题色调整
 - [ ] 关于页面信息
@@ -68,9 +68,9 @@ jan/
 └── package.json      # 名称和版本
 ```
 
-### Day 5-6: 集成 Hawkeye 感知层
+### Day 5-6: 集成 Shadow 感知层
 
-将 Hawkeye 的感知功能移植到 Jan：
+将 Shadow 的感知功能移植到 Jan：
 
 ```typescript
 // 添加屏幕感知
@@ -95,7 +95,7 @@ import { WindowTracker } from '@hawkeye/core/perception';
 - [ ] 记录问题和下周计划
 
 **Week 1 交付物**:
-- ✅ Hawkeye Desktop App v0.1 (基于 Jan)
+- ✅ Shadow Desktop App v0.1 (基于 Jan)
 - ✅ 支持 Windows/Mac/Linux
 - ✅ 包含基础感知功能
 
@@ -133,12 +133,12 @@ page-assist/
 
 ### Day 3-4: 品牌替换 + UI 调整
 
-- [ ] 扩展名称: Page Assist → Hawkeye
+- [ ] 扩展名称: Page Assist → Shadow
 - [ ] 图标和 Logo
 - [ ] 主题色
 - [ ] 移除不需要的功能
 
-### Day 5-6: 添加 Hawkeye 功能
+### Day 5-6: 添加 Shadow 功能
 
 ```typescript
 // 1. 添加页面内容感知
@@ -152,7 +152,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // 2. 添加选中文本分析
 chrome.contextMenus.create({
   id: 'hawkeye-analyze',
-  title: 'Hawkeye: 分析选中内容',
+  title: 'Shadow: 分析选中内容',
   contexts: ['selection']
 });
 
@@ -167,7 +167,7 @@ chrome.contextMenus.create({
 - [ ] 记录问题
 
 **Week 2 交付物**:
-- ✅ Hawkeye Chrome Extension v0.1
+- ✅ Shadow Chrome Extension v0.1
 - ✅ 侧边栏 AI 对话
 - ✅ 页面内容分析
 - ✅ 与 Desktop 基础通信
@@ -206,12 +206,12 @@ continue/
 
 ### Day 3-4: 品牌替换 + 精简功能
 
-- [ ] 扩展名称: Continue → Hawkeye
+- [ ] 扩展名称: Continue → Shadow
 - [ ] 图标和 Logo
 - [ ] 移除不需要的 Provider (保留 Claude + Ollama)
 - [ ] 简化 UI
 
-### Day 5-6: 添加 Hawkeye 功能
+### Day 5-6: 添加 Shadow 功能
 
 ```typescript
 // 1. 监听文件变化
@@ -237,7 +237,7 @@ vscode.languages.onDidChangeDiagnostics((event) => {
 - [ ] 记录问题
 
 **Week 3 交付物**:
-- ✅ Hawkeye VS Code Extension v0.1
+- ✅ Shadow VS Code Extension v0.1
 - ✅ 代码辅助功能
 - ✅ 错误自动分析
 - ✅ 与 Desktop 通信
@@ -250,7 +250,7 @@ vscode.languages.onDidChangeDiagnostics((event) => {
 
 ```typescript
 // 定义统一的消息格式
-interface HawkeyeMessage {
+interface ShadowMessage {
   type: 'context' | 'suggestion' | 'execution' | 'sync';
   source: 'desktop' | 'chrome' | 'vscode';
   payload: {
@@ -274,7 +274,7 @@ interface HawkeyeMessage {
 // Chrome: sql.js (WASM)
 // VS Code: better-sqlite3
 
-interface HawkeyeStorage {
+interface ShadowStorage {
   // 建议历史
   suggestions: TaskSuggestion[];
 
@@ -359,7 +359,7 @@ onPerception(context) {
 | **Chrome 框架** | Manifest V3 | Page-Assist |
 | **Chrome UI** | React + IndexedDB | Page-Assist |
 | **VS Code 框架** | VS Code Extension API | Continue |
-| **核心引擎** | TypeScript | Hawkeye |
+| **核心引擎** | TypeScript | Shadow |
 | **AI 集成** | Claude API + Ollama | 混合 |
 | **存储** | SQLite | 统一 |
 | **通信** | WebSocket + HTTP | 自建 |

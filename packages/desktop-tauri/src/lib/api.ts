@@ -1,5 +1,5 @@
 /**
- * Hawkeye HTTP client — the React app's only way to talk to the backend.
+ * Shadow HTTP client — the React app's only way to talk to the backend.
  *
  * Replaces the old `invoke()` IPC path. Every `useTauri.ts` function now
  * delegates here. The base URL + bearer token are bootstrapped once at
@@ -76,7 +76,22 @@ class ApiError extends Error {
   }
 }
 
-async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+/** Re-fetch the daemon token from Tauri — heals a stale localStorage cache. */
+async function refreshToken(): Promise<boolean> {
+  try {
+    const fresh = await tauriInvoke<string>('get_daemon_token');
+    if (fresh && fresh !== token) {
+      token = fresh;
+      localStorage.setItem('hawkeyed_token', fresh);
+      return true;
+    }
+  } catch {
+    // Non-Tauri context — nothing to refresh from.
+  }
+  return false;
+}
+
+async function req<T>(method: string, path: string, body?: unknown, retried = false): Promise<T> {
   if (!baseUrl) {
     // Allow lazy bootstrap on first call so individual consumers don't
     // have to remember the dance. Tests will usually call bootstrap()
@@ -92,6 +107,14 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+
+  // 401 with a cached token usually means localStorage outlived a token
+  // rotation — pull the authoritative token from Tauri and retry once.
+  if (r.status === 401 && !retried) {
+    if (await refreshToken()) {
+      return req<T>(method, path, body, true);
+    }
+  }
 
   if (!r.ok) {
     let msg: string;

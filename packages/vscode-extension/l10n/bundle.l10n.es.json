@@ -1,7 +1,7 @@
 {
-  "Connected to Hawkeye Desktop": "Conectado a Hawkeye Desktop",
+  "Connected to Shadow Desktop": "Conectado a Shadow Desktop",
   "Not connected to Desktop": "No conectado al escritorio",
-  "Cannot connect to Hawkeye Desktop. Is it running?": "No se puede conectar a Hawkeye Desktop. ¿Está ejecutándose?",
+  "Cannot connect to Shadow Desktop. Is it running?": "No se puede conectar a Shadow Desktop. ¿Está ejecutándose?",
   "Retry": "Reintentar",
   "Settings": "Configuración",
   "Found {0} intent(s)": "Se encontraron {0} intención(es)",

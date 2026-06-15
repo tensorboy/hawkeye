@@ -2,7 +2,7 @@
  * 插件管理器
  * Plugin Manager
  *
- * 管理 Hawkeye 插件的加载、卸载、启用和禁用
+ * 管理 Shadow 插件的加载、卸载、启用和禁用
  */
 
 import { EventEmitter } from 'events';

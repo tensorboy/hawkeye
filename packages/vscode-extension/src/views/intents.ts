@@ -1,5 +1,5 @@
 /**
- * Hawkeye VS Code Extension - Intents View Provider
+ * Shadow VS Code Extension - Intents View Provider
  * Webview for displaying intents, plans, and execution status
  */
 
@@ -171,7 +171,7 @@ export class IntentsViewProvider implements vscode.WebviewViewProvider {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hawkeye Intents</title>
+  <title>Shadow Intents</title>
   <style>
     :root {
       --primary: #667eea;

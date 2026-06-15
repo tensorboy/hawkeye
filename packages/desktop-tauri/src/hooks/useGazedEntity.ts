@@ -4,7 +4,7 @@
  * This is the single hook that turns "the user's eye is here" into "the
  * user is looking at THIS specific text region with THIS knowledge type".
  * It implements Google DeepMind's "Show and Tell" + "This/That" principles
- * on top of Hawkeye's existing gaze + OCR pipeline.
+ * on top of Shadow's existing gaze + OCR pipeline.
  *
  * Lifecycle per fixation:
  *

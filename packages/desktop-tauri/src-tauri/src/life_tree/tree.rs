@@ -267,7 +267,7 @@ impl LifeTree {
             .unwrap_or_else(|| "General".to_string());
 
         let prompt = format!(
-            "You are Hawkeye, an AI life assistant. The user's activity tree shows they spend time on: \
+            "You are Shadow, an AI life assistant. The user's activity tree shows they spend time on: \
              \"{}\" in the \"{}\" life stage. They have {} observations for this activity.\n\n\
              Propose ONE small, actionable micro-experiment they could try to improve or explore this area. \
              The experiment should be:\n\

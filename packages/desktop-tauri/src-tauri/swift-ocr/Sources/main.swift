@@ -5,7 +5,7 @@ import Vision
 import AppKit
 #endif
 
-/// Hawkeye OCR CLI — uses macOS Vision API for text recognition
+/// Shadow OCR CLI — uses macOS Vision API for text recognition
 /// Usage: hawkeye-ocr <image-path>
 /// Output: JSON array of recognized text regions
 

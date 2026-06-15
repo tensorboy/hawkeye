@@ -190,7 +190,7 @@ export const KWS_MODELS: SherpaModelSpec[] = [
     id: 'kws-zipformer-en',
     name: 'Zipformer KWS (English)',
     type: 'kws',
-    description: 'Custom keyword spotting for wake words like "Hey Hawkeye".',
+    description: 'Custom keyword spotting for wake words like "Hey Shadow".',
     url: `${HUGGINGFACE_BASE}/kws-models/sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01.tar.bz2`,
     size: 15_000_000, // ~15MB
     languages: ['en', 'zh'],

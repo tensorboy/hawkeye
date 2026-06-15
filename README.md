@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="./assets/hawkeye-hero.svg" alt="Hawkeye — The first proactive AI desktop assistant you control with your eyes, voice, and gestures. No mouse, no keyboard. Press Cmd+Shift+H to observe your screen." width="100%" />
+<img src="./assets/hawkeye-hero.svg" alt="Shadow — The first proactive AI desktop assistant you control with your eyes, voice, and gestures. No mouse, no keyboard. Press Cmd+Shift+H to observe your screen." width="100%" />
 
-# Hawkeye
+# Shadow
 
 **AI that enhances your story. Watch keenly. Act thoughtfully. 10x your productivity.**
 
@@ -24,15 +24,15 @@
 
 ---
 
-## 🎯 What is Hawkeye?
+## 🎯 What is Shadow?
 
-> **Other AIs wait for your keyboard. Hawkeye watches your eyes, hears your voice, reads your gestures — the first proactive AI desktop assistant you don't have to *touch*.**
+> **Other AIs wait for your keyboard. Shadow watches your eyes, hears your voice, reads your gestures — the first proactive AI desktop assistant you don't have to *touch*.**
 
-Hawkeye is the **first proactive AI desktop assistant that runs fully hands-free**. It observes your screen, follows your gaze, listens to your voice, and reads in-air gestures — all on-device. Mouse and keyboard become *optional accelerators*, not required input. No prompts needed.
+Shadow is the **first proactive AI desktop assistant that runs fully hands-free**. It observes your screen, follows your gaze, listens to your voice, and reads in-air gestures — all on-device. Mouse and keyboard become *optional accelerators*, not required input. No prompts needed.
 
-The AI behind Hawkeye is designed to **enhance your own story** — turning your screen time into meaningful personal growth by automatically mapping your goals, habits, and progress into a living **Life Tree**.
+The AI behind Shadow is designed to **enhance your own story** — turning your screen time into meaningful personal growth by automatically mapping your goals, habits, and progress into a living **Life Tree**.
 
-| Feature | Copilot / Cursor / Claude Code | Recall / Rewind | **Hawkeye** |
+| Feature | Copilot / Cursor / Claude Code | Recall / Rewind | **Shadow** |
 |---------|-------------------------------|------------------|-------------|
 | **Mode** | Reactive (you ask) | Passive (it records) | **Proactive** (it watches & acts) |
 | **Input** | Mouse & keyboard | Mouse & keyboard | **Eyes, voice & gesture** — hands-free |
@@ -40,13 +40,13 @@ The AI behind Hawkeye is designed to **enhance your own story** — turning your
 | **Privacy** | Cloud-based | Local index, cloud sync | **100% local-first**, no server to leak from |
 | **Control** | AI executes silently | You search later | **You decide** every action, in real time |
 
-<sub>Plenty of AI tools "watch the screen." Hawkeye is the first one where you can stop reaching for the mouse — your eyes <em>are</em> the pointer.</sub>
+<sub>Plenty of AI tools "watch the screen." Shadow is the first one where you can stop reaching for the mouse — your eyes <em>are</em> the pointer.</sub>
 
 <br/>
 
 ### 🛡️ Built to be Loyal — Only to You
 
-> **Hawkeye has one user, one allegiance: you.** No advertiser, no cloud provider, no shareholder sits between Hawkeye and the person it serves.
+> **Shadow has one user, one allegiance: you.** No advertiser, no cloud provider, no shareholder sits between Shadow and the person it serves.
 
 <table>
 <tr>
@@ -73,7 +73,7 @@ Risky agent actions (`click`, `type_text`, `press_key`, `launch_app`, `scroll`) 
 <td width="50%">
 
 #### 🧱 Open & auditable
-**MIT licensed.** Every event is visible on the SSE debug timeline, every model call is logged for you to inspect, every prompt template is in the repo. If Hawkeye ever does something you didn't expect, you can read the exact line of code that did it.
+**MIT licensed.** Every event is visible on the SSE debug timeline, every model call is logged for you to inspect, every prompt template is in the repo. If Shadow ever does something you didn't expect, you can read the exact line of code that did it.
 
 </td>
 </tr>
@@ -81,7 +81,7 @@ Risky agent actions (`click`, `type_text`, `press_key`, `launch_app`, `scroll`) 
 <td width="50%">
 
 #### 🧠 Your own model, your own metal
-Run a local LLM via `llama-cpp-2` on **Apple Metal / ANE**. Weights live in `~/Library/Application Support/com.hawkeye.desktop/models/`. Delete a model with one click; uninstall Hawkeye and **zero bytes of your data persist anywhere else**.
+Run a local LLM via `llama-cpp-2` on **Apple Metal / ANE**. Weights live in `~/Library/Application Support/com.hawkeye.desktop/models/`. Delete a model with one click; uninstall Shadow and **zero bytes of your data persist anywhere else**.
 
 </td>
 <td width="50%">
@@ -93,7 +93,7 @@ A built-in safety analyzer flags destructive shell commands, credential leaks in
 </tr>
 </table>
 
-<p align="center"><sub><em>If Hawkeye ever loses your trust, it has lost its purpose.</em></sub></p>
+<p align="center"><sub><em>If Shadow ever loses your trust, it has lost its purpose.</em></sub></p>
 
 <br/>
 
@@ -193,7 +193,7 @@ A built-in safety analyzer flags destructive shell commands, credential leaks in
 
 ```bash
 # Remove quarantine attribute
-xattr -cr /Applications/Hawkeye.app
+xattr -cr /Applications/Shadow.app
 ```
 
 </details>
@@ -250,7 +250,7 @@ Recommended models:
 brew install ollama && ollama pull qwen3:8b
 ```
 
-Select "Ollama" in Hawkeye settings.
+Select "Ollama" in Shadow settings.
 
 </details>
 
@@ -285,7 +285,7 @@ Select "Ollama" in Hawkeye settings.
 
 ### 🔮 Future: Multi-Modal HCI Pipeline
 
-Hawkeye is evolving into a full multi-modal human-computer interaction system that combines **audio understanding**, **visual perception**, and **gesture control**.
+Shadow is evolving into a full multi-modal human-computer interaction system that combines **audio understanding**, **visual perception**, and **gesture control**.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -426,9 +426,9 @@ hawkeye/
 ### As a Library
 
 ```typescript
-import { HawkeyeEngine } from '@hawkeye/core';
+import { ShadowEngine } from '@hawkeye/core';
 
-const engine = new HawkeyeEngine({
+const engine = new ShadowEngine({
   provider: 'ollama',
   model: 'qwen3:8b'
 });
@@ -472,7 +472,7 @@ The observation interval adjusts dynamically based on user activity — fast pol
 A priority-based task queue with deduplication ensures that AI requests and plan executions are processed efficiently without duplicate work.
 
 ### MCP Server Tools
-Hawkeye exposes 15+ tools via MCP (Model Context Protocol) for screen perception, window management, file organization, and automation.
+Shadow exposes 15+ tools via MCP (Model Context Protocol) for screen perception, window management, file organization, and automation.
 
 ### Safety Guardrails
 An agent monitor enforces cost limits, blocks dangerous operations (e.g. `rm -rf /`), requires confirmation for risky actions, and supports a sandbox mode.
@@ -609,7 +609,7 @@ sequenceDiagram
   participant FS as ~/.config/hawkeye
   participant R as React UI
 
-  U->>T: Launch Hawkeye.app
+  U->>T: Launch Shadow.app
   T->>T: env_logger init
   T->>T: register ⌥E / ⌥⇧E / ⌥⌘E
   T->>T: app.manage(TauriShellState::default())
@@ -664,7 +664,7 @@ flowchart TD
 
 ### Look-to-Explain (`⌥E` / `⌥⇧E` / `⌥⌘E`)
 
-Hawkeye's signature interaction: hold your gaze on something, press one of the three explain hotkeys, and a card pops up with a *dictionary* / *troubleshoot* / *scene* explanation rendered as inline HTML.
+Shadow's signature interaction: hold your gaze on something, press one of the three explain hotkeys, and a card pops up with a *dictionary* / *troubleshoot* / *scene* explanation rendered as inline HTML.
 
 ```mermaid
 sequenceDiagram
@@ -794,7 +794,7 @@ graph LR
 
 | Decision | Rationale |
 |---|---|
-| **First-person gaze direction** (not gaze target heatmap) | Hawkeye looks at the user's face and needs screen coordinates. Gaze-LLE / GazeMoE solve a different problem (third-person heatmap inside the input image). |
+| **First-person gaze direction** (not gaze target heatmap) | Shadow looks at the user's face and needs screen coordinates. Gaze-LLE / GazeMoE solve a different problem (third-person heatmap inside the input image). |
 | **SigLIP 2 Base** backbone | Apache 2.0, non-gated, empirically stronger downstream features than MobileCLIP2 in our hands. |
 | **L2CS head** (Abdelrahman et al., arXiv:2203.03339) | yaw/pitch bin classification + regression refinement is more stable than naive angle regression. |
 | **All ~86M params trainable** | Lets user data compound: backbone, head, and screen mapping all benefit from accumulated click samples. |
@@ -1059,7 +1059,7 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 <div align="center">
 
-If you find Hawkeye useful, consider buying me a coffee!
+If you find Shadow useful, consider buying me a coffee!
 
 <a href="https://buymeacoffee.com/7xyxbngjf1">
   <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" />
@@ -1079,11 +1079,11 @@ If you find Hawkeye useful, consider buying me a coffee!
 
 **[🌐 Website](https://hawkiyi.com)** · **[📖 Docs](https://hawkiyi.com/docs)** · **[🐦 Twitter](https://twitter.com/hawkeyeai)** · **[💬 Discord](https://discord.gg/hawkeye)**
 
-<sub>Built with ❤️ by the Hawkeye Team</sub>
+<sub>Built with ❤️ by the Shadow Team</sub>
 
 <br/>
 
-**If Hawkeye helps you, please consider giving it a ⭐**
+**If Shadow helps you, please consider giving it a ⭐**
 
 </div>
 

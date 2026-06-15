@@ -1,0 +1,218 @@
+/* ChatBubble — transparent window, all chrome is CSS. */
+
+html,
+body,
+#chat-bubble-root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ── Collapsed dot ─────────────────────────────────────────────────── */
+
+.bubble-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bubble-dot {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bubble-dot:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 22px rgba(233, 69, 96, 0.35);
+}
+
+/* ── Expanded panel ────────────────────────────────────────────────── */
+
+.bubble-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(18, 18, 32, 0.94);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  color: #eee;
+}
+
+.bubble-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: grab;
+}
+
+.bubble-header-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bubble-header-hint {
+  flex: 1;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bubble-collapse {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bubble-collapse:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* ── Messages ──────────────────────────────────────────────────────── */
+
+.bubble-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bubble-empty {
+  margin: auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  padding: 0 24px;
+  line-height: 1.6;
+}
+
+.bubble-msg {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+.bubble-msg--user {
+  align-self: flex-end;
+  background: #e94560;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.bubble-msg--assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 4px;
+}
+
+.bubble-typing {
+  display: flex;
+  gap: 4px;
+  padding: 12px;
+}
+
+.bubble-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  animation: bubble-blink 1.2s infinite ease-in-out;
+}
+
+.bubble-typing span:nth-child(2) { animation-delay: 0.2s; }
+.bubble-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bubble-blink {
+  0%, 70%, 100% { opacity: 0.25; }
+  35% { opacity: 1; }
+}
+
+.bubble-error {
+  align-self: center;
+  font-size: 11px;
+  color: #f87272;
+  padding: 4px 8px;
+}
+
+/* ── Input ─────────────────────────────────────────────────────────── */
+
+.bubble-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bubble-input {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+}
+
+.bubble-input:focus {
+  border-color: rgba(233, 69, 96, 0.6);
+}
+
+.bubble-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.bubble-send {
+  width: 34px;
+  border: none;
+  border-radius: 10px;
+  background: #e94560;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.bubble-send:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

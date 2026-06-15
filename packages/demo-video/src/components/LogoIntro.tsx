@@ -108,7 +108,7 @@ export const LogoIntro: React.FC = () => {
           letterSpacing: "-2px",
         }}
       >
-        Hawkeye
+        Shadow
       </h1>
 
       {/* Tagline */}

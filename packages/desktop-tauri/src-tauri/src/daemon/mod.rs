@@ -1,4 +1,4 @@
-//! `hawkeyed` — HTTP daemon mode for Hawkeye.
+//! `hawkeyed` — HTTP daemon mode for Shadow.
 //!
 //! Exposes the same [`crate::state::AppState`] that the Tauri app uses, via
 //! a localhost-only REST API + Server-Sent Events streams. The lightweight

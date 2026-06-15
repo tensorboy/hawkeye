@@ -1,5 +1,5 @@
 /**
- * Hawkeye VS Code Extension
+ * Shadow VS Code Extension
  * Intent → Plan → Execution flow with Desktop communication
  */
 
@@ -25,7 +25,7 @@ let config: ExtensionConfig = {
 };
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('[Hawkeye] Extension activating...');
+  console.log('[Shadow] Extension activating...');
 
   // Load configuration
   loadConfig();
@@ -70,7 +70,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  console.log('[Hawkeye] Extension activated!');
+  console.log('[Shadow] Extension activated!');
 }
 
 export function deactivate() {
@@ -106,7 +106,7 @@ function initSyncClient(context: vscode.ExtensionContext) {
   syncClient.on('connected', () => {
     updateStatusBar(true);
     if (config.enableNotifications) {
-      vscode.window.showInformationMessage(l10n.t('Connected to Hawkeye Desktop'));
+      vscode.window.showInformationMessage(l10n.t('Connected to Shadow Desktop'));
     }
   });
 
@@ -120,7 +120,7 @@ function initSyncClient(context: vscode.ExtensionContext) {
 
   syncClient.on('max_reconnect_reached', () => {
     vscode.window.showWarningMessage(
-      l10n.t('Cannot connect to Hawkeye Desktop. Is it running?'),
+      l10n.t('Cannot connect to Shadow Desktop. Is it running?'),
       l10n.t('Retry'),
       l10n.t('Settings')
     ).then((selection) => {
@@ -211,11 +211,11 @@ function updateStatusBar(connected: boolean) {
   if (!statusBarItem) return;
 
   if (connected) {
-    statusBarItem.text = '$(eye) Hawkeye';
-    statusBarItem.tooltip = l10n.t('Connected to Hawkeye Desktop');
+    statusBarItem.text = '$(eye) Shadow';
+    statusBarItem.tooltip = l10n.t('Connected to Shadow Desktop');
     statusBarItem.backgroundColor = undefined;
   } else {
-    statusBarItem.text = '$(eye-closed) Hawkeye';
+    statusBarItem.text = '$(eye-closed) Shadow';
     statusBarItem.tooltip = l10n.t('Not connected to Desktop');
     statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
   }
@@ -228,10 +228,10 @@ async function showConnectionStatus() {
   const status = syncClient?.status;
 
   const message = connected
-    ? l10n.t('Connected to Hawkeye Desktop\nAI Provider: {0} ({1})',
+    ? l10n.t('Connected to Shadow Desktop\nAI Provider: {0} ({1})',
         status?.aiProvider || 'Unknown',
         status?.aiProviderStatus || 'unknown')
-    : l10n.t('Not connected to Hawkeye Desktop');
+    : l10n.t('Not connected to Shadow Desktop');
 
   const action = await vscode.window.showInformationMessage(
     message,

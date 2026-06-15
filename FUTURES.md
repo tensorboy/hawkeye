@@ -1,4 +1,4 @@
-# Hawkeye FUTURES - Mobile AI Agent Expansion Roadmap
+# Shadow FUTURES - Mobile AI Agent Expansion Roadmap
 
 > "像鹰眼一样敏锐地观察，像助手一样体贴地执行 — 现在，无处不在。"
 >
@@ -6,9 +6,9 @@
 
 ---
 
-## Vision: Hawkeye Mobile
+## Vision: Shadow Mobile
 
-将 Hawkeye 的**主动感知范式**从桌面扩展到移动端，让 AI 成为用户在任何设备上的智能助手。不同于传统的自动化测试工具（依赖控件 ID、xpath），Hawkeye Mobile 将采用**视觉理解 + 多模态 AI** 的方式，像人类一样"看屏幕"来操作手机。
+将 Shadow 的**主动感知范式**从桌面扩展到移动端，让 AI 成为用户在任何设备上的智能助手。不同于传统的自动化测试工具（依赖控件 ID、xpath），Shadow Mobile 将采用**视觉理解 + 多模态 AI** 的方式，像人类一样"看屏幕"来操作手机。
 
 ### Core Principles (继承桌面端)
 
@@ -40,13 +40,13 @@
 
 ---
 
-## Architecture: Hawkeye Mobile
+## Architecture: Shadow Mobile
 
 ### Phase 1: 远程控制模式 (Remote Control)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Hawkeye Desktop (现有)                        │
+│                     Shadow Desktop (现有)                        │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
 │  │  Perception │→ │  Reasoning  │→ │  Execution  │              │
 │  │   Engine    │  │   Engine    │  │   Engine    │              │
@@ -73,7 +73,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Hawkeye Mobile App                            │
+│                    Shadow Mobile App                            │
 │                                                                  │
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │                    Perception Layer                          ││
@@ -211,7 +211,7 @@ AI 分解:
 
 > 原生移动应用
 
-**目标**: 独立运行的 Hawkeye Mobile App
+**目标**: 独立运行的 Shadow Mobile App
 
 **Android 功能**:
 - [ ] Accessibility Service (无障碍服务) — 核心执行能力
@@ -296,7 +296,7 @@ class ADBExecutor {
 
 **Android (Accessibility Service 方式)**:
 ```kotlin
-class HawkeyeAccessibilityService : AccessibilityService() {
+class ShadowAccessibilityService : AccessibilityService() {
     fun performClick(nodeInfo: AccessibilityNodeInfo) {
         nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
@@ -348,7 +348,7 @@ class HawkeyeAccessibilityService : AccessibilityService() {
 ```
 ┌─────────────┐                    ┌─────────────┐
 │   Desktop   │◄──── Sync ────────►│   Mobile    │
-│   Hawkeye   │     Protocol       │   Hawkeye   │
+│   Shadow   │     Protocol       │   Shadow   │
 └─────────────┘                    └─────────────┘
       │                                   │
       └───────────┬───────────────────────┘
@@ -423,7 +423,7 @@ ADB Control   Visual AI      iOS + Android      Learning
 
 ### 对开发者
 
-Hawkeye Mobile 是一个充满挑战和机遇的项目。我们正在寻找：
+Shadow Mobile 是一个充满挑战和机遇的项目。我们正在寻找：
 
 - 🤖 **AI/ML 工程师**: 多模态模型微调、端侧推理优化
 - 📱 **移动开发者**: Android/iOS 原生开发、Accessibility Service

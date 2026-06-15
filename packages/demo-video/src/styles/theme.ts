@@ -1,4 +1,4 @@
-// Hawkeye Brand Theme - Matching the cyberpunk puppy logo
+// Shadow Brand Theme - Matching the cyberpunk puppy logo
 export const theme = {
   colors: {
     // Primary - Cyan/Teal from logo

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Hawkeye",
+    "title": "Shadow",
     "loading": "화면 분석 중...",
     "empty": "감지된 의도가 없습니다",
     "observeScreen": "화면 관찰",
@@ -94,21 +94,21 @@
     "showSuggestions": "제안 표시",
     "settings": "설정",
     "quit": "종료",
-    "tooltip": "Hawkeye - 지능형 작업 도우미"
+    "tooltip": "Shadow - 지능형 작업 도우미"
   },
   "error": {
     "configureApiKey": "먼저 API 키를 설정해주세요",
     "engineNotInitialized": "엔진이 초기화되지 않았습니다",
-    "notInitialized": "Hawkeye가 초기화되지 않았습니다",
+    "notInitialized": "Shadow가 초기화되지 않았습니다",
     "intentNotFound": "의도를 찾을 수 없습니다",
     "planNotFound": "계획을 찾을 수 없습니다"
   },
   "onboarding": {
-    "title": "Hawkeye에 오신 것을 환영합니다",
+    "title": "Shadow에 오신 것을 환영합니다",
     "subtitle": "시작하려면 AI 모델을 선택하세요",
     "selectModel": "모델 선택",
     "noModelAvailable": "사용 가능한 모델이 없습니다",
-    "noModelDesc": "Hawkeye의 모든 기능을 사용하려면 먼저 모델을 다운로드하세요",
+    "noModelDesc": "Shadow의 모든 기능을 사용하려면 먼저 모델을 다운로드하세요",
     "downloadFirst": "먼저 모델을 다운로드하세요",
     "downloading": "모델 다운로드 중...",
     "downloadComplete": "다운로드 완료!",

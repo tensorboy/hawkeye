@@ -1,5 +1,5 @@
 /**
- * Hawkeye VS Code Extension - Types
+ * Shadow VS Code Extension - Types
  */
 
 export interface UserIntent {

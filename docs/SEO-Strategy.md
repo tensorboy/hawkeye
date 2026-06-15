@@ -1,4 +1,4 @@
-# Hawkeye (hawkiyi.com) SEO 完整战略计划
+# Shadow (hawkiyi.com) SEO 完整战略计划
 
 **版本**: 1.0
 **日期**: 2026-01-20
@@ -48,16 +48,16 @@
 
 ### 1.3 核心差异化定位
 
-Hawkeye 的独特卖点 (USP)：
+Shadow 的独特卖点 (USP)：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Hawkeye 核心差异化                        │
+│                     Shadow 核心差异化                        │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │   🦅 主动感知 (Proactive)    vs    被动响应 (Reactive)       │
 │   ──────────────────────────────────────────────────────   │
-│   Hawkeye 自动观察屏幕        Claude Code 等待你输入指令     │
+│   Shadow 自动观察屏幕        Claude Code 等待你输入指令     │
 │   主动发现可帮助的点           你需要先想好问题再问           │
 │                                                             │
 │   🏠 本地优先 (Local-First)  vs    云端依赖 (Cloud-Based)   │
@@ -103,7 +103,7 @@ Hawkeye 的独特卖点 (USP)：
 3. **信任背书**: 展示融资金额、投资方
 4. **开源可信度**: GitHub星标作为社会证明
 
-**可借鉴应用到 Hawkeye**:
+**可借鉴应用到 Shadow**:
 - 明确技术定位: "Zero-Input AI Assistant"
 - 强调本地隐私: "Your data never leaves your device"
 - 开源信任: GitHub 活跃度展示
@@ -121,7 +121,7 @@ Hawkeye 的独特卖点 (USP)：
 │                                                                 │
 │                    ┌─────────────┐                              │
 │                    │   品牌词    │  Volume: Low                 │
-│                    │  Hawkeye    │  Competition: Low            │
+│                    │  Shadow    │  Competition: Low            │
 │                    │  Hawkiyi    │  Priority: 🔴 Must Own       │
 │                    └─────────────┘                              │
 │                          │                                      │
@@ -149,10 +149,10 @@ Hawkeye 的独特卖点 (USP)：
 
 | 关键词 | 语言 | 搜索意图 | 目标页面 |
 |--------|------|---------|---------|
-| Hawkeye AI | EN | 品牌搜索 | 首页 |
+| Shadow AI | EN | 品牌搜索 | 首页 |
 | Hawkiyi | EN | 品牌搜索 | 首页 |
 | 鹰眼AI助手 | ZH | 品牌搜索 | 中文首页 |
-| Hawkeye desktop app | EN | 产品搜索 | 下载页 |
+| Shadow desktop app | EN | 产品搜索 | 下载页 |
 
 #### 核心功能关键词
 
@@ -198,16 +198,16 @@ Hawkeye 的独特卖点 (USP)：
                     "AI automation trends"
 
 兴趣阶段            比较型关键词            对比页面
-(Interest)          "Hawkeye vs Cursor"      功能对比表
+(Interest)          "Shadow vs Cursor"      功能对比表
                     "best local AI tools"    评测文章
 
 考虑阶段            功能型关键词            产品页面
-(Consideration)     "Hawkeye features"       详细功能说明
+(Consideration)     "Shadow features"       详细功能说明
                     "screen AI capabilities" 用例展示
 
 决策阶段            交易型关键词            下载/注册页
-(Decision)          "download Hawkeye"       CTA优化
-                    "Hawkeye free trial"     转化落地页
+(Decision)          "download Shadow"       CTA优化
+                    "Shadow free trial"     转化落地页
 ```
 
 ---
@@ -254,14 +254,14 @@ hawkiyi.com
 
 - [ ] **Meta 标签优化**
   ```html
-  <title>Hawkeye - Proactive AI Assistant | Zero-Input Desktop Automation</title>
-  <meta name="description" content="Hawkeye is a local-first AI assistant that watches your screen, understands your intent, and proactively suggests actions. No prompts needed. Privacy-first.">
+  <title>Shadow - Proactive AI Assistant | Zero-Input Desktop Automation</title>
+  <meta name="description" content="Shadow is a local-first AI assistant that watches your screen, understands your intent, and proactively suggests actions. No prompts needed. Privacy-first.">
   <meta name="keywords" content="AI assistant, proactive AI, screen AI, local AI, desktop automation, zero input">
   ```
 
 - [ ] **Open Graph 标签**
   ```html
-  <meta property="og:title" content="Hawkeye - Your Proactive AI Assistant">
+  <meta property="og:title" content="Shadow - Your Proactive AI Assistant">
   <meta property="og:description" content="Like a hawk watching your work, suggesting before you ask.">
   <meta property="og:image" content="https://hawkiyi.com/og-image.png">
   <meta property="og:type" content="website">
@@ -270,7 +270,7 @@ hawkiyi.com
 - [ ] **Twitter Cards**
   ```html
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Hawkeye AI">
+  <meta name="twitter:title" content="Shadow AI">
   <meta name="twitter:description" content="Proactive AI assistant for your desktop">
   ```
 
@@ -302,7 +302,7 @@ hawkiyi.com
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Hawkeye",
+  "name": "Shadow",
   "applicationCategory": "ProductivityApplication",
   "operatingSystem": ["macOS", "Windows", "Linux"],
   "description": "AI-powered proactive task assistant",
@@ -369,15 +369,15 @@ hawkiyi.com
 │                                                                 │
 │   支柱3: 场景化使用指南                                         │
 │   ────────────────────                                          │
-│   │── 开发者如何用Hawkeye提升10x效率                            │
+│   │── 开发者如何用Shadow提升10x效率                            │
 │   │── 设计师的AI工作流                                          │
 │   │── 学生学习效率提升指南                                      │
 │   └── 职场人士的AI自动化秘诀                                    │
 │                                                                 │
 │   支柱4: 技术深度内容                                           │
 │   ────────────────────                                          │
-│   │── Hawkeye架构设计解析                                       │
-│   │── 如何贡献Hawkeye开源项目                                   │
+│   │── Shadow架构设计解析                                       │
+│   │── 如何贡献Shadow开源项目                                   │
 │   │── 构建你自己的AI插件                                        │
 │   └── API文档与集成指南                                         │
 │                                                                 │
@@ -390,40 +390,40 @@ hawkiyi.com
 
 | 周次 | 内容类型 | 标题 | 目标关键词 |
 |------|---------|------|----------|
-| W1 | 产品页 | Hawkeye Features Overview | hawkeye features, AI assistant features |
+| W1 | 产品页 | Shadow Features Overview | hawkeye features, AI assistant features |
 | W1 | 落地页 | Zero-Input AI Experience | zero input AI, proactive AI |
 | W2 | 博客 | Why Proactive AI Will Replace Reactive Assistants | proactive AI assistant |
-| W2 | 对比页 | Hawkeye vs Cursor: Which AI Tool is Right for You? | hawkeye vs cursor |
+| W2 | 对比页 | Shadow vs Cursor: Which AI Tool is Right for You? | hawkeye vs cursor |
 | W3 | 博客 | The Complete Guide to Local-First AI | local first AI, privacy AI |
-| W3 | 用例页 | Hawkeye for Developers | AI assistant for developers |
-| W4 | 博客 | How to Set Up Ollama with Hawkeye | ollama integration, local LLM |
-| W4 | 对比页 | Hawkeye vs GitHub Copilot | hawkeye vs copilot |
+| W3 | 用例页 | Shadow for Developers | AI assistant for developers |
+| W4 | 博客 | How to Set Up Ollama with Shadow | ollama integration, local LLM |
+| W4 | 对比页 | Shadow vs GitHub Copilot | hawkeye vs copilot |
 
 #### 第2个月: 场景深耕
 
 | 周次 | 内容类型 | 标题 | 目标关键词 |
 |------|---------|------|----------|
-| W5 | 用例页 | 10 Ways Hawkeye Helps Designers | AI for designers |
+| W5 | 用例页 | 10 Ways Shadow Helps Designers | AI for designers |
 | W5 | 博客 | AI Screen Perception: How It Works | screen AI, OCR AI |
 | W6 | 博客 | Automate Your Workflow Without Writing Code | no-code automation AI |
-| W6 | 教程 | Getting Started with Hawkeye in 5 Minutes | hawkeye tutorial |
+| W6 | 教程 | Getting Started with Shadow in 5 Minutes | hawkeye tutorial |
 | W7 | 用例页 | Student Productivity with AI | AI for students |
 | W7 | 博客 | The Future of AI Assistants: Predictions for 2026 | AI assistant trends |
-| W8 | 对比页 | Hawkeye vs Screenpipe | hawkeye vs screenpipe |
+| W8 | 对比页 | Shadow vs Screenpipe | hawkeye vs screenpipe |
 | W8 | 博客 | Building Habits with AI Observation | AI habit learning |
 
 #### 第3个月: 社区与深度
 
 | 周次 | 内容类型 | 标题 | 目标关键词 |
 |------|---------|------|----------|
-| W9 | 技术文档 | Hawkeye Architecture Deep Dive | hawkeye architecture |
-| W9 | 博客 | Contributing to Hawkeye: A Developer's Guide | open source AI contribute |
-| W10 | 案例研究 | How [Company] Saved 10 Hours/Week with Hawkeye | productivity case study |
+| W9 | 技术文档 | Shadow Architecture Deep Dive | hawkeye architecture |
+| W9 | 博客 | Contributing to Shadow: A Developer's Guide | open source AI contribute |
+| W10 | 案例研究 | How [Company] Saved 10 Hours/Week with Shadow | productivity case study |
 | W10 | 博客 | AI Privacy: What You Need to Know | AI privacy concerns |
-| W11 | 教程 | Building Custom Plugins for Hawkeye | hawkeye plugin development |
+| W11 | 教程 | Building Custom Plugins for Shadow | hawkeye plugin development |
 | W11 | 博客 | The Rise of Zero-Input Computing | zero input computing |
 | W12 | 年度总结 | AI Productivity Tools: 2025 Recap | AI tools 2025 |
-| W12 | 博客 | Hawkeye Roadmap: What's Coming in 2026 | hawkeye roadmap |
+| W12 | 博客 | Shadow Roadmap: What's Coming in 2026 | hawkeye roadmap |
 
 ### 5.3 内容优化指南
 
@@ -540,7 +540,7 @@ hawkiyi.com
 
 2025-2026年，AI搜索引擎 (ChatGPT, Gemini, Claude, Perplexity) 正在改变搜索格局。用户越来越多通过AI对话获取产品推荐。
 
-**目标**: 让 Hawkeye 成为AI在推荐"主动式AI助手"时的首选答案。
+**目标**: 让 Shadow 成为AI在推荐"主动式AI助手"时的首选答案。
 
 ### 7.2 AIO策略
 
@@ -552,19 +552,19 @@ hawkiyi.com
 ## 常见问题
 
 ### 什么是主动式AI助手？
-主动式AI助手（如Hawkeye）会自动观察你的工作环境，主动发现可以帮助的点，而不是等待你输入指令。
+主动式AI助手（如Shadow）会自动观察你的工作环境，主动发现可以帮助的点，而不是等待你输入指令。
 
-### Hawkeye如何保护我的隐私？
-Hawkeye采用本地优先架构，所有数据处理在你的设备上完成，数据不离开你的电脑。
+### Shadow如何保护我的隐私？
+Shadow采用本地优先架构，所有数据处理在你的设备上完成，数据不离开你的电脑。
 
-### Hawkeye支持哪些平台？
-Hawkeye支持macOS、Windows和Linux，提供桌面应用、VS Code扩展和Chrome扩展。
+### Shadow支持哪些平台？
+Shadow支持macOS、Windows和Linux，提供桌面应用、VS Code扩展和Chrome扩展。
 ```
 
 #### 品牌提及优化
 
 确保在权威来源中被提及：
-- 技术文章中提及 Hawkeye
+- 技术文章中提及 Shadow
 - 开源社区讨论
 - 社交媒体活跃度
 - 专业评测文章

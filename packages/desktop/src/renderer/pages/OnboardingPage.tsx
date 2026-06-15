@@ -109,8 +109,8 @@ export function OnboardingPage() {
     <div className="container onboarding">
       <div className="onboarding-content">
         <div className="onboarding-header">
-          <img src={logoIcon} alt="Hawkeye" className="onboarding-icon" />
-          <h1>{t('onboarding.title', '欢迎使用 Hawkeye')}</h1>
+          <img src={logoIcon} alt="Shadow" className="onboarding-icon" />
+          <h1>{t('onboarding.title', '欢迎使用 Shadow')}</h1>
           <p>
             {onboardingMode === 'choose'
               ? t('onboarding.chooseMode', '请选择 AI 运行方式')

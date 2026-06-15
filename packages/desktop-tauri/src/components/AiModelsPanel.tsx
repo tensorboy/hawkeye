@@ -1,5 +1,5 @@
 /**
- * AiModelsPanel — single management surface for every model in Hawkeye.
+ * AiModelsPanel — single management surface for every model in Shadow.
  *
  * Six sections, top to bottom by importance:
  *
@@ -40,11 +40,14 @@ import {
 } from '../hooks/useTauri';
 import { GazeTrainingPanel } from './GazeTrainingPanel';
 
-type ProviderId = 'gemini' | 'openai' | 'local';
+type ProviderId = 'gemini' | 'openai' | 'anthropic' | 'custom' | 'local';
+type CloudVendor = Exclude<ProviderId, 'local'>;
 
 const PROVIDER_LABELS: Record<ProviderId, string> = {
-  gemini: 'Google Gemini',
-  openai: 'OpenAI Compatible',
+  gemini: 'Gemini',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  custom: 'Custom',
   local: 'Local (llama.cpp)',
 };
 
@@ -96,11 +99,10 @@ export const AiModelsPanel: React.FC = () => {
   return (
     <div className="main-content" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <DaemonBanner />
-      <ChatProviderSection config={config} setConfig={setConfig} />
-      <LocalLlmSection config={config} setConfig={setConfig} />
       <SpeechSection config={config} setConfig={setConfig} />
       <VisionSection config={config} setConfig={setConfig} />
       <FaceMeshSection />
+      <ChatProviderSection config={config} setConfig={setConfig} />
       <GazeSection />
       <AgentSection />
     </div>
@@ -252,6 +254,12 @@ const ChatProviderSection: React.FC<SectionProps> = ({ config, setConfig }) => {
   }, [config]);
 
   const provider = (draft?.aiProvider ?? 'gemini') as ProviderId;
+  const isLocal = provider === 'local';
+  // Remember the last cloud vendor so toggling Local → Cloud restores it.
+  const [lastCloud, setLastCloud] = useState<CloudVendor>('gemini');
+  useEffect(() => {
+    if (provider !== 'local') setLastCloud(provider);
+  }, [provider]);
 
   const update = (patch: Partial<AppConfig>) => {
     if (!draft) return;
@@ -293,26 +301,51 @@ const ChatProviderSection: React.FC<SectionProps> = ({ config, setConfig }) => {
       subtitle="Which AI answers your messages and powers gaze command chips"
       right={valid && <StatusDot tone={valid.ok ? 'ok' : 'err'} label={valid.ok ? 'OK' : 'Error'} />}
     >
-      {/* Provider segmented control */}
-      <div className="flex gap-2 mb-4">
-        {(['gemini', 'openai', 'local'] as ProviderId[]).map((p) => (
+      {/* Tier 1 — deployment: cloud vs local. Both host text/vision-capable models. */}
+      <div className="flex gap-2 mb-2">
+        {([
+          { id: 'cloud', label: '☁️ Cloud', active: !isLocal, pick: () => update({ aiProvider: lastCloud }) },
+          { id: 'local', label: '💻 Local', active: isLocal, pick: () => update({ aiProvider: 'local' }) },
+        ]).map((t) => (
           <button
-            key={p}
+            key={t.id}
             className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
             style={{
-              background:
-                provider === p
-                  ? 'rgba(245, 158, 11, 0.18)'
-                  : 'rgba(255, 255, 255, 0.04)',
-              border: `1px solid ${provider === p ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.08)'}`,
-              color: provider === p ? '#fef3c7' : 'var(--hawkeye-text-secondary, #aaa)',
+              background: t.active ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${t.active ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.08)'}`,
+              color: t.active ? '#fef3c7' : 'var(--hawkeye-text-secondary, #aaa)',
             }}
-            onClick={() => update({ aiProvider: p })}
+            onClick={t.pick}
           >
-            {PROVIDER_LABELS[p]}
+            {t.label}
           </button>
         ))}
       </div>
+      <div className="text-[10px] text-hawkeye-text-muted mb-3">
+        {isLocal
+          ? 'GGUF models on Apple Metal — zero network, full privacy'
+          : 'Text + vision models via API — pick a vendor below'}
+      </div>
+
+      {/* Tier 2 — cloud vendor */}
+      {!isLocal && (
+        <div className="flex gap-2 mb-4">
+          {(['gemini', 'openai', 'anthropic', 'custom'] as const).map((p) => (
+            <button
+              key={p}
+              className="flex-1 px-3 py-1.5 rounded-lg text-xs transition-colors"
+              style={{
+                background: provider === p ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                border: `1px solid ${provider === p ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                color: provider === p ? '#fff' : 'var(--hawkeye-text-secondary, #aaa)',
+              }}
+              onClick={() => update({ aiProvider: p })}
+            >
+              {PROVIDER_LABELS[p]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {provider === 'gemini' && (
         <div className="space-y-3">
@@ -383,11 +416,85 @@ const ChatProviderSection: React.FC<SectionProps> = ({ config, setConfig }) => {
         </div>
       )}
 
-      {provider === 'local' && (
+      {provider === 'anthropic' && (
+        <div className="space-y-3">
+          <Field label="API Key">
+            <input
+              type="password"
+              className="form-input"
+              value={draft.anthropicApiKey ?? ''}
+              onChange={(e) => update({ anthropicApiKey: e.target.value })}
+              placeholder="sk-ant-…"
+              autoComplete="off"
+            />
+          </Field>
+          <Field label="Model">
+            <input
+              type="text"
+              className="form-input"
+              value={draft.anthropicModel ?? ''}
+              onChange={(e) => update({ anthropicModel: e.target.value })}
+              placeholder="claude-sonnet-4-6"
+            />
+          </Field>
+          <Field
+            label="Base URL"
+            hint="Optional — leave blank for Anthropic's default. Useful for proxies."
+          >
+            <input
+              type="text"
+              className="form-input"
+              value={draft.anthropicBaseUrl ?? ''}
+              onChange={(e) => update({ anthropicBaseUrl: e.target.value || undefined })}
+              placeholder="https://api.anthropic.com"
+            />
+          </Field>
+        </div>
+      )}
+
+      {provider === 'custom' && (
         <div className="space-y-3">
           <Field
-            label="Active GGUF model"
-            hint="Pick a model from the Local LLMs section below (download first if it's not yet on disk)."
+            label="Endpoint"
+            hint="Any OpenAI-compatible /v1 base URL — vLLM, Ollama, LM Studio, proxies…"
+          >
+            <input
+              type="text"
+              className="form-input"
+              value={draft.customBaseUrl ?? ''}
+              onChange={(e) => update({ customBaseUrl: e.target.value || undefined })}
+              placeholder="http://localhost:11434/v1"
+            />
+          </Field>
+          <Field label="API Key" hint="Leave blank if the endpoint doesn't require one.">
+            <input
+              type="password"
+              className="form-input"
+              value={draft.customApiKey ?? ''}
+              onChange={(e) => update({ customApiKey: e.target.value || undefined })}
+              placeholder="optional"
+              autoComplete="off"
+            />
+          </Field>
+          <Field label="Model">
+            <input
+              type="text"
+              className="form-input"
+              value={draft.customModel ?? ''}
+              onChange={(e) => update({ customModel: e.target.value })}
+              placeholder="llama3.3:70b"
+            />
+          </Field>
+        </div>
+      )}
+
+      {provider === 'local' && (
+        <div className="space-y-3">
+          {/* Full catalog inline — download + activate without leaving this card. */}
+          <LocalTextLlmCatalog config={config} setConfig={setConfig} />
+          <Field
+            label="Custom model id (advanced)"
+            hint="Only needed for GGUF files not in the catalog above."
           >
             <input
               type="text"
@@ -398,7 +505,7 @@ const ChatProviderSection: React.FC<SectionProps> = ({ config, setConfig }) => {
             />
           </Field>
           <div className="text-xs text-hawkeye-text-muted">
-            Local provider runs on Apple Metal — zero network, full privacy. Vision falls back to text-only.
+            Vision falls back to text-only on the local provider.
           </div>
         </div>
       )}
@@ -445,7 +552,12 @@ const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode 
 // 2. Local Text LLMs (GGUF registry)
 // ──────────────────────────────────────────────────────────────────────
 
-const LocalLlmSection: React.FC<SectionProps> = ({ config, setConfig }) => {
+/**
+ * Shared model-library state: registry + downloads + progress + actions.
+ * Used by the text-LLM catalog (embedded in Chat Provider's Local branch)
+ * and the standalone Whisper section.
+ */
+function useLocalModelLibrary(config: AppConfig | null, setConfig: (cfg: AppConfig) => void) {
   const [registry, setRegistry] = useState<ModelInfo[]>([]);
   const [downloaded, setDownloaded] = useState<LocalModel[]>([]);
   const [progress, setProgress] = useState<Record<string, DownloadProgress>>({});
@@ -524,68 +636,85 @@ const LocalLlmSection: React.FC<SectionProps> = ({ config, setConfig }) => {
   const textLlms = useMemo(() => registry.filter((m) => m.modelType === 'text_llm'), [registry]);
   const whispers = useMemo(() => registry.filter((m) => m.modelType === 'whisper'), [registry]);
 
-  return (
-    <>
-      <Section
-        title="Local Text LLMs"
-        subtitle="GGUF models that run offline via llama.cpp on Apple Metal"
-        right={
-          <StatusDot
-            tone={downloaded.some((m) => m.modelType === 'text_llm') ? 'ok' : 'idle'}
-            label={`${downloaded.filter((m) => m.modelType === 'text_llm').length} installed`}
-          />
-        }
-      >
-        {error && (
-          <div className="text-xs mb-2" style={{ color: '#ef4444' }}>
-            {error}
-          </div>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {textLlms.map((m) => (
-            <ModelRow
-              key={m.id}
-              model={m}
-              installed={isDownloaded(m.id)}
-              active={config?.aiProvider === 'local' && config?.localModelId === m.id}
-              progress={progress[m.id]}
-              busy={busyId === m.id}
-              onDownload={() => handleDownload(m.id)}
-              onDelete={() => handleDelete(m.id)}
-              onActivate={() => handleSetActive(m.id)}
-            />
-          ))}
-        </div>
-      </Section>
+  return {
+    downloaded,
+    progress,
+    busyId,
+    error,
+    isDownloaded,
+    handleDownload,
+    handleDelete,
+    handleSetActive,
+    textLlms,
+    whispers,
+  };
+}
 
-      {/* Whisper goes under speech but registry lists it here — duplicate render below. */}
-      <Section
-        title="Whisper Speech Models"
-        subtitle="GGML weights for whisper.cpp — high-accuracy transcription"
-        right={
-          <StatusDot
-            tone={downloaded.some((m) => m.modelType === 'whisper') ? 'ok' : 'idle'}
-            label={`${downloaded.filter((m) => m.modelType === 'whisper').length} installed`}
-          />
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {whispers.map((m) => (
-            <ModelRow
-              key={m.id}
-              model={m}
-              installed={isDownloaded(m.id)}
-              active={false}
-              progress={progress[m.id]}
-              busy={busyId === m.id}
-              onDownload={() => handleDownload(m.id)}
-              onDelete={() => handleDelete(m.id)}
-              showActivate={false}
-            />
-          ))}
+/** Text-LLM catalog — rendered inline inside Chat Provider's 💻 Local branch. */
+const LocalTextLlmCatalog: React.FC<SectionProps> = ({ config, setConfig }) => {
+  const lib = useLocalModelLibrary(config, setConfig);
+  const installedCount = lib.downloaded.filter((m) => m.modelType === 'text_llm').length;
+
+  return (
+    <div>
+      {lib.error && (
+        <div className="text-xs mb-2" style={{ color: '#ef4444' }}>
+          {lib.error}
         </div>
-      </Section>
-    </>
+      )}
+      <div className="text-[10px] text-hawkeye-text-muted mb-2">
+        {installedCount} installed · download once, then fully offline via llama.cpp
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {lib.textLlms.map((m) => (
+          <ModelRow
+            key={m.id}
+            model={m}
+            installed={lib.isDownloaded(m.id)}
+            active={config?.aiProvider === 'local' && config?.localModelId === m.id}
+            progress={lib.progress[m.id]}
+            busy={lib.busyId === m.id}
+            onDownload={() => lib.handleDownload(m.id)}
+            onDelete={() => lib.handleDelete(m.id)}
+            onActivate={() => lib.handleSetActive(m.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/** Whisper GGML catalog — rendered inline under Speech's Whisper.cpp branch. */
+const WhisperModelCatalog: React.FC<SectionProps> = ({ config, setConfig }) => {
+  const lib = useLocalModelLibrary(config, setConfig);
+  const installedCount = lib.downloaded.filter((m) => m.modelType === 'whisper').length;
+
+  return (
+    <div>
+      {lib.error && (
+        <div className="text-xs mb-2" style={{ color: '#ef4444' }}>
+          {lib.error}
+        </div>
+      )}
+      <div className="text-[10px] text-hawkeye-text-muted mb-2">
+        {installedCount} installed · GGML weights for whisper.cpp, accuracy scales with size
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {lib.whispers.map((m) => (
+          <ModelRow
+            key={m.id}
+            model={m}
+            installed={lib.isDownloaded(m.id)}
+            active={false}
+            progress={lib.progress[m.id]}
+            busy={lib.busyId === m.id}
+            onDownload={() => lib.handleDownload(m.id)}
+            onDelete={() => lib.handleDelete(m.id)}
+            showActivate={false}
+          />
+        ))}
+      </div>
+    </div>
   );
 };
 
@@ -695,6 +824,26 @@ const SpeechSection: React.FC<SectionProps> = ({ config, setConfig }) => {
   const [error, setError] = useState<string | null>(null);
 
   const provider = ((config?.speechProvider as SpeechProvider) ?? 'apple');
+  const isLocalSpeech = provider === 'apple' || provider === 'whisper';
+  // Remember last pick per tier so toggling Local ↔ Cloud restores it.
+  const [lastLocal, setLastLocal] = useState<'apple' | 'whisper'>('apple');
+  const [lastCloud, setLastCloud] = useState<'openai' | 'gemini'>('openai');
+  useEffect(() => {
+    if (provider === 'apple' || provider === 'whisper') setLastLocal(provider);
+    else setLastCloud(provider);
+  }, [provider]);
+
+  // Switching providers must never fail silently: surface "config not
+  // loaded yet" and save errors right in the card.
+  const switchProvider = (p: SpeechProvider) => {
+    if (!config) {
+      setError('Config not loaded yet — daemon still starting? Check the Status tab.');
+      return;
+    }
+    update({ speechProvider: p }).catch((e) =>
+      setError(e instanceof Error ? e.message : String(e)),
+    );
+  };
 
   useEffect(() => {
     speechStatus()
@@ -741,19 +890,42 @@ const SpeechSection: React.FC<SectionProps> = ({ config, setConfig }) => {
       subtitle="Choose a local on-device backend or a cloud API"
       right={<StatusDot tone={tone} label={toneLabel} />}
     >
+      {/* Tier 1 — deployment */}
+      <div className="flex gap-2 mb-2">
+        {([
+          { id: 'local', label: '💻 Local', active: isLocalSpeech, pick: () => switchProvider(lastLocal) },
+          { id: 'cloud', label: '☁️ Cloud', active: !isLocalSpeech, pick: () => switchProvider(lastCloud) },
+        ]).map((t) => (
+          <button
+            key={t.id}
+            className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{
+              background: t.active ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${t.active ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.08)'}`,
+              color: t.active ? '#fef3c7' : 'var(--hawkeye-text-secondary, #aaa)',
+            }}
+            onClick={t.pick}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tier 2 — backend within the chosen tier */}
       <SourceSwitch
         value={provider}
-        onChange={(p) => update({ speechProvider: p })}
-        options={[
-          { id: 'apple', label: 'Apple Speech (local)', hint: 'macOS built-in, ANE-accelerated' },
-          {
-            id: 'whisper',
-            label: 'Whisper.cpp (local)',
-            hint: 'Download Whisper models in the Whisper section above',
-          },
-          { id: 'openai', label: 'OpenAI Whisper API', hint: 'Reuses your OpenAI key' },
-          { id: 'gemini', label: 'Gemini Audio', hint: 'Reuses your Gemini key' },
-        ]}
+        onChange={(p) => switchProvider(p as SpeechProvider)}
+        options={
+          isLocalSpeech
+            ? [
+                { id: 'apple', label: 'Apple Speech', hint: 'macOS built-in, ANE-accelerated' },
+                { id: 'whisper', label: 'Whisper.cpp', hint: 'GGML models, fully offline' },
+              ]
+            : [
+                { id: 'openai', label: 'OpenAI Whisper API', hint: 'Reuses your OpenAI key' },
+                { id: 'gemini', label: 'Gemini Audio', hint: 'Reuses your Gemini key' },
+              ]
+        }
       />
 
       {error && (
@@ -776,31 +948,24 @@ const SpeechSection: React.FC<SectionProps> = ({ config, setConfig }) => {
       )}
 
       {provider === 'whisper' && (
-        <div className="space-y-2 text-xs">
-          {whispers.length === 0 ? (
-            <div className="text-hawkeye-text-muted" style={{ lineHeight: 1.4 }}>
-              No Whisper model installed. Scroll up to the &ldquo;Whisper Speech Models&rdquo; section and download one first.
-            </div>
-          ) : (
-            <>
-              <Field label="Active Whisper model">
-                <select
-                  className="form-input form-select"
-                  value={config?.whisperModelId ?? whispers[0].id}
-                  onChange={(e) => update({ whisperModelId: e.target.value })}
-                >
-                  {whispers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({formatBytes(m.sizeBytes)})
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <div className="text-hawkeye-text-muted" style={{ lineHeight: 1.4 }}>
-                Multi-language, fully offline, accuracy improves with model size.
-              </div>
-            </>
+        <div className="space-y-3 text-xs">
+          {whispers.length > 0 && (
+            <Field label="Active Whisper model">
+              <select
+                className="form-input form-select"
+                value={config?.whisperModelId ?? whispers[0].id}
+                onChange={(e) => update({ whisperModelId: e.target.value })}
+              >
+                {whispers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({formatBytes(m.sizeBytes)})
+                  </option>
+                ))}
+              </select>
+            </Field>
           )}
+          {/* Full catalog inline — download weights without leaving this card. */}
+          <WhisperModelCatalog config={config} setConfig={setConfig} />
         </div>
       )}
 

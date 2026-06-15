@@ -1,12 +1,12 @@
 {
   "extensionName": {
-    "message": "Hawkeye"
+    "message": "Shadow"
   },
   "extensionDescription": {
     "message": "Asistente inteligente de percepción y ejecución de tareas"
   },
   "actionTitle": {
-    "message": "Hawkeye"
+    "message": "Shadow"
   },
   "commandObservePage": {
     "message": "Observar página actual"
@@ -18,7 +18,7 @@
     "message": "Escritorio no conectado"
   },
   "desktopNotConnected": {
-    "message": "Asegúrate de que Hawkeye Desktop esté en ejecución y conectado"
+    "message": "Asegúrate de que Shadow Desktop esté en ejecución y conectado"
   },
   "settings": {
     "message": "Configuración"
@@ -116,10 +116,10 @@
     }
   },
   "contextMenuAnalyzeSelection": {
-    "message": "Hawkeye: Analizar selección"
+    "message": "Shadow: Analizar selección"
   },
   "contextMenuAnalyzePage": {
-    "message": "Hawkeye: Analizar página"
+    "message": "Shadow: Analizar página"
   },
   "foundIntents": {
     "message": "Se encontraron $count$ intención(es)",
@@ -130,6 +130,6 @@
     }
   },
   "notificationError": {
-    "message": "Error de Hawkeye"
+    "message": "Error de Shadow"
   }
 }

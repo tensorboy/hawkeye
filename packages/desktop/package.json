@@ -1,9 +1,9 @@
 {
   "name": "@hawkeye/desktop",
   "version": "0.2.3",
-  "description": "Hawkeye Desktop Application - Intelligent Task Assistant",
+  "description": "Shadow Desktop Application - Intelligent Task Assistant",
   "author": {
-    "name": "Hawkeye Team",
+    "name": "Shadow Team",
     "email": "hawkeye@example.com"
   },
   "repository": {
@@ -24,7 +24,7 @@
     "clean": "rm -rf dist out",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "electron-rebuild -f -w better-sqlite3 || true",
-    "models:dir": "echo ~/Library/Application\\ Support/Hawkeye/models"
+    "models:dir": "echo ~/Library/Application\\ Support/Shadow/models"
   },
   "dependencies": {
     "@hawkeye/core": "workspace:*",
@@ -105,7 +105,7 @@
   },
   "build": {
     "appId": "com.hawkeye.app",
-    "productName": "Hawkeye",
+    "productName": "Shadow",
     "asarUnpack": [
       "node_modules/node-llama-cpp/**/*",
       "node_modules/smart-whisper/**/*"

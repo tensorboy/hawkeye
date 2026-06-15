@@ -2,7 +2,6 @@ import { useEffect, useCallback, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHawkeyeStore } from './store';
-import { ChatPanel } from './components/ChatPanel';
 import { ObservePanel } from './components/ObservePanel';
 import { GazeOverlay } from './components/GazeOverlay';
 import { GesturePanel } from './components/GesturePanel';
@@ -13,6 +12,7 @@ import { AiModelsPanel } from './components/AiModelsPanel';
 import { AgentConfirmModal } from './components/AgentConfirmModal';
 import { useTauriEvent } from './hooks/useEvents';
 import { useExplain } from './hooks/useExplain';
+import { useGestureFusion } from './hooks/useGestureFusion';
 import {
   getStatus,
   captureScreen,
@@ -26,7 +26,7 @@ import {
   type ObservationResult,
 } from './hooks/useTauri';
 
-type TabId = 'status' | 'chat' | 'models' | 'observe' | 'gaze' | 'gesture' | 'life-tree' | 'debug';
+type TabId = 'status' | 'models' | 'observe' | 'gaze' | 'gesture' | 'life-tree' | 'debug';
 
 const fadeIn = {
   initial: { opacity: 0 },
@@ -74,7 +74,7 @@ function App() {
     setGazeChipResult,
   } = useHawkeyeStore();
 
-  const [activeTab, setActiveTab] = useState<TabId>('status');
+  const [activeTab, setActiveTab] = useState<TabId>('observe');
   const [captureInterval, setCaptureInterval] = useState<number | null>(null);
 
   // Mirror Rust's gaze:entity-changed / -cleared events into the store so
@@ -85,6 +85,10 @@ function App() {
   // Look-to-Explain: bridges Tauri global-shortcut → daemon /v1/explain → overlay window.
   // Mount once; hook handles all 3 hotkey modes (⌥E / ⌥⇧E / ⌥⌘E).
   useExplain();
+
+  // Hand-gesture dispatch: pinch → explain the gazed entity, thumbs answer
+  // proactive suggestions, canned gestures → daemon actions. Mount once.
+  useGestureFusion();
 
   // The observe loop emits regions + screenshot dims. Capture them so
   // GazeOverlay can hit-test gaze against them without re-running OCR.
@@ -103,29 +107,47 @@ function App() {
     return () => window.clearTimeout(t);
   }, [gazeChipResult, setGazeChipResult]);
 
-  // Initialize on mount
+  // Initialize on mount. The GUI spawns the daemon at startup, so the first
+  // requests race against its bind — retry with backoff instead of giving up,
+  // otherwise config stays null forever and every config-gated control
+  // (settings modal, provider switches) silently ignores clicks.
   useEffect(() => {
+    let cancelled = false;
+
     async function init() {
-      try {
-        const statusResult = await getStatus();
-        setStatus(statusResult.initialized ? 'Ready' : 'Initializing...');
+      const MAX_ATTEMPTS = 15;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS && !cancelled; attempt++) {
+        try {
+          const statusResult = await getStatus();
+          setStatus(statusResult.initialized ? 'Ready' : 'Initializing...');
 
-        const configResult = await loadConfig();
-        setConfig(configResult);
+          const configResult = await loadConfig();
+          if (cancelled) return;
+          setConfig(configResult);
 
-        // Try to init AI if key exists for the selected provider
-        const hasKey =
-          (configResult.aiProvider === 'gemini' && configResult.geminiApiKey) ||
-          (configResult.aiProvider === 'openai' && configResult.openaiApiKey);
-        if (hasKey) {
-          initAi().catch(console.error);
+          // Try to init AI if key exists for the selected provider
+          const hasKey =
+            (configResult.aiProvider === 'gemini' && configResult.geminiApiKey) ||
+            (configResult.aiProvider === 'openai' && configResult.openaiApiKey) ||
+            (configResult.aiProvider === 'anthropic' && configResult.anthropicApiKey) ||
+            (configResult.aiProvider === 'custom' && configResult.customBaseUrl);
+          if (hasKey) {
+            initAi().catch(console.error);
+          }
+          return;
+        } catch (error) {
+          console.warn(`Init attempt ${attempt}/${MAX_ATTEMPTS} failed (daemon starting?):`, error);
+          setStatus('Waiting for daemon…');
+          await new Promise((r) => setTimeout(r, Math.min(1000 * attempt, 3000)));
         }
-      } catch (error) {
-        console.error('Init error:', error);
-        setStatus('Error initializing');
       }
+      if (!cancelled) setStatus('Error initializing — is the daemon up?');
     }
     init();
+
+    return () => {
+      cancelled = true;
+    };
   }, [setStatus, setConfig]);
 
   // Listen for tray "open-settings" event
@@ -203,7 +225,7 @@ function App() {
       <header className="header">
         <div className="header-title">
           <span className="text-2xl">🦅</span>
-          <span>Hawkeye</span>
+          <span>Shadow</span>
           <span className="text-xs text-hawkeye-text-muted ml-2">Tauri</span>
         </div>
         <div className="header-actions">
@@ -220,10 +242,9 @@ function App() {
       {/* Tab Bar */}
       <div className="flex border-b border-hawkeye-border px-2">
         {([
-          { id: 'status' as TabId, label: 'Status' },
-          { id: 'chat' as TabId, label: 'Chat' },
-          { id: 'models' as TabId, label: 'Models' },
           { id: 'observe' as TabId, label: 'Observe' },
+          { id: 'status' as TabId, label: 'Status' },
+          { id: 'models' as TabId, label: 'Models' },
           { id: 'gaze' as TabId, label: 'Gaze' },
           { id: 'gesture' as TabId, label: 'Gesture' },
           { id: 'life-tree' as TabId, label: 'Life Tree' },
@@ -326,7 +347,6 @@ function App() {
           </main>
         )}
 
-        {activeTab === 'chat' && <ChatPanel />}
         {activeTab === 'models' && <AiModelsPanel />}
         {activeTab === 'observe' && <ObservePanel />}
         {activeTab === 'gaze' && (
@@ -382,7 +402,9 @@ function App() {
               // Re-init AI for any provider with a key
               const hasKey =
                 (newConfig.aiProvider === 'gemini' && newConfig.geminiApiKey) ||
-                (newConfig.aiProvider === 'openai' && newConfig.openaiApiKey);
+                (newConfig.aiProvider === 'openai' && newConfig.openaiApiKey) ||
+                (newConfig.aiProvider === 'anthropic' && newConfig.anthropicApiKey) ||
+                (newConfig.aiProvider === 'custom' && newConfig.customBaseUrl);
               if (hasKey) {
                 initAi().catch(console.error);
               }

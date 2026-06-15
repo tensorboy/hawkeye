@@ -30,7 +30,7 @@ export enum BehaviorEventType {
   CLIPBOARD_COPY = 'clipboard_copy',
   CLIPBOARD_PASTE = 'clipboard_paste',
 
-  // Hawkeye 交互
+  // Shadow 交互
   SUGGESTION_VIEW = 'suggestion_view',
   SUGGESTION_ACCEPT = 'suggestion_accept',
   SUGGESTION_REJECT = 'suggestion_reject',

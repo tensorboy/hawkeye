@@ -1,4 +1,4 @@
-# Hawkeye Electron → Tauri 2.0 + Rust 迁移方案
+# Shadow Electron → Tauri 2.0 + Rust 迁移方案
 
 ## 一、当前架构全景
 
@@ -24,7 +24,7 @@ packages/
 ```
 [用户] → [React UI] → [preload IPC] → [Electron Main]
                                             ↓
-                    [HawkeyeService] → [Core Engine]
+                    [ShadowService] → [Core Engine]
                          ↓                    ↓
               [WhisperService]    [Perception → Reasoning → Execution]
               [SherpaOnnxService]

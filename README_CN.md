@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="./logo.png" alt="Hawkeye Logo" width="120" height="120" />
+<img src="./logo.png" alt="Shadow Logo" width="120" height="120" />
 
-# Hawkeye
+# Shadow
 
 ### 🦅 首个主动感知型桌面 AI 助手
 
@@ -28,13 +28,13 @@
 
 ---
 
-## 🎯 Hawkeye 是什么？
+## 🎯 Shadow 是什么？
 
-> **传统 AI 等你发号施令，Hawkeye 主动观察并提供帮助。**
+> **传统 AI 等你发号施令，Shadow 主动观察并提供帮助。**
 
-Hawkeye 是一款 **AI 驱动的桌面助手**，它观察你的工作环境——屏幕、剪贴板、文件——并主动提供智能建议。无需输入任何指令。
+Shadow 是一款 **AI 驱动的桌面助手**，它观察你的工作环境——屏幕、剪贴板、文件——并主动提供智能建议。无需输入任何指令。
 
-| 特性 | Copilot / Cursor / Claude Code | **Hawkeye** |
+| 特性 | Copilot / Cursor / Claude Code | **Shadow** |
 |------|-------------------------------|-------------|
 | **模式** | 被动（你问它答） | **主动**（它观察你） |
 | **范围** | 仅限代码 | 全场景：编程、浏览、办公 |
@@ -126,7 +126,7 @@ Hawkeye 是一款 **AI 驱动的桌面助手**，它观察你的工作环境—�
 
 ```bash
 # 移除隔离属性
-xattr -cr /Applications/Hawkeye.app
+xattr -cr /Applications/Shadow.app
 ```
 
 </details>
@@ -165,7 +165,7 @@ brew install ollama  # macOS
 ollama pull qwen3:8b        # 文本模型（需要 8GB+ 内存）
 ollama pull qwen2.5vl:7b    # 视觉模型
 
-# 在 Hawkeye 设置中选择 "Ollama"
+# 在 Shadow 设置中选择 "Ollama"
 ```
 
 </details>
@@ -239,9 +239,9 @@ hawkeye/
 ### 作为库使用
 
 ```typescript
-import { HawkeyeEngine } from '@hawkeye/core';
+import { ShadowEngine } from '@hawkeye/core';
 
-const engine = new HawkeyeEngine({
+const engine = new ShadowEngine({
   provider: 'ollama',
   model: 'qwen3:8b'
 });
@@ -322,10 +322,10 @@ watcher.on('change', (event) => {
 
 **[🌐 官网](https://hawkiyi.com)** · **[📖 文档](https://hawkiyi.com/docs)** · **[🐦 Twitter](https://twitter.com/hawkeyeai)** · **[💬 Discord](https://discord.gg/hawkeye)**
 
-<sub>由 Hawkeye 团队用 ❤️ 打造</sub>
+<sub>由 Shadow 团队用 ❤️ 打造</sub>
 
 <br/>
 
-**如果 Hawkeye 对你有帮助，请给我们一个 ⭐**
+**如果 Shadow 对你有帮助，请给我们一个 ⭐**
 
 </div>

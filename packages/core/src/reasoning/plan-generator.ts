@@ -571,7 +571,7 @@ export class PlanGenerator extends EventEmitter {
     const messages: AIMessage[] = [
       {
         role: 'system',
-        content: `你是 Hawkeye 计划优化器。根据用户意图和上下文，优化执行计划。
+        content: `你是 Shadow 计划优化器。根据用户意图和上下文，优化执行计划。
 ${trajectoryGuidance ? `
 你将收到一个"引导轨迹"(Guidance Trajectory)，这是类似任务的成功执行记录。
 请参考轨迹中的思考方式和动作序列来优化计划，但要根据当前具体情况调整。

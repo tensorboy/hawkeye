@@ -86,7 +86,7 @@ export class ModelManagerService {
     private mainWindowGetter: () => BrowserWindow | null,
     private debugLog: (msg: string) => void
   ) {
-    // 模型存储目录: ~/Library/Application Support/Hawkeye/models
+    // 模型存储目录: ~/Library/Application Support/Shadow/models
     this.modelDir = path.join(
       app.getPath('userData'),
       'models'

@@ -1,7 +1,7 @@
 {
   "name": "@hawkeye/chrome-extension",
   "version": "0.2.1",
-  "description": "Hawkeye Chrome Extension - Intelligent Task Assistant for the Browser",
+  "description": "Shadow Chrome Extension - Intelligent Task Assistant for the Browser",
   "private": true,
   "scripts": {
     "dev": "vite build --watch",

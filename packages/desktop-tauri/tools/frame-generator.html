@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Hawkeye Life Tree Frame Generator</title>
+<title>Shadow Life Tree Frame Generator</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0a0a1a; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; font-family: 'Inter', sans-serif; color: #ccc; }
@@ -334,12 +334,12 @@ function layoutAndRender(canvas, snapshot, animTime, opts = {}) {
   ctx.restore();
 
   // ── Overlay: Brand ──
-  // Subtle "Hawkeye" branding bottom-right
+  // Subtle "Shadow" branding bottom-right
   ctx.fillStyle = 'rgba(200,200,216,0.15)';
   ctx.font = '400 14px "Inter", "SF Pro", sans-serif';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'bottom';
-  ctx.fillText('Hawkeye — Expand & Guard Your Life', W - 24, H - 16);
+  ctx.fillText('Shadow — Expand & Guard Your Life', W - 24, H - 16);
 
   // ── Overlay: Stats HUD (full frame only) ──
   if (!seedMode && snapshot.stats) {

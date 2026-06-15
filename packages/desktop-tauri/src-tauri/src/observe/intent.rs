@@ -161,7 +161,7 @@ impl IntentRecognizer {
             .collect();
 
         format!(
-            "You are Hawkeye, a desktop activity assistant. Based on the following user context, \
+            "You are Shadow, a desktop activity assistant. Based on the following user context, \
              identify what the user is currently doing. Respond with a single short sentence (max 15 words) \
              describing the user's current activity/intent.\n\n\
              Context:\n{}\n\n\

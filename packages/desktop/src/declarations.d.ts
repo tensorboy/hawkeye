@@ -1,5 +1,5 @@
 /**
- * Type declarations for Hawkeye Desktop
+ * Type declarations for Shadow Desktop
  */
 
 // Declare image module imports

@@ -207,7 +207,7 @@ export function applyPositionBlending<T extends RankedItem>(
 
 /**
  * 简化的双列表 RRF 融合（向量 + FTS）
- * 适用于 Hawkeye 的 hybrid search 场景
+ * 适用于 Shadow 的 hybrid search 场景
  */
 export function fuseVectorAndFTS<T extends RankedItem>(
   vectorResults: T[],
