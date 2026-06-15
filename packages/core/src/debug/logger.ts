@@ -2,7 +2,7 @@
  * Simple Logger Utility
  *
  * Provides scoped logging with different log levels.
- * Inspired by loguru but simplified for the Hawkeye project.
+ * Inspired by loguru but simplified for the Shadow project.
  */
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

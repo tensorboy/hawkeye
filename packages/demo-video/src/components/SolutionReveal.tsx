@@ -129,7 +129,7 @@ export const SolutionReveal: React.FC = () => {
           textShadow: `0 0 40px ${theme.colors.primaryGlow}`,
         }}
       >
-        Hawkeye
+        Shadow
       </h1>
 
       {/* Tagline */}

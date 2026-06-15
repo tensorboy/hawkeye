@@ -1,4 +1,4 @@
-# Hawkeye Integration Recommendations
+# Shadow Integration Recommendations
 
 基于对 9 个 AI 桌面控制项目源代码的深入分析，本文档提供具体可移植的代码模式和功能建议。
 
@@ -38,7 +38,7 @@
 
 ### 2.1 现状分析
 
-Hawkeye 当前只支持 Ollama 和 Gemini：
+Shadow 当前只支持 Ollama 和 Gemini：
 
 ```typescript
 // packages/core/src/ai/providers/index.ts (当前)
@@ -1675,14 +1675,14 @@ export class UITARSClient {
 
 ## 9. 具体实现代码
 
-### 9.1 完整的 Hawkeye 增强主循环
+### 9.1 完整的 Shadow 增强主循环
 
 ```typescript
 // packages/core/src/hawkeye-enhanced.ts
 
 import { EventEmitter } from 'events';
 
-export interface HawkeyeConfig {
+export interface ShadowConfig {
   aiProvider: UnifiedProviderConfig;
   enableReflection: boolean;
   enableMemory: boolean;
@@ -1690,8 +1690,8 @@ export interface HawkeyeConfig {
   maxTurns: number;
 }
 
-export class HawkeyeEnhanced extends EventEmitter {
-  private config: HawkeyeConfig;
+export class ShadowEnhanced extends EventEmitter {
+  private config: ShadowConfig;
 
   // 核心模块
   private aiProvider: UnifiedAIProvider;
@@ -1707,7 +1707,7 @@ export class HawkeyeEnhanced extends EventEmitter {
   private errorRecovery: ErrorRecovery;
   private toolLearning: ToolLearning;
 
-  constructor(config: HawkeyeConfig) {
+  constructor(config: ShadowConfig) {
     super();
     this.config = config;
     this.initializeModules();
@@ -1925,7 +1925,7 @@ Respond with a JSON object:
   }
 
   private getSystemPrompt(): string {
-    return `You are Hawkeye, an AI desktop automation agent. You can see the screen, understand UI elements, and execute actions to complete tasks.
+    return `You are Shadow, an AI desktop automation agent. You can see the screen, understand UI elements, and execute actions to complete tasks.
 
 Rules:
 1. Always use normalized coordinates (0-1) for positions
@@ -1966,7 +1966,7 @@ Is this task complete? Answer with JSON: {"complete": true/false, "reason": "...
 
 ## 总结
 
-本文档基于对 9 个开源项目的深入分析，为 Hawkeye 提供了具体可落地的代码模式和功能建议。
+本文档基于对 9 个开源项目的深入分析，为 Shadow 提供了具体可落地的代码模式和功能建议。
 
 **推荐实施顺序**:
 
@@ -1986,4 +1986,4 @@ Is this task complete? Answer with JSON: {"complete": true/false, "reason": "...
 4. **第四阶段 (P3)** - 端到端模型
    - ShowUI/UI-TARS 集成
 
-每个模块都提供了完整的 TypeScript 代码示例，可直接用于 Hawkeye 项目的开发。
+每个模块都提供了完整的 TypeScript 代码示例，可直接用于 Shadow 项目的开发。

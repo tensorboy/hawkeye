@@ -1,12 +1,12 @@
 {
   "extensionName": {
-    "message": "Hawkeye"
+    "message": "Shadow"
   },
   "extensionDescription": {
     "message": "지능형 작업 인식 및 실행 도우미"
   },
   "actionTitle": {
-    "message": "Hawkeye"
+    "message": "Shadow"
   },
   "commandObservePage": {
     "message": "현재 페이지 관찰"
@@ -18,7 +18,7 @@
     "message": "데스크톱 연결 안 됨"
   },
   "desktopNotConnected": {
-    "message": "Hawkeye 데스크톱이 실행 중이고 연결되어 있는지 확인하세요"
+    "message": "Shadow 데스크톱이 실행 중이고 연결되어 있는지 확인하세요"
   },
   "settings": {
     "message": "설정"
@@ -116,10 +116,10 @@
     }
   },
   "contextMenuAnalyzeSelection": {
-    "message": "Hawkeye: 선택 항목 분석"
+    "message": "Shadow: 선택 항목 분석"
   },
   "contextMenuAnalyzePage": {
-    "message": "Hawkeye: 페이지 분석"
+    "message": "Shadow: 페이지 분석"
   },
   "foundIntents": {
     "message": "$count$개의 의도를 발견했습니다",
@@ -130,6 +130,6 @@
     }
   },
   "notificationError": {
-    "message": "Hawkeye 오류"
+    "message": "Shadow 오류"
   }
 }

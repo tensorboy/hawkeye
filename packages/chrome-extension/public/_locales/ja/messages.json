@@ -1,12 +1,12 @@
 {
   "extensionName": {
-    "message": "Hawkeye"
+    "message": "Shadow"
   },
   "extensionDescription": {
     "message": "インテリジェントタスク認識・実行アシスタント"
   },
   "actionTitle": {
-    "message": "Hawkeye"
+    "message": "Shadow"
   },
   "commandObservePage": {
     "message": "現在のページを観察"
@@ -18,7 +18,7 @@
     "message": "デスクトップ未接続"
   },
   "desktopNotConnected": {
-    "message": "Hawkeye デスクトップが起動し、接続されていることを確認してください"
+    "message": "Shadow デスクトップが起動し、接続されていることを確認してください"
   },
   "settings": {
     "message": "設定"
@@ -116,10 +116,10 @@
     }
   },
   "contextMenuAnalyzeSelection": {
-    "message": "Hawkeye: 選択を分析"
+    "message": "Shadow: 選択を分析"
   },
   "contextMenuAnalyzePage": {
-    "message": "Hawkeye: ページを分析"
+    "message": "Shadow: ページを分析"
   },
   "foundIntents": {
     "message": "$count$ 件の意図が見つかりました",
@@ -130,6 +130,6 @@
     }
   },
   "notificationError": {
-    "message": "Hawkeye エラー"
+    "message": "Shadow エラー"
   }
 }

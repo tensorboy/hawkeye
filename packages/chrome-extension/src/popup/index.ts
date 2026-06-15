@@ -1,5 +1,5 @@
 /**
- * Hawkeye Chrome Extension - Popup Script
+ * Shadow Chrome Extension - Popup Script
  * A2UI Card-based interface (zero text input)
  */
 
@@ -767,7 +767,7 @@ async function handleAnalyze(): Promise<void> {
       id: 'not-connected',
       type: 'error',
       title: 'Not Connected',
-      description: 'Please connect to Hawkeye Desktop first',
+      description: 'Please connect to Shadow Desktop first',
       icon: '🔌',
       actions: [{ id: 'dismiss', label: 'Dismiss', type: 'secondary' }],
     });
@@ -824,7 +824,7 @@ async function handleClipboard(): Promise<void> {
       id: 'not-connected',
       type: 'error',
       title: 'Not Connected',
-      description: 'Please connect to Hawkeye Desktop first',
+      description: 'Please connect to Shadow Desktop first',
       icon: '🔌',
       actions: [{ id: 'dismiss', label: 'Dismiss', type: 'secondary' }],
     });
@@ -1024,7 +1024,7 @@ async function syncWebGazerWithDesktop(): Promise<void> {
       id: 'webgazer-sync-error',
       type: 'error',
       title: 'Sync Failed',
-      description: 'Not connected to Hawkeye Desktop',
+      description: 'Not connected to Shadow Desktop',
       icon: '🔌',
     });
     return;

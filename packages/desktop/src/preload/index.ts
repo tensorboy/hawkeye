@@ -68,7 +68,7 @@ contextBridge.exposeInMainWorld('hawkeye', {
   // 获取当前计划
   getPlan: () => ipcRenderer.invoke('get-plan'),
 
-  // 获取 Hawkeye 状态
+  // 获取 Shadow 状态
   getStatus: () => ipcRenderer.invoke('get-status'),
 
   // 获取可用的 AI Provider
@@ -144,7 +144,7 @@ contextBridge.exposeInMainWorld('hawkeye', {
     return () => ipcRenderer.removeListener('execution-completed', handler);
   },
 
-  // 监听 Hawkeye 就绪
+  // 监听 Shadow 就绪
   onHawkeyeReady: (callback: (status: HawkeyeStatus) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, status: HawkeyeStatus) => callback(status);
     ipcRenderer.on('hawkeye-ready', handler);

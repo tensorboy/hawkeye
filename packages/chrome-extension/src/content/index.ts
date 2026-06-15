@@ -1,5 +1,5 @@
 /**
- * Hawkeye Chrome Extension - Content Script
+ * Shadow Chrome Extension - Content Script
  * Runs in the context of web pages
  * Includes WebGazer eye tracking support
  */
@@ -178,7 +178,7 @@ function createDebugPanel(): HTMLDivElement {
   const panel = document.createElement('div');
   panel.id = 'hawkeye-debug-panel';
   panel.innerHTML = `
-    <div class="title">👁️ Hawkeye WebGazer</div>
+    <div class="title">👁️ Shadow WebGazer</div>
     <div class="row"><span class="label">Status:</span><span class="value" id="wg-status">Off</span></div>
     <div class="row"><span class="label">Samples:</span><span class="value" id="wg-samples">0</span></div>
     <div class="row"><span class="label">Gaze X:</span><span class="value" id="wg-x">-</span></div>
@@ -233,7 +233,7 @@ function loadWebGazerScript(): Promise<void> {
     // Load from extension bundle instead of CDN (MV3 CSP blocks external scripts)
     script.src = chrome.runtime.getURL('vendor/webgazer.js');
     script.onload = () => {
-      console.log('[Hawkeye] WebGazer script loaded');
+      console.log('[Shadow] WebGazer script loaded');
       resolve();
     };
     script.onerror = () => reject(new Error('Failed to load WebGazer script. Ensure vendor/webgazer.js is included in the extension build.'));
@@ -319,13 +319,13 @@ async function initWebGazer(): Promise<{ success: boolean; error?: string }> {
     // Cleanup on page unload to prevent memory leaks
     window.addEventListener('beforeunload', destroyWebGazer);
 
-    console.log('[Hawkeye WebGazer] Initialized successfully');
+    console.log('[Shadow WebGazer] Initialized successfully');
     return { success: true };
 
   } catch (error) {
     webgazerLoading = false;
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Hawkeye WebGazer] Init failed:', error);
+    console.error('[Shadow WebGazer] Init failed:', error);
     return { success: false, error: errorMsg };
   }
 }
@@ -391,7 +391,7 @@ async function saveCalibrationData() {
       webgazer_count: sampleCount,
     });
   } catch (e) {
-    console.warn('[Hawkeye] Failed to save calibration:', e);
+    console.warn('[Shadow] Failed to save calibration:', e);
   }
 }
 
@@ -402,7 +402,7 @@ async function loadCalibrationData() {
     if (data.webgazer_count) sampleCount = data.webgazer_count;
     updateDebugPanel();
   } catch (e) {
-    console.warn('[Hawkeye] Failed to load calibration:', e);
+    console.warn('[Shadow] Failed to load calibration:', e);
   }
 }
 
@@ -421,7 +421,7 @@ function destroyWebGazer() {
   gazeIndicator = null;
   debugPanel = null;
 
-  console.log('[Hawkeye WebGazer] Destroyed');
+  console.log('[Shadow WebGazer] Destroyed');
 }
 
 function syncFromDesktop(samples: Array<{ id: string; x: number; y: number; timestamp: number }>) {
@@ -443,7 +443,7 @@ function syncFromDesktop(samples: Array<{ id: string; x: number; y: number; time
   saveCalibrationData();
   updateDebugPanel();
 
-  console.log(`[Hawkeye] Synced ${synced} samples from desktop`);
+  console.log(`[Shadow] Synced ${synced} samples from desktop`);
   return synced;
 }
 
@@ -657,4 +657,4 @@ chrome.storage.local.get(['showFloatingButton']).then((data) => {
   }
 });
 
-console.log('Hawkeye content script loaded');
+console.log('Shadow content script loaded');

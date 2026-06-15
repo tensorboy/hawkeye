@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Hawkeye",
+    "title": "Shadow",
     "loading": "画面を分析中...",
     "empty": "意図が検出されていません",
     "observeScreen": "画面を観察",
@@ -94,21 +94,21 @@
     "showSuggestions": "提案を表示",
     "settings": "設定",
     "quit": "終了",
-    "tooltip": "Hawkeye - インテリジェントタスクアシスタント"
+    "tooltip": "Shadow - インテリジェントタスクアシスタント"
   },
   "error": {
     "configureApiKey": "まず API キーを設定してください",
     "engineNotInitialized": "エンジンが初期化されていません",
-    "notInitialized": "Hawkeye が初期化されていません",
+    "notInitialized": "Shadow が初期化されていません",
     "intentNotFound": "意図が見つかりません",
     "planNotFound": "計画が見つかりません"
   },
   "onboarding": {
-    "title": "Hawkeye へようこそ",
+    "title": "Shadow へようこそ",
     "subtitle": "AI モデルを選択して開始してください",
     "selectModel": "モデルを選択",
     "noModelAvailable": "利用可能なモデルがありません",
-    "noModelDesc": "Hawkeye の全機能を使用するには、まずモデルをダウンロードしてください",
+    "noModelDesc": "Shadow の全機能を使用するには、まずモデルをダウンロードしてください",
     "downloadFirst": "まずモデルをダウンロードしてください",
     "downloading": "モデルをダウンロード中...",
     "downloadComplete": "ダウンロード完了！",

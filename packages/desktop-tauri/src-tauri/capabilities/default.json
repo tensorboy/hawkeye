@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default capability — applies to every window in this app.",
-  "windows": ["main", "explain-overlay"],
+  "windows": ["main", "explain-overlay", "chat-bubble"],
   "permissions": [
     "core:default",
     "shell:default",

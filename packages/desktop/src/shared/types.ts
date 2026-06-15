@@ -1,5 +1,5 @@
 /**
- * Shared type definitions for the Hawkeye desktop package.
+ * Shared type definitions for the Shadow desktop package.
  * Single source of truth for types used across main, preload, and renderer processes.
  */
 

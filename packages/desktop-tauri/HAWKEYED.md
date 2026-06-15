@@ -1,13 +1,13 @@
-# `hawkeyed` — Headless Hawkeye for Programmers
+# `hawkeyed` — Headless Shadow for Programmers
 
-A local HTTP+SSE daemon that exposes every Hawkeye capability — screen
+A local HTTP+SSE daemon that exposes every Shadow capability — screen
 perception, eye tracking, life-tree, voice, chat, and the desktop-control
 agent — over a clean REST API. Designed to share one backend with the
 Tauri GUI: scripts and apps see the same live state the user sees.
 
-> **Two flavors of Hawkeye:**
+> **Two flavors of Shadow:**
 >
-> - **Hawkeye Desktop (Tauri)** — point-and-click app for Mac end users.
+> - **Shadow Desktop (Tauri)** — point-and-click app for Mac end users.
 > - **hawkeyed (this)** — daemon for programmers, scripts, and integrations.
 
 ---

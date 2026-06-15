@@ -117,7 +117,7 @@ export class HawkeyeService extends EventEmitter {
       await this.hawkeye.initialize();
       this.safeSend('hawkeye-ready', this.getStatus());
     } catch (error) {
-      this.debugLog(`Hawkeye init failed: ${error}`);
+      this.debugLog(`Shadow init failed: ${error}`);
       this.safeSend('error', (error as Error).message);
     }
   }
@@ -157,7 +157,7 @@ export class HawkeyeService extends EventEmitter {
   }
 
   async perceiveAndRecognize(): Promise<UserIntent[]> {
-    if (!this.hawkeye) throw new Error('Hawkeye not initialized');
+    if (!this.hawkeye) throw new Error('Shadow not initialized');
 
     try {
       this.emit('analyzing');
@@ -172,7 +172,7 @@ export class HawkeyeService extends EventEmitter {
   }
 
   async generatePlan(intentId: string): Promise<ExecutionPlan> {
-    if (!this.hawkeye) throw new Error('Hawkeye not initialized');
+    if (!this.hawkeye) throw new Error('Shadow not initialized');
 
     try {
       const intents = this.hawkeye.getCurrentIntents();

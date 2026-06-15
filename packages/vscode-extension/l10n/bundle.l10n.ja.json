@@ -1,7 +1,7 @@
 {
-  "Connected to Hawkeye Desktop": "Hawkeye デスクトップに接続済み",
+  "Connected to Shadow Desktop": "Shadow デスクトップに接続済み",
   "Not connected to Desktop": "デスクトップ未接続",
-  "Cannot connect to Hawkeye Desktop. Is it running?": "Hawkeye デスクトップに接続できません。起動していますか？",
+  "Cannot connect to Shadow Desktop. Is it running?": "Shadow デスクトップに接続できません。起動していますか？",
   "Retry": "再試行",
   "Settings": "設定",
   "Found {0} intent(s)": "{0} 件の意図が見つかりました",

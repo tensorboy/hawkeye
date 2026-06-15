@@ -1,7 +1,7 @@
 {
-  "Connected to Hawkeye Desktop": "已連接到 Hawkeye 桌面端",
+  "Connected to Shadow Desktop": "已連接到 Shadow 桌面端",
   "Not connected to Desktop": "未連接到桌面端",
-  "Cannot connect to Hawkeye Desktop. Is it running?": "無法連接到 Hawkeye 桌面端。請確認是否已啟動？",
+  "Cannot connect to Shadow Desktop. Is it running?": "無法連接到 Shadow 桌面端。請確認是否已啟動？",
   "Retry": "重試",
   "Settings": "設定",
   "Found {0} intent(s)": "發現 {0} 個意圖",

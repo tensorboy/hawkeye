@@ -2,7 +2,7 @@ import Foundation
 import Speech
 import AVFoundation
 
-/// Hawkeye Speech CLI — uses macOS SFSpeechRecognizer for on-device speech recognition
+/// Shadow Speech CLI — uses macOS SFSpeechRecognizer for on-device speech recognition
 /// Usage: hawkeye-speech <command> [args]
 /// Commands:
 ///   listen <duration_secs>  — Record from microphone and transcribe (returns JSON)
@@ -41,7 +41,10 @@ func requestAuthorization() -> Bool {
 
 func checkStatus() {
     let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-    let authorized = requestAuthorization()
+    // Read-only authorization query: requestAuthorization() is a TCC call that
+    // ABORTS (SIGABRT) any process lacking NSSpeechRecognitionUsageDescription,
+    // and a status probe should never trigger a permission prompt anyway.
+    let authorized = SFSpeechRecognizer.authorizationStatus() == .authorized
 
     let status = SpeechStatus(
         available: recognizer?.isAvailable ?? false,

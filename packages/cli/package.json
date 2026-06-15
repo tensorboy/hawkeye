@@ -1,7 +1,7 @@
 {
   "name": "@hawkeye/cli",
   "version": "0.1.0",
-  "description": "Hawkeye CLI - command-line interface to the Hawkeye Core engine",
+  "description": "Shadow CLI - command-line interface to the Shadow Core engine",
   "type": "module",
   "private": false,
   "bin": {

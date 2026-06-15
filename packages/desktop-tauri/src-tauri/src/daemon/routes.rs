@@ -26,7 +26,7 @@ use serde_json::{json, Value};
 use crate::agent::{run_user_turn, AlwaysApprove, ConfirmGate, CuaDriverClient};
 use crate::ai::{
     types::{ChatMessage, ToolMessage},
-    AiProvider, GeminiClient, LocalProvider, OpenAiClient,
+    AiProvider, AnthropicClient, GeminiClient, LocalProvider, OpenAiClient,
 };
 use crate::commands::debug_cmd::{DebugEvent, DebugEventType};
 use crate::commands::gesture_cmd::{GestureConfig, GestureEvent};
@@ -251,6 +251,21 @@ async fn init_ai(State(ctx): State<AppCtx>) -> Result<Json<Value>, ApiError> {
                 .openai_api_key
                 .ok_or_else(|| bad_request("openai_api_key missing"))?;
             Arc::new(OpenAiClient::new(key, cfg.openai_model, cfg.openai_base_url))
+        }
+        "anthropic" => {
+            let key = cfg
+                .anthropic_api_key
+                .ok_or_else(|| bad_request("anthropic_api_key missing"))?;
+            Arc::new(AnthropicClient::new(key, cfg.anthropic_model, cfg.anthropic_base_url))
+        }
+        // Custom = any OpenAI-compatible endpoint; key optional (vLLM/Ollama
+        // often run keyless).
+        "custom" => {
+            let base = cfg
+                .custom_base_url
+                .ok_or_else(|| bad_request("custom_base_url missing"))?;
+            let key = cfg.custom_api_key.unwrap_or_default();
+            Arc::new(OpenAiClient::new(key, cfg.custom_model, Some(base)))
         }
         _ => {
             let key = cfg
@@ -1196,7 +1211,7 @@ async fn summary_generate(State(ctx): State<AppCtx>) -> Result<Json<Value>, ApiE
         .ok_or_else(|| bad_request("AI not initialized. Configure API key in settings."))?;
 
     let prompt = format!(
-        "You are Hawkeye, a desktop activity monitor. Summarize the following user activity log in 2-3 concise sentences. \
+        "You are Shadow, a desktop activity monitor. Summarize the following user activity log in 2-3 concise sentences. \
          Focus on what the user was doing, which apps they used, and any notable patterns. \
          Be specific about the content they were working on based on window titles and OCR text.\n\n\
          Activity Log ({} entries):\n{}\n\n\
@@ -1683,7 +1698,7 @@ async fn explain_gaze_target(
         .await
         .as_ref()
         .cloned()
-        .ok_or_else(|| bad_request("AI not initialized — open Hawkeye chat first to configure a provider"))?;
+        .ok_or_else(|| bad_request("AI not initialized — open Shadow chat first to configure a provider"))?;
 
     let system_prompt = prompt_for_mode(&req.mode);
     let user_prompt = format!("OCR 抓到的内容如下:\n\n{}", text);
@@ -1700,7 +1715,7 @@ async fn explain_gaze_target(
 
     Ok(Json(json!({
         "ok": true,
-        "html": resp.content,
+        "html": resp.text,
         "mode": req.mode,
         "anchor": { "x": req.x, "y": req.y },
         "cropSize": { "w": crop_w, "h": crop_h },

@@ -1,6 +1,6 @@
 # Relevant Works - AI Computer Control Projects
 
-> 本文档分析了 9 个 AI 电脑控制开源项目，评估其与 Hawkeye 的集成潜力。
+> 本文档分析了 9 个 AI 电脑控制开源项目，评估其与 Shadow 的集成潜力。
 
 ## Overview Table
 
@@ -69,9 +69,9 @@
    - Semgrep-based vulnerability scanning
    - Blocked command patterns (rm -rf, sudo rm, mkfs)
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
-| Component | Current Hawkeye | Open Interpreter Value |
+| Component | Current Shadow | Open Interpreter Value |
 |-----------|----------------|----------------------|
 | AI Provider | Ollama, Gemini, OpenAI-compatible | LiteLLM for 100+ providers |
 | Code Execution | Shell only | Multi-language (Python, JS, Shell) |
@@ -130,9 +130,9 @@
    }
    ```
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
-**Current Gap**: Hawkeye's OCR extracts text but doesn't identify UI element types or provide semantic descriptions.
+**Current Gap**: Shadow's OCR extracts text but doesn't identify UI element types or provide semantic descriptions.
 
 **Recommended Integration**:
 ```typescript
@@ -193,9 +193,9 @@ async perceive(): Promise<ExtendedPerceptionContext> {
    - Real-time speech-to-text
    - Context-aware command interpretation
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
-**Critical Gap**: Hawkeye lacks direct mouse/keyboard control and coordinate-based targeting.
+**Critical Gap**: Shadow lacks direct mouse/keyboard control and coordinate-based targeting.
 
 **Recommended Implementation**:
 ```typescript
@@ -261,7 +261,7 @@ interface CoordinateMark {
    - State abstraction independent of specific apps
    - Composable action primitives
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
 **Recommended Enhancements**:
 
@@ -326,7 +326,7 @@ interface CoordinateMark {
    value = excel.ActiveSheet.Range("B5").Value
    ```
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
 **Windows-Specific Enhancements**:
 
@@ -405,7 +405,7 @@ interface CoordinateMark {
    - 3D scene understanding
    - Cross-application generalization
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
 **Recommended Enhancements**:
 
@@ -472,7 +472,7 @@ interface CoordinateMark {
    - **Mid-term**: Recent successful patterns
    - **Long-term**: Generalized skills
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
 **Trajectory-Based Learning**:
 ```typescript
@@ -534,7 +534,7 @@ class TrajectoryLearner {
    | Deployment | Local | Cloud only |
    | Cost | One-time | Per-call |
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
 **On-Device Vision Model**:
 ```typescript
@@ -579,7 +579,7 @@ class ShowUIProvider implements IAIProvider {
 1. **End-to-End Design (No Intermediate Parsing)**
    ```
    UI-TARS:  Screenshot → VLM → {action: "click", x: 100, y: 200}
-   Hawkeye:  Screenshot → OCR → Intent → Plan → Shell command
+   Shadow:  Screenshot → OCR → Intent → Plan → Shell command
    ```
 
 2. **Unified Model Inference**
@@ -592,9 +592,9 @@ class ShowUIProvider implements IAIProvider {
    - Remote control support
    - Enterprise-ready scalability
 
-### Hawkeye vs UI-TARS Comparison
+### Shadow vs UI-TARS Comparison
 
-| Feature | Hawkeye | UI-TARS |
+| Feature | Shadow | UI-TARS |
 |---------|---------|---------|
 | **Flexibility** | Multi-model support | Single model |
 | **Transparency** | Visible reasoning steps | Black-box |
@@ -602,7 +602,7 @@ class ShowUIProvider implements IAIProvider {
 | **Latency** | Multi-step pipeline | Direct inference |
 | **Visual Precision** | OCR-based | Learned from data |
 
-### Hawkeye Integration Opportunities
+### Shadow Integration Opportunities
 
 **Vision-First Architecture Option**:
 ```typescript
@@ -700,7 +700,7 @@ Most successful projects use direct coordinate targeting rather than element-bas
 - OmniParser: Normalized (0-1) coordinates
 - UI-TARS: Direct pixel coordinates from VLM
 
-**Hawkeye Gap**: Currently relies on element refs from accessibility tree.
+**Shadow Gap**: Currently relies on element refs from accessibility tree.
 
 ### 2. Vision-First is the Future
 
@@ -709,7 +709,7 @@ Modern approaches process raw screenshots without intermediate parsing:
 - UI-TARS: End-to-end VLM
 - ShowUI: Direct vision→action
 
-**Hawkeye Opportunity**: Add optional vision-first path while keeping current pipeline.
+**Shadow Opportunity**: Add optional vision-first path while keeping current pipeline.
 
 ### 3. Memory Systems Improve Over Time
 
@@ -718,20 +718,20 @@ Dual memory (narrative + episodic) with RAG enables continuous improvement:
 - Cradle: Short-term + long-term with RAG
 - OS-Copilot: Trajectory-based learning
 
-**Hawkeye Enhancement**: Add memory layer to storage module.
+**Shadow Enhancement**: Add memory layer to storage module.
 
 ### 4. Platform-Specific Optimization Matters
 
 - UFO: Deep Windows integration (UI Automation, COM)
 - Open Interpreter: Cross-platform abstraction
 
-**Hawkeye Strategy**: Maintain cross-platform core, add platform-specific optimizations.
+**Shadow Strategy**: Maintain cross-platform core, add platform-specific optimizations.
 
 ---
 
 ## Conclusion
 
-The 9 analyzed projects represent the cutting edge of AI computer control. Key takeaways for Hawkeye:
+The 9 analyzed projects represent the cutting edge of AI computer control. Key takeaways for Shadow:
 
 1. **Adopt coordinate-based targeting** for reliable automation
 2. **Integrate vision-first perception** for better UI understanding
@@ -739,4 +739,4 @@ The 9 analyzed projects represent the cutting edge of AI computer control. Key t
 4. **Support both pipeline and end-to-end** approaches
 5. **Leverage LiteLLM** for provider flexibility
 
-By strategically integrating components from these projects, Hawkeye can evolve from an "intent-aware assistant" to a "visually-grounded automation agent" capable of reliable, human-like computer control.
+By strategically integrating components from these projects, Shadow can evolve from an "intent-aware assistant" to a "visually-grounded automation agent" capable of reliable, human-like computer control.

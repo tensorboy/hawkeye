@@ -52,6 +52,8 @@ export const GazeOverlay: React.FC<GazeOverlayProps> = ({
   onGaze,
 }) => {
   const [indicatorVisible, setIndicatorVisible] = useState(true);
+  // Closable per tab visit — unmounting (tab switch) naturally brings it back.
+  const [debugClosed, setDebugClosed] = useState(false);
   const gazeModelMode = useHawkeyeStore((s) => s.gazeModelMode);
 
   const handleGaze = useCallback(
@@ -157,9 +159,18 @@ export const GazeOverlay: React.FC<GazeOverlayProps> = ({
       )}
 
       {/* Debug panel */}
-      {showDebug && isReady && (
+      {showDebug && !debugClosed && isReady && (
         <div className="gaze-debug">
-          <div className="gaze-debug-title">Eye Tracking</div>
+          <div className="gaze-debug-title">
+            <span>Eye Tracking</span>
+            <button
+              className="gaze-debug-close"
+              onClick={() => setDebugClosed(true)}
+              title="Close panel (tracking keeps running)"
+            >
+              ✕
+            </button>
+          </div>
           <div className="gaze-debug-row">
             <span>Status:</span>
             <span className="gaze-debug-value">

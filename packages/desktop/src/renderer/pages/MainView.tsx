@@ -341,7 +341,7 @@ export function MainView() {
       {/* Header */}
       <header className="header">
         <div className="header-brand">
-          <img src={logoIcon} alt="Hawkeye" className="brand-icon" />
+          <img src={logoIcon} alt="Shadow" className="brand-icon" />
         </div>
         <div className="header-actions">
           <button
@@ -487,7 +487,7 @@ export function MainView() {
           cards={cards}
           onAction={handleCardAction}
           onDismiss={handleCardDismiss}
-          emptyMessage="暂无建议，Hawkeye 正在观察您的工作环境..."
+          emptyMessage="暂无建议，Shadow 正在观察您的工作环境..."
         />
       </div>
 
@@ -606,7 +606,7 @@ export function MainView() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
                   >
-                    <p>{t('app.chatWelcome', '你好！我是 Hawkeye AI，有什么可以帮助你的？')}</p>
+                    <p>{t('app.chatWelcome', '你好！我是 Shadow AI，有什么可以帮助你的？')}</p>
                   </motion.div>
                 ) : (
                   chatMessages.map((msg, index) => (

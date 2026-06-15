@@ -1,6 +1,6 @@
 # @hawkeye/cli
 
-A standalone command-line interface to the Hawkeye Core engine.
+A standalone command-line interface to the Shadow Core engine.
 
 ## Install (within the monorepo)
 
@@ -84,7 +84,7 @@ hawkeye run "rename the screenshots in ~/Desktop to today's date"
 ```
 src/
   main.ts            # commander setup, dispatch
-  config.ts          # CliConfig + 3-layer merge + buildHawkeyeConfig()
+  config.ts          # CliConfig + 3-layer merge + buildShadowConfig()
   output.ts          # pretty / json output modes
   commands/
     init.ts
@@ -97,5 +97,5 @@ src/
 ```
 
 Zero changes are made to `@hawkeye/core`. The CLI translates a small `CliConfig`
-into the full `HawkeyeConfig` and consumes the same public API as
+into the full `ShadowConfig` and consumes the same public API as
 `@hawkeye/desktop` and `@hawkeye/desktop-tauri`.

@@ -1,7 +1,7 @@
 {
   "name": "hawkeye",
   "version": "0.2.1",
-  "description": "Hawkeye - Intelligent Task Perception and Execution Assistant",
+  "description": "Shadow - Intelligent Task Perception and Execution Assistant",
   "private": true,
   "workspaces": [
     "packages/*"

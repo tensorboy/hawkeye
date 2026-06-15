@@ -1,5 +1,5 @@
-# Hawkeye 自主智能增强实施计划
-# Hawkeye Autonomous Intelligence Enhancement Implementation Plan
+# Shadow 自主智能增强实施计划
+# Shadow Autonomous Intelligence Enhancement Implementation Plan
 
 > 目标: 打造一个无需输入 Prompt 就能自主执行的丝滑 AI 助手
 > Goal: Build a smooth AI assistant that can autonomously execute without prompt input
@@ -313,5 +313,5 @@ Week 4: P4 + 集成
 3. 实现 `pattern-detector.ts` (基础)
 4. 实现 `auto-suggest.ts` (核心)
 5. 实现 `proactive-intent.ts` (增强)
-6. 集成到 Hawkeye 主引擎
+6. 集成到 Shadow 主引擎
 7. 更新 QuickActions UI

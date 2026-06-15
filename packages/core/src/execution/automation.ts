@@ -216,7 +216,7 @@ export class AutomationExecutor {
           const safeTitle = title.replace(/[<>&'"]/g, '');
           const safeMessage = message.replace(/[<>&'"]/g, '');
           await execFileAsync('powershell', ['-Command',
-            `[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null; $xml = '<toast><visual><binding template="ToastText02"><text id="1">${safeTitle}</text><text id="2">${safeMessage}</text></binding></visual></toast>'; $toast = [Windows.Data.Xml.Dom.XmlDocument]::new(); $toast.LoadXml($xml); [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Hawkeye').Show([Windows.UI.Notifications.ToastNotification]::new($toast))`
+            `[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null; $xml = '<toast><visual><binding template="ToastText02"><text id="1">${safeTitle}</text><text id="2">${safeMessage}</text></binding></visual></toast>'; $toast = [Windows.Data.Xml.Dom.XmlDocument]::new(); $toast.LoadXml($xml); [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Shadow').Show([Windows.UI.Notifications.ToastNotification]::new($toast))`
           ]);
           break;
         }

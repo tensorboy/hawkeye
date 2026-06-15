@@ -1,6 +1,6 @@
 /**
- * Hawkeye 核心引擎
- * Hawkeye Core - Perception, Reasoning, Execution
+ * Shadow 核心引擎
+ * Shadow Core - Perception, Reasoning, Execution
  */
 
 // 感知模块 (contains ScreenCapture class)

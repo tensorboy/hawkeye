@@ -62,3 +62,6 @@ packages/desktop-tauri/src-tauri/gen/
 frame-check.png
 hawkeye-graph-initial.png
 *.screenshot.png
+
+# MediaPipe vendored runtime assets (large binaries, fetched/vendored separately)
+packages/desktop-tauri/public/mediapipe/

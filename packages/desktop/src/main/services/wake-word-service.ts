@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import type { SherpaOnnxService } from './sherpa-onnx-service';
 
 export interface WakeWordConfig {
-  /** Keywords to detect (default: ["Hey Hawkeye", "你好鹰眼"]) */
+  /** Keywords to detect (default: ["Hey Shadow", "你好鹰眼"]) */
   keywords: string[];
   /** Detection sensitivity 0-1 (default: 0.6) */
   sensitivity: number;
@@ -14,7 +14,7 @@ export interface WakeWordConfig {
 }
 
 export const DEFAULT_WAKE_WORD_CONFIG: WakeWordConfig = {
-  keywords: ['Hey Hawkeye', '你好鹰眼'],
+  keywords: ['Hey Shadow', '你好鹰眼'],
   sensitivity: 0.6,
   cooldownMs: 3000,
   autoStart: false,
@@ -238,7 +238,7 @@ export class WakeWordService extends EventEmitter {
       return;
     }
 
-    const testKeyword = keyword || this.config.keywords[0] || 'Hey Hawkeye';
+    const testKeyword = keyword || this.config.keywords[0] || 'Hey Shadow';
     this.debugLog(`[WakeWordService] Manually triggering wake word: "${testKeyword}"`);
     this.onWakeWordDetected(testKeyword);
   }

@@ -3,7 +3,7 @@
  *
  * Mirrors Google DeepMind's "Move this / Merge those / Add that" pill UI,
  * but anchored to a *gaze* target instead of a mouse pointer. The actions
- * use Hawkeye's `chat_with_gaze_context` IPC so the LLM sees the entity
+ * use Shadow's `chat_with_gaze_context` IPC so the LLM sees the entity
  * substituted for "this" automatically.
  */
 
@@ -88,7 +88,7 @@ export const GazeCommandChips: React.FC<GazeCommandChipsProps> = ({
 
     inFlightRef.current.add(primary.id);
     chatWithGazeContext([
-      { role: 'system', content: '你是 Hawkeye 的注视助手。回答要短、直接、聚焦。' },
+      { role: 'system', content: '你是 Shadow 的注视助手。回答要短、直接、聚焦。' },
       { role: 'user', content: primary.prompt },
     ])
       .then((reply) => {
@@ -113,7 +113,7 @@ export const GazeCommandChips: React.FC<GazeCommandChipsProps> = ({
     setBusyId(id);
     try {
       const reply = await chatWithGazeContext([
-        { role: 'system', content: '你是 Hawkeye 的注视助手。回答要短、直接、聚焦。' },
+        { role: 'system', content: '你是 Shadow 的注视助手。回答要短、直接、聚焦。' },
         { role: 'user', content: prompt },
       ]);
       cacheRef.current.set(id, reply.text);

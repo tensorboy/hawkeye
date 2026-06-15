@@ -1,5 +1,5 @@
 /**
- * Hawkeye 统一引擎
+ * Shadow 统一引擎
  * 整合所有模块：感知、AI、推理、执行、存储、同步
  */
 
@@ -304,17 +304,17 @@ export class Hawkeye extends EventEmitter {
             const result = await this.aiManager!.chatWithVision(messages, [imageBase64]);
             return result.text || '';
           } catch (err) {
-            console.warn('[Hawkeye] Vision API OCR failed:', err);
+            console.warn('[Shadow] Vision API OCR failed:', err);
             return '';
           }
         };
         this.perception.setVisionAPIFunction(ocrAnalyzeFunction);
-        console.log('[Hawkeye] ✓ Vision API OCR 已配置 (使用 AI Manager)');
+        console.log('[Shadow] ✓ Vision API OCR 已配置 (使用 AI Manager)');
       }
 
       // 3.6 启动感知引擎 (用于 Debug Timeline 事件收集)
       await this.perception.start();
-      console.log('[Hawkeye] ✓ 感知引擎已启动');
+      console.log('[Shadow] ✓ 感知引擎已启动');
 
       // 4. 配置 Intent Engine 和 Plan Generator 使用 AI
       this.intentEngine = new IntentEngine();
@@ -391,7 +391,7 @@ export class Hawkeye extends EventEmitter {
 
       // 12.5 注册内置 MCP 工具并启动 MCP Server
       registerBuiltinTools(this.toolRegistry);
-      console.log(`[Hawkeye] ✓ 已注册 ${this.toolRegistry.getAllTools().length} 个 MCP 工具`);
+      console.log(`[Shadow] ✓ 已注册 ${this.toolRegistry.getAllTools().length} 个 MCP 工具`);
 
       if (this.mcpServer) {
         await this.mcpServer.start();
@@ -429,7 +429,7 @@ export class Hawkeye extends EventEmitter {
    */
   async perceiveAndRecognize(): Promise<UserIntent[]> {
     if (!this._initialized) {
-      throw new Error('Hawkeye 尚未初始化');
+      throw new Error('Shadow 尚未初始化');
     }
 
     this.emit('perceiving');
@@ -509,7 +509,7 @@ export class Hawkeye extends EventEmitter {
    */
   async generatePlan(intent: UserIntent): Promise<ExecutionPlan> {
     if (!this._initialized) {
-      throw new Error('Hawkeye 尚未初始化');
+      throw new Error('Shadow 尚未初始化');
     }
 
     const context = await this.perception.perceive();
@@ -561,7 +561,7 @@ export class Hawkeye extends EventEmitter {
    */
   async executePlan(plan: ExecutionPlan): Promise<PlanExecution> {
     if (!this._initialized) {
-      throw new Error('Hawkeye 尚未初始化');
+      throw new Error('Shadow 尚未初始化');
     }
 
     const execution = await this.planExecutor.execute(plan);
@@ -1437,7 +1437,7 @@ export class Hawkeye extends EventEmitter {
 
     // 错误处理 - 防止 ERR_UNHANDLED_ERROR
     this.perception.on('error', (errorInfo) => {
-      console.warn(`[Hawkeye] 感知模块错误 (${errorInfo?.module || 'unknown'}):`, errorInfo?.error?.message || errorInfo);
+      console.warn(`[Shadow] 感知模块错误 (${errorInfo?.module || 'unknown'}):`, errorInfo?.error?.message || errorInfo);
       // 不重新抛出，只记录日志，让应用继续运行
     });
 
@@ -1537,7 +1537,7 @@ export class Hawkeye extends EventEmitter {
     this.on('error', (error) => {
       this.eventCollector.addError({
         message: error instanceof Error ? error.message : String(error),
-        source: 'Hawkeye',
+        source: 'Shadow',
         stack: error instanceof Error ? error.stack : undefined,
       });
     });

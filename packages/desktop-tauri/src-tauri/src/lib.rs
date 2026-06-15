@@ -1,6 +1,6 @@
-//! Hawkeye Desktop - Tauri Backend
+//! Shadow Desktop - Tauri Backend
 //!
-//! This is the Rust backend for Hawkeye Desktop, providing:
+//! This is the Rust backend for Shadow Desktop, providing:
 //! - AI chat (Gemini, OpenAI-compatible, local llama.cpp with Metal)
 //! - Local LLM inference via llama-cpp-2 (GGUF models, Apple Metal GPU)
 //! - Training data collection for LoRA fine-tuning
@@ -28,8 +28,6 @@ pub mod voice;
 use tauri::{Emitter, Manager};
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconEvent;
-
-use crate::events;
 
 /// Initialize and run the Tauri application
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -110,9 +108,9 @@ pub fn run() {
             // After unification, observe loop is started from the React UI
             // (which goes to the daemon over HTTP), so the tray-menu entry
             // for that is gone. The tray keeps the four window-mgmt items.
-            let show_item = MenuItemBuilder::with_id("show", "Show Hawkeye").build(app)?;
+            let show_item = MenuItemBuilder::with_id("show", "Show Shadow").build(app)?;
             let settings_item = MenuItemBuilder::with_id("settings", "Settings").build(app)?;
-            let quit_item = MenuItemBuilder::with_id("quit", "Quit Hawkeye").build(app)?;
+            let quit_item = MenuItemBuilder::with_id("quit", "Quit Shadow").build(app)?;
 
             let tray_menu = MenuBuilder::new(app)
                 .item(&show_item)

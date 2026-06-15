@@ -19,7 +19,7 @@ use hawkeye_lib::{
 };
 
 #[derive(Parser)]
-#[command(name = "hawkeye-cli", version, about = "Hawkeye headless CLI")]
+#[command(name = "hawkeye-cli", version, about = "Shadow headless CLI")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -56,7 +56,7 @@ enum Cmd {
     /// Verify cua-driver daemon connectivity.
     AgentStatus,
 
-    /// Run the hawkeyed HTTP daemon — exposes every Hawkeye capability
+    /// Run the hawkeyed HTTP daemon — exposes every Shadow capability
     /// over a localhost REST + SSE API. The Tauri GUI can attach to this
     /// instead of running its own backend.
     Daemon {
@@ -181,6 +181,32 @@ async fn build_provider(state: &Arc<AppState>) -> anyhow::Result<Arc<dyn AiProvi
                 key,
                 cfg.openai_model.clone(),
                 cfg.openai_base_url.clone(),
+            )))
+        }
+
+        "anthropic" => {
+            let key = cfg
+                .anthropic_api_key
+                .clone()
+                .ok_or_else(|| anyhow::anyhow!("ANTHROPIC_API_KEY missing"))?;
+            Ok(Arc::new(hawkeye_lib::ai::AnthropicClient::new(
+                key,
+                cfg.anthropic_model.clone(),
+                cfg.anthropic_base_url.clone(),
+            )))
+        }
+
+        // Custom = any OpenAI-compatible endpoint; key optional (vLLM/Ollama
+        // often run keyless).
+        "custom" => {
+            let base = cfg
+                .custom_base_url
+                .clone()
+                .ok_or_else(|| anyhow::anyhow!("custom_base_url missing"))?;
+            Ok(Arc::new(OpenAiClient::new(
+                cfg.custom_api_key.clone().unwrap_or_default(),
+                cfg.custom_model.clone(),
+                Some(base),
             )))
         }
 

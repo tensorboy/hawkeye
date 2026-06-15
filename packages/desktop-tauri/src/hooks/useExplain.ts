@@ -11,7 +11,7 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useHawkeyeStore } from '../store';
-import { fetchExplain, showExplainOverlay, type ExplainMode } from '../lib/explain';
+import { explainGazedEntity, type ExplainMode } from '../lib/explain';
 
 interface ExplainRequestedPayload {
   mode: ExplainMode;
@@ -42,11 +42,7 @@ export function useExplain() {
           console.warn('[explain] no gaze position available — calibrate the eye tracker first');
           return;
         }
-        // Use the center of the gazed text's bounding box as the anchor.
-        const cx = Math.round(entity.bboxPx.xPx + entity.bboxPx.widthPx / 2);
-        const cy = Math.round(entity.bboxPx.yPx + entity.bboxPx.heightPx / 2);
-        const resp = await fetchExplain(cx, cy, e.payload.mode);
-        await showExplainOverlay(resp);
+        await explainGazedEntity(entity, e.payload.mode);
       } catch (err) {
         console.error('[explain] failed:', err);
       } finally {

@@ -1,6 +1,6 @@
 /**
  * Bounding-box utilities for converting between coordinate systems used in
- * Hawkeye's gaze ↔ entity pipeline.
+ * Shadow's gaze ↔ entity pipeline.
  *
  * Three coordinate systems exist:
  *
@@ -14,7 +14,7 @@
  *                             TOP-LEFT.
  *
  * The screenshot covers the whole physical screen; the browser window is
- * typically smaller. For the MVP (gaze restricted to inside the Hawkeye app
+ * typically smaller. For the MVP (gaze restricted to inside the Shadow app
  * window), we assume gaze coords map 1:1 to a SCALED version of the
  * screenshot — the scaling factor is window-px / screenshot-px per axis.
  */
@@ -40,7 +40,7 @@ export function bboxToScreenPx(
 
 /**
  * Convert screenshot-pixel bbox into the local browser window's coordinate
- * system, scaling proportionally. Assumes the Hawkeye window covers the
+ * system, scaling proportionally. Assumes the Shadow window covers the
  * same logical screen as the screenshot (the typical setup for the
  * always-on-top main window).
  */

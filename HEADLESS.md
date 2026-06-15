@@ -1,6 +1,6 @@
-# Hawkeye Headless Operations Guide
+# Shadow Headless Operations Guide
 
-Hawkeye runs in three modes:
+Shadow runs in three modes:
 
 | Mode | Binary | Use case |
 |---|---|---|
@@ -145,11 +145,11 @@ pnpm typecheck
 
 ### Disabled-by-default modules
 
-`buildHawkeyeConfig()` in [`packages/cli/src/config.ts`](packages/cli/src/config.ts) turns off behavior tracking, memory, dashboard, workflow, plugins, autonomous, and the task queue. The CLI is one-shot; these modules add startup cost and pull native deps. The `daemon` subcommand can opt in via env vars (Phase 3 work).
+`buildShadowConfig()` in [`packages/cli/src/config.ts`](packages/cli/src/config.ts) turns off behavior tracking, memory, dashboard, workflow, plugins, autonomous, and the task queue. The CLI is one-shot; these modules add startup cost and pull native deps. The `daemon` subcommand can opt in via env vars (Phase 3 work).
 
 ### Daemon polling caveat
 
-`@hawkeye/core` does not currently expose a single `observation` event. The `daemon` subcommand falls back to polling `perceiveAndRecognize` on the configured interval, while also subscribing to 11 real `Hawkeye` events (`ready`, `perceiving`, `intents:detected`, `plan:generated`, `execution:step:*`, etc.). All emitted as NDJSON to stdout.
+`@hawkeye/core` does not currently expose a single `observation` event. The `daemon` subcommand falls back to polling `perceiveAndRecognize` on the configured interval, while also subscribing to 11 real `Shadow` events (`ready`, `perceiving`, `intents:detected`, `plan:generated`, `execution:step:*`, etc.). All emitted as NDJSON to stdout.
 
 ---
 
@@ -266,7 +266,7 @@ Rule of thumb: **Node CLI for breadth, Rust CLI for distribution.** Most users o
 
 ## cua-driver agent mode
 
-When `agent` mode is enabled, Hawkeye gains "hands" via [trycua/cua's `cua-driver`](https://github.com/trycua/cua) — a Swift daemon that drives macOS apps **in the background without stealing focus**.
+When `agent` mode is enabled, Shadow gains "hands" via [trycua/cua's `cua-driver`](https://github.com/trycua/cua) — a Swift daemon that drives macOS apps **in the background without stealing focus**.
 
 ### Install
 
@@ -338,7 +338,7 @@ The following are documented in [`HEADLESS_PLAN.md`](HEADLESS_PLAN.md) and not y
 | `package.json` | `@hawkeye/cli@0.1.0`, `bin: hawkeye`, workspace dep on `@hawkeye/core` |
 | `tsup.config.ts` | ESM bundle, `node20` target, shebang banner |
 | `src/main.ts` | Commander entrypoint + global `--json` flag |
-| `src/config.ts` | 4-layer config merge (defaults → file → env → overrides), `CliConfig`/`HawkeyeConfig` translation |
+| `src/config.ts` | 4-layer config merge (defaults → file → env → overrides), `CliConfig`/`ShadowConfig` translation |
 | `src/output.ts` | `pretty` (ANSI, TTY-aware) and `json` (NDJSON) modes |
 | `src/commands/{init,perceive,plan,execute,run,chat,daemon}.ts` | One file per subcommand |
 | `README.md` | One-page usage doc |

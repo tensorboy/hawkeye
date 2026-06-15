@@ -128,12 +128,35 @@
 }
 
 .gaze-debug-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 10px;
   padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   color: #3b82f6;
+}
+
+.gaze-debug-close {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gaze-debug-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .gaze-debug-row {

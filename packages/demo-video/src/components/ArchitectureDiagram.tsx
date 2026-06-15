@@ -234,7 +234,7 @@ export const ArchitectureDiagram: React.FC = () => {
               fontFamily: theme.fonts.heading,
             }}
           >
-            Hawkeye Engine
+            Shadow Engine
           </span>
         </div>
 

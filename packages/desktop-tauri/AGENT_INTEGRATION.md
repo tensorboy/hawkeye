@@ -1,12 +1,12 @@
 # Agent (cua-driver) Integration
 
-This document describes the **computer-use agent** layer added to Hawkeye's
+This document describes the **computer-use agent** layer added to Shadow's
 Tauri build: how it's wired, how to install the dependency binary, how to
 test it end-to-end, and what the security model looks like.
 
 ## What got built
 
-Hawkeye's Tauri app now has a **"hand"** to match its existing **"eye"**
+Shadow's Tauri app now has a **"hand"** to match its existing **"eye"**
 (WebGazer) and **"brain"** (Gemini chat). When the user enables Agent mode
 in the chat panel, Gemini receives a tool catalog and can:
 
@@ -76,7 +76,7 @@ delimited JSON protocol it already exposes for its CLI.
 
 ## Installing cua-driver
 
-The Hawkeye binary does **not** ship with cua-driver. Install it once:
+The Shadow binary does **not** ship with cua-driver. Install it once:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/trycua/cua/main/libs/cua-driver/scripts/install.sh)"
@@ -98,7 +98,7 @@ cua-driver serve &         # starts the daemon
 ls ~/Library/Caches/cua-driver/cua-driver.sock   # should exist
 ```
 
-## Running Hawkeye + the agent
+## Running Shadow + the agent
 
 ```bash
 cd packages/desktop-tauri
@@ -145,7 +145,7 @@ In the chat panel:
   `describe` methods; we could surface the full 28-tool catalog
   dynamically with a richer Gemini schema translation.
 - **No conversation persistence**. Both plain chat and agent chat lose
-  history on reload. Hawkeye memory says this is also true today for the
+  history on reload. Shadow memory says this is also true today for the
   non-agent path.
 - **Image return path**: when the model calls `screenshot`, we attach the
   PNG as a *follow-up* user image part (since Gemini doesn't support
@@ -175,7 +175,7 @@ cargo test --lib agent::
 cua-driver serve &
 sleep 1
 
-# From any Hawkeye chat with agent mode on:
+# From any Shadow chat with agent mode on:
 "List my open windows"
 # → list_windows tool call → assistant reports the windows
 

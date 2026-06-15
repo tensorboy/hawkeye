@@ -1,5 +1,5 @@
 /**
- * Hawkeye Desktop - Main Process i18n
+ * Shadow Desktop - Main Process i18n
  */
 
 import { app } from 'electron';
@@ -10,7 +10,7 @@ const translations: Record<string, Record<string, string>> = {
     'tray.showSuggestions': 'Show Suggestions',
     'tray.settings': 'Settings',
     'tray.quit': 'Quit',
-    'tray.tooltip': 'Hawkeye - Intelligent Task Assistant',
+    'tray.tooltip': 'Shadow - Intelligent Task Assistant',
     'error.configureApiKey': 'Please configure API key first',
     'error.engineNotInitialized': 'Engine not initialized',
     // Auto-updater
@@ -27,7 +27,7 @@ const translations: Record<string, Record<string, string>> = {
     'tray.showSuggestions': '显示建议',
     'tray.settings': '设置',
     'tray.quit': '退出',
-    'tray.tooltip': 'Hawkeye - 智能任务助手',
+    'tray.tooltip': 'Shadow - 智能任务助手',
     'error.configureApiKey': '请先配置 API 密钥',
     'error.engineNotInitialized': '引擎未初始化',
     // Auto-updater
@@ -44,7 +44,7 @@ const translations: Record<string, Record<string, string>> = {
     'tray.showSuggestions': '顯示建議',
     'tray.settings': '設定',
     'tray.quit': '結束',
-    'tray.tooltip': 'Hawkeye - 智慧任務助手',
+    'tray.tooltip': 'Shadow - 智慧任務助手',
     'error.configureApiKey': '請先設定 API 金鑰',
     'error.engineNotInitialized': '引擎未初始化',
     // Auto-updater
@@ -61,7 +61,7 @@ const translations: Record<string, Record<string, string>> = {
     'tray.showSuggestions': '提案を表示',
     'tray.settings': '設定',
     'tray.quit': '終了',
-    'tray.tooltip': 'Hawkeye - インテリジェントタスクアシスタント',
+    'tray.tooltip': 'Shadow - インテリジェントタスクアシスタント',
     'error.configureApiKey': 'まず API キーを設定してください',
     'error.engineNotInitialized': 'エンジンが初期化されていません',
     // Auto-updater
@@ -78,7 +78,7 @@ const translations: Record<string, Record<string, string>> = {
     'tray.showSuggestions': '제안 표시',
     'tray.settings': '설정',
     'tray.quit': '종료',
-    'tray.tooltip': 'Hawkeye - 지능형 작업 도우미',
+    'tray.tooltip': 'Shadow - 지능형 작업 도우미',
     'error.configureApiKey': '먼저 API 키를 설정해주세요',
     'error.engineNotInitialized': '엔진이 초기화되지 않았습니다',
     // Auto-updater
@@ -95,7 +95,7 @@ const translations: Record<string, Record<string, string>> = {
     'tray.showSuggestions': 'Mostrar sugerencias',
     'tray.settings': 'Configuración',
     'tray.quit': 'Salir',
-    'tray.tooltip': 'Hawkeye - Asistente inteligente de tareas',
+    'tray.tooltip': 'Shadow - Asistente inteligente de tareas',
     'error.configureApiKey': 'Por favor, configura primero la clave API',
     'error.engineNotInitialized': 'Motor no inicializado',
     // Auto-updater
@@ -112,7 +112,7 @@ const translations: Record<string, Record<string, string>> = {
     'tray.showSuggestions': 'Mostrar sugestões',
     'tray.settings': 'Configurações',
     'tray.quit': 'Sair',
-    'tray.tooltip': 'Hawkeye - Assistente inteligente de tarefas',
+    'tray.tooltip': 'Shadow - Assistente inteligente de tarefas',
     'error.configureApiKey': 'Por favor, configure a chave API primeiro',
     'error.engineNotInitialized': 'Motor não inicializado',
     // Auto-updater

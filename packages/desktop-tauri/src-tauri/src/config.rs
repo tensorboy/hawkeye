@@ -22,6 +22,17 @@ pub struct AppConfig {
     pub openai_api_key: Option<String>,
     pub openai_model: Option<String>,
 
+    /// Anthropic (Claude) settings
+    pub anthropic_api_key: Option<String>,
+    pub anthropic_model: Option<String>,
+    pub anthropic_base_url: Option<String>,
+
+    /// Custom OpenAI-compatible endpoint (vLLM / Ollama / proxies / anything
+    /// speaking the chat-completions wire format)
+    pub custom_base_url: Option<String>,
+    pub custom_api_key: Option<String>,
+    pub custom_model: Option<String>,
+
     /// Local model settings (llama.cpp)
     pub local_model_id: Option<String>,
     pub collect_training_data: Option<bool>,
@@ -57,6 +68,12 @@ impl Default for AppConfig {
             openai_base_url: None,
             openai_api_key: None,
             openai_model: Some("gpt-4o-mini".to_string()),
+            anthropic_api_key: None,
+            anthropic_model: Some("claude-sonnet-4-6".to_string()),
+            anthropic_base_url: None,
+            custom_base_url: None,
+            custom_api_key: None,
+            custom_model: None,
             local_model_id: None,
             collect_training_data: Some(false),
             speech_provider: Some("apple".to_string()),

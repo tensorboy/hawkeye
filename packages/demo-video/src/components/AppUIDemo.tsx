@@ -181,7 +181,7 @@ export const AppUIDemo: React.FC = () => {
               fontFamily: theme.fonts.body,
             }}
           >
-            Hawkeye
+            Shadow
           </span>
           <div
             style={{

@@ -434,7 +434,7 @@ module.exports = {
           name: 'Git Integration',
           version: '1.0.0',
           description: '自动检测 Git 操作并提供智能建议',
-          author: { name: 'Hawkeye Team' },
+          author: { name: 'Shadow Team' },
           category: 'integration',
           keywords: ['git', 'version-control', 'automation'],
         },

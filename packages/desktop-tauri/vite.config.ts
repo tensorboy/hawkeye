@@ -24,6 +24,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         explain: path.resolve(__dirname, 'explain.html'),
+        chatBubble: path.resolve(__dirname, 'chat-bubble.html'),
       },
     },
   },

@@ -116,7 +116,7 @@ export interface AutonomousAnalysisResult {
  * AutonomousManager - 自主能力统一管理器
  *
  * 整合 PatternDetector、AutoSuggestEngine、ProactiveIntentDetector
- * 提供简化的 API 供 Hawkeye 主引擎使用
+ * 提供简化的 API 供 Shadow 主引擎使用
  */
 export class AutonomousManager extends EventEmitter {
   private config: AutonomousConfig;

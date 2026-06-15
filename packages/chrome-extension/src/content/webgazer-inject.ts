@@ -179,7 +179,7 @@ function createDebugPanel(): HTMLDivElement {
   const panel = document.createElement('div');
   panel.id = 'hawkeye-debug-panel';
   panel.innerHTML = `
-    <div class="title"><span>👁️</span> Hawkeye WebGazer</div>
+    <div class="title"><span>👁️</span> Shadow WebGazer</div>
     <div class="row">
       <span class="label">Status:</span>
       <span class="value" id="hawkeye-status">Loading...</span>
@@ -326,7 +326,7 @@ async function initializeWebGazerOverlay() {
   await webGazerController.initialize();
   isEnabled = true;
 
-  console.log('[Hawkeye WebGazer] Overlay initialized');
+  console.log('[Shadow WebGazer] Overlay initialized');
 }
 
 // Cleanup
@@ -341,7 +341,7 @@ function destroyWebGazerOverlay() {
   debugPanel = null;
   isEnabled = false;
 
-  console.log('[Hawkeye WebGazer] Overlay destroyed');
+  console.log('[Shadow WebGazer] Overlay destroyed');
 }
 
 // Toggle debug panel visibility
@@ -401,4 +401,4 @@ chrome.storage.local.get(['webgazer_auto_start']).then((data) => {
   }
 });
 
-console.log('[Hawkeye WebGazer] Content script loaded');
+console.log('[Shadow WebGazer] Content script loaded');

@@ -64,10 +64,12 @@ fn compile_swift_speech() {
     use std::process::Command;
 
     let swift_src = "swift-speech/Sources/main.swift";
+    let info_plist = "swift-speech/Info.plist";
     let out_dir = std::env::var("OUT_DIR").unwrap_or_else(|_| "target".to_string());
     let output_path = Path::new(&out_dir).join("hawkeye-speech");
 
     println!("cargo:rerun-if-changed={}", swift_src);
+    println!("cargo:rerun-if-changed={}", info_plist);
 
     if !Path::new(swift_src).exists() {
         println!("cargo:warning=Swift Speech source not found at {}, skipping compilation", swift_src);
@@ -86,6 +88,12 @@ fn compile_swift_speech() {
             "-framework", "Speech",
             "-framework", "AVFoundation",
             "-framework", "Foundation",
+            // Embed Info.plist so TCC-protected calls (speech auth, mic)
+            // prompt instead of SIGABRT-ing this plain CLI binary.
+            "-Xlinker", "-sectcreate",
+            "-Xlinker", "__TEXT",
+            "-Xlinker", "__info_plist",
+            "-Xlinker", info_plist,
         ])
         .status();
 

@@ -11,6 +11,7 @@
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
 import { api } from './api';
+import type { GazedEntity } from '../hooks/useTauri';
 
 export type ExplainMode = 'dictionary' | 'troubleshoot' | 'scene';
 
@@ -31,6 +32,20 @@ export async function fetchExplain(
   mode: ExplainMode,
 ): Promise<ExplainResponse> {
   return api.post<ExplainResponse>('/v1/explain', { x, y, mode });
+}
+
+/**
+ * Full explain flow anchored on a gazed entity: bbox center → daemon → overlay.
+ * Shared by the hotkey path (useExplain) and the gaze+pinch path (useGestureFusion).
+ */
+export async function explainGazedEntity(
+  entity: GazedEntity,
+  mode: ExplainMode,
+): Promise<void> {
+  const cx = Math.round(entity.bboxPx.xPx + entity.bboxPx.widthPx / 2);
+  const cy = Math.round(entity.bboxPx.yPx + entity.bboxPx.heightPx / 2);
+  const resp = await fetchExplain(cx, cy, mode);
+  await showExplainOverlay(resp);
 }
 
 const OVERLAY_LABEL = 'explain-overlay';

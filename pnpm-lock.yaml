@@ -384,6 +384,9 @@ importers:
       '@hawkeye/core':
         specifier: workspace:*
         version: link:../core
+      '@mediapipe/tasks-vision':
+        specifier: 0.10.35
+        version: 0.10.35
       '@tanstack/react-virtual':
         specifier: ^3.13.0
         version: 3.13.18(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -1476,6 +1479,9 @@ packages:
 
   '@mediapipe/tasks-vision@0.10.32':
     resolution: {integrity: sha512-3tiAZnmKloYnRXYoO3dKltTUGnqeCwzC4lV03uY0vCsE+aveJTyEVQyZHOlQGQNsjK+gRHzkf9q08C99Qm2K0Q==}
+
+  '@mediapipe/tasks-vision@0.10.35':
+    resolution: {integrity: sha512-HOvadwVRE6JC+45nyYhmnywnr5h/J8KZvOeUNVOG9q/0875pZgItznFB9bRTvLc264YSJqiZ1NsIpCStJw/egg==}
 
   '@node-llama-cpp/linux-arm64@3.15.1':
     resolution: {integrity: sha512-g7JC/WwDyyBSmkIjSvRF2XLW+YA0z2ZVBSAKSv106mIPO4CzC078woTuTaPsykWgIaKcQRyXuW5v5XQMcT1OOA==}
@@ -6627,6 +6633,8 @@ snapshots:
   '@mediapipe/face_mesh@0.4.1633559619': {}
 
   '@mediapipe/tasks-vision@0.10.32': {}
+
+  '@mediapipe/tasks-vision@0.10.35': {}
 
   '@node-llama-cpp/linux-arm64@3.15.1':
     optional: true

@@ -1,12 +1,14 @@
 [package]
 name = "hawkeye-desktop"
 version = "0.1.0"
-description = "Hawkeye Desktop - AI-Powered Screen Assistant"
-authors = ["Hawkeye Team"]
+description = "Shadow Desktop - AI-Powered Screen Assistant"
+authors = ["Shadow Team"]
 license = "MIT"
 repository = "https://github.com/anthropics/hawkeye"
 edition = "2021"
 rust-version = "1.70"
+# `cargo run` (and `tauri dev`) must pick the webview app, not cli/mcp.
+default-run = "hawkeye-desktop"
 
 [lib]
 name = "hawkeye_lib"
@@ -25,7 +27,7 @@ name = "hawkeye-cli"
 path = "src/bin/cli.rs"
 
 # Model Context Protocol stdio server — wraps the local hawkeyed daemon
-# so Claude Code / Cursor / Continue can call into Hawkeye for live
+# so Claude Code / Cursor / Continue can call into Shadow for live
 # screen + gaze + life-tree context.
 [[bin]]
 name = "hawkeye-mcp"

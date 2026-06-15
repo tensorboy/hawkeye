@@ -1,5 +1,5 @@
 /**
- * Hawkeye Desktop - Bootstrap
+ * Shadow Desktop - Bootstrap
  * This file runs BEFORE the main process to catch early errors
  */
 
@@ -88,7 +88,7 @@ try {
   const { dialog, app } = require('electron');
 
   app.whenReady().then(() => {
-    dialog.showErrorBox('Failed to start Hawkeye', `${error.message}\n\nCheck console for details.`);
+    dialog.showErrorBox('Failed to start Shadow', `${error.message}\n\nCheck console for details.`);
     app.quit();
   });
 }

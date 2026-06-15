@@ -1,5 +1,5 @@
 /**
- * Hawkeye Desktop - Renderer Entry
+ * Shadow Desktop - Renderer Entry
  */
 
 import React from 'react';

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Hawkeye",
+  "productName": "Shadow",
   "version": "0.1.0",
   "identifier": "com.hawkeye.app",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Hawkeye",
+        "title": "Shadow",
         "width": 420,
         "height": 600,
         "minWidth": 360,
@@ -28,9 +28,24 @@
         "visible": true
       },
       {
+        "label": "chat-bubble",
+        "url": "chat-bubble.html",
+        "title": "Shadow Chat",
+        "width": 64,
+        "height": 64,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "focus": false,
+        "visible": true,
+        "shadow": false
+      },
+      {
         "label": "explain-overlay",
         "url": "explain.html",
-        "title": "Hawkeye Explain",
+        "title": "Shadow Explain",
         "width": 380,
         "height": 220,
         "decorations": false,
@@ -64,7 +79,7 @@
     ],
     "category": "Productivity",
     "shortDescription": "AI-Powered Screen Assistant",
-    "longDescription": "Hawkeye is an AI-powered screen assistant that observes your work context and provides intelligent suggestions.",
+    "longDescription": "Shadow is an AI-powered screen assistant that observes your work context and provides intelligent suggestions.",
     "macOS": {
       "entitlements": null,
       "exceptionDomain": null,

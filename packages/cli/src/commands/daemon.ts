@@ -6,7 +6,7 @@ import { printError, printEvent, printInfo } from '../output.js';
 /**
  * Long-running observe loop.
  *
- * The Hawkeye core engine emits events like `intents:detected`, `perceiving`,
+ * The Shadow core engine emits events like `intents:detected`, `perceiving`,
  * and `execution:*` via its EventEmitter. We subscribe to a handful of them
  * and re-emit each as NDJSON on stdout. SIGINT triggers a clean shutdown.
  *
@@ -58,7 +58,7 @@ export function registerDaemon(program: Command): void {
         hawkeye = createHawkeye(buildHawkeyeConfig(cliCfg));
 
         // Best-effort event subscriptions. We pick the events that actually
-        // exist on the Hawkeye class (verified in packages/core/src/hawkeye.ts).
+        // exist on the Shadow class (verified in packages/core/src/hawkeye.ts).
         const events = [
           'ready',
           'perceiving',

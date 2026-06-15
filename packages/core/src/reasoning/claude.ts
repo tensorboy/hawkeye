@@ -97,7 +97,7 @@ export class ClaudeClient {
   }
 
   private buildSystemPrompt(): string {
-    return `你是 Hawkeye，一个智能任务感知助手。你的职责是：
+    return `你是 Shadow，一个智能任务感知助手。你的职责是：
 
 1. 分析用户当前的屏幕内容和上下文
 2. 理解用户可能的意图和需求

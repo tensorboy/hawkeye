@@ -1,5 +1,5 @@
 /**
- * Hawkeye Chrome Extension - Sync Client
+ * Shadow Chrome Extension - Sync Client
  * WebSocket client for communicating with Desktop app
  */
 
@@ -85,7 +85,7 @@ export class SyncClient {
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
-          console.log('Connected to Hawkeye Desktop');
+          console.log('Connected to Shadow Desktop');
           this._connected = true;
           this._desktopAvailable = true;
           this.reconnectAttempts = 0;
@@ -112,7 +112,7 @@ export class SyncClient {
         };
 
         this.ws.onclose = () => {
-          console.log('Disconnected from Hawkeye Desktop');
+          console.log('Disconnected from Shadow Desktop');
           this._connected = false;
           this.emit('disconnected', {});
           this.scheduleReconnect();

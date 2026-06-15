@@ -80,7 +80,7 @@ const SPEC_JSON: &str = r##"{
   "openapi": "3.0.3",
   "info": {
     "title": "hawkeyed",
-    "description": "HTTP+SSE daemon for Hawkeye — local AI screen assistant. Pair with the Hawkeye Desktop Mac app to script every capability (chat, gaze, OCR, life-tree, agent, voice).",
+    "description": "HTTP+SSE daemon for Shadow — local AI screen assistant. Pair with the Shadow Desktop Mac app to script every capability (chat, gaze, OCR, life-tree, agent, voice).",
     "version": "0.0.0",
     "license": { "name": "MIT" }
   },

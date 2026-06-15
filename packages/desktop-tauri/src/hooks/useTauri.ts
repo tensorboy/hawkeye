@@ -86,6 +86,13 @@ export interface AppConfig {
   openaiBaseUrl?: string;
   openaiApiKey?: string;
   openaiModel?: string;
+  anthropicApiKey?: string;
+  anthropicModel?: string;
+  anthropicBaseUrl?: string;
+  /** Custom OpenAI-compatible endpoint (vLLM / Ollama / proxies) */
+  customBaseUrl?: string;
+  customApiKey?: string;
+  customModel?: string;
   /** GGUF model id (must exist in the registry) when aiProvider === 'local' */
   localModelId?: string;
   collectTrainingData?: boolean;

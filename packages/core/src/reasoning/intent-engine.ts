@@ -301,7 +301,7 @@ export class IntentEngine extends EventEmitter {
     const messages: AIMessage[] = [
       {
         role: 'system',
-        content: `你是 Hawkeye 意图识别引擎。根据用户的当前上下文（包括屏幕内容、剪贴板、文件操作、以及用户的语音指令），识别用户可能的意图。
+        content: `你是 Shadow 意图识别引擎。根据用户的当前上下文（包括屏幕内容、剪贴板、文件操作、以及用户的语音指令），识别用户可能的意图。
 
 特别注意：如果用户有语音输入，这通常是最重要的意图信号，应该优先考虑用户说的话。
 

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Hawkeye",
+    "title": "Shadow",
     "loading": "Analizando pantalla...",
     "empty": "No se detectaron intenciones",
     "observeScreen": "Observar pantalla",
@@ -94,21 +94,21 @@
     "showSuggestions": "Mostrar sugerencias",
     "settings": "Configuración",
     "quit": "Salir",
-    "tooltip": "Hawkeye - Asistente inteligente de tareas"
+    "tooltip": "Shadow - Asistente inteligente de tareas"
   },
   "error": {
     "configureApiKey": "Por favor, configura primero la clave API",
     "engineNotInitialized": "Motor no inicializado",
-    "notInitialized": "Hawkeye no inicializado",
+    "notInitialized": "Shadow no inicializado",
     "intentNotFound": "Intención no encontrada",
     "planNotFound": "Plan no encontrado"
   },
   "onboarding": {
-    "title": "Bienvenido a Hawkeye",
+    "title": "Bienvenido a Shadow",
     "subtitle": "Por favor, selecciona un modelo de IA para comenzar",
     "selectModel": "Seleccionar modelo",
     "noModelAvailable": "No hay modelos disponibles",
-    "noModelDesc": "Por favor, descarga un modelo primero para usar todas las funciones de Hawkeye",
+    "noModelDesc": "Por favor, descarga un modelo primero para usar todas las funciones de Shadow",
     "downloadFirst": "Descarga un modelo primero",
     "downloading": "Descargando modelo...",
     "downloadComplete": "¡Descarga completada!",

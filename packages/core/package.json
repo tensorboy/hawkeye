@@ -1,7 +1,7 @@
 {
   "name": "@hawkeye/core",
   "version": "0.2.3",
-  "description": "Hawkeye Core Engine - Perception, Reasoning, Execution",
+  "description": "Shadow Core Engine - Perception, Reasoning, Execution",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",

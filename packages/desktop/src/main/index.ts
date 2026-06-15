@@ -1,5 +1,5 @@
 /**
- * Hawkeye Desktop - Main Process
+ * Shadow Desktop - Main Process
  * 模块化重构版本
  */
 
@@ -98,9 +98,9 @@ async function checkScreenRecordingPermission(): Promise<boolean> {
 
   const result = await dialog.showMessageBox({
     type: 'warning',
-    title: 'Hawkeye 需要屏幕录制权限',
-    message: '为了正常工作，Hawkeye 需要屏幕录制权限来捕获屏幕内容。',
-    detail: '请在系统偏好设置中:\n\n1. 找到「Hawkeye」\n2. 勾选复选框授予权限\n\n授权后可能需要重启应用。',
+    title: 'Shadow 需要屏幕录制权限',
+    message: '为了正常工作，Shadow 需要屏幕录制权限来捕获屏幕内容。',
+    detail: '请在系统偏好设置中:\n\n1. 找到「Shadow」\n2. 勾选复选框授予权限\n\n授权后可能需要重启应用。',
     buttons: ['打开系统设置', '稍后再说'],
     defaultId: 0,
     cancelId: 1,
@@ -318,9 +318,9 @@ app.whenReady().then(async () => {
         });
     });
 
-    // Init Hawkeye
+    // Init Shadow
     await hawkeyeService.initialize(configService.getConfig());
-    console.log('[Main] Hawkeye initialized, starting Whisper init...');
+    console.log('[Main] Shadow initialized, starting Whisper init...');
 
     // Initialize Life Tree Service
     const lifeTreeDb = hawkeyeService.getDatabase();

@@ -2,7 +2,7 @@
  * 插件系统类型定义
  * Plugin System Type Definitions
  *
- * 定义 Hawkeye 插件的接口和数据结构
+ * 定义 Shadow 插件的接口和数据结构
  */
 
 import { PerceptionContext, TaskSuggestion, ExecutionResult } from '../types';
@@ -47,7 +47,7 @@ export interface PluginMetadata {
   category?: PluginCategory;
   /** 图标 URL */
   icon?: string;
-  /** 最低 Hawkeye 版本要求 */
+  /** 最低 Shadow 版本要求 */
   minHawkeyeVersion?: string;
   /** 依赖的其他插件 */
   dependencies?: Record<string, string>;
@@ -427,7 +427,7 @@ export interface ConfirmationRequest {
 // ============================================================================
 
 /**
- * Hawkeye 插件接口
+ * Shadow 插件接口
  */
 export interface HawkeyePlugin {
   /** 插件元数据 */

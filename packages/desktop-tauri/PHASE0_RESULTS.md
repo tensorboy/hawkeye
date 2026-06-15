@@ -2,7 +2,7 @@
 
 ## Summary
 
-**Status: PASSED** - Tauri 2.0 is viable for the Hawkeye desktop app migration.
+**Status: PASSED** - Tauri 2.0 is viable for the Shadow desktop app migration.
 
 ## Environment
 

@@ -182,7 +182,7 @@ export const MenuBarPanel: React.FC = () => {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <span style={styles.headerTitle}>Hawkeye</span>
+        <span style={styles.headerTitle}>Shadow</span>
         <StatusBadge observing={state.isObserving} task={state.currentTask} />
       </div>
 
@@ -248,7 +248,7 @@ export const MenuBarPanel: React.FC = () => {
 
       {/* Footer */}
       <div style={styles.footer}>
-        <span style={styles.footerText}>Hawkeye AI Agent</span>
+        <span style={styles.footerText}>Shadow AI Agent</span>
       </div>
     </div>
   );
