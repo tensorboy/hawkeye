@@ -1,0 +1,51 @@
+name: repository hygiene
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-hygiene-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Require pinned external actions
+        run: |
+          set -euo pipefail
+          if ! find .github/actions .github/workflows \( -name '*.yml' -o -name '*.yaml' \) -print0 2>/dev/null |
+            xargs -0 perl -ne 'next if /^\s*#/; if (/uses:\s+[^.\/\s][^@\s]+@(?![0-9a-f]{40}(?:\s|$))/) { print "$ARGV:$.:$_"; $bad = 1 } END { exit($bad ? 1 : 0) }'; then
+            echo "External GitHub Actions must be pinned to full-length commit SHAs." >&2
+            exit 1
+          fi
+
+      - name: Reject committed env and key material
+        run: |
+          set -euo pipefail
+          env_files="$(
+            git ls-files |
+              grep -E '(^|/)\.env($|[.][^/]+$)' |
+              grep -Ev '(^|/)\.env\.example$' || true
+          )"
+          key_files="$(
+            git ls-files |
+              grep -Ei '(^|/)(id_rsa|id_dsa|id_ecdsa|id_ecdsa_sk|id_ed25519|id_ed25519_sk|.*\.(pem|p8|p12|key))$' || true
+          )"
+          private_key_matches="$(
+            git grep -I -n -E -- '-----BEGIN [A-Z ]*PRIVATE KEY-----' -- . || true
+          )"
+          if [[ -n "$env_files$key_files$private_key_matches" ]]; then
+            printf '%s\n%s\n%s\n' "$env_files" "$key_files" "$private_key_matches" | sed '/^$/d' >&2
+            echo "Tracked env files or private key material are not allowed." >&2
+            exit 1
+          fi
